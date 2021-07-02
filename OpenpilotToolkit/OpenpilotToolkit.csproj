@@ -1,0 +1,125 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net6.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+	<DebugType>embedded</DebugType>
+	<ApplicationIcon>Resources\ic_launcher-web.ico</ApplicationIcon>
+	<Platforms>AnyCPU;x64</Platforms>
+	<LangVersion>preview</LangVersion>
+	<StartupObject>OpenpilotToolkit.Program</StartupObject>
+	<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+	<ApplicationManifest>app.manifest</ApplicationManifest>
+  </PropertyGroup>
+
+	<PropertyGroup Condition="'$(PlatformTarget)' == 'x86'">
+		<RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-x86</RuntimeIdentifier>
+		<SelfContained Condition="'$(SelfContained)' == ''">false</SelfContained>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(PlatformTarget)' == 'x64'">
+		<RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-x64</RuntimeIdentifier>
+		<SelfContained Condition="'$(SelfContained)' == ''">false</SelfContained>
+	</PropertyGroup>
+
+  <ItemGroup>
+	<PackageReference Include="CefSharp.WinForms.NetCore" Version="92.0.260" />
+	<PackageReference Include="CombinationStream" Version="2.2.2" />
+	<PackageReference Include="LibUsbDotNet" Version="2.2.29" />
+    <PackageReference Include="LibVLCSharp" Version="3.6.0" />
+    <PackageReference Include="LibVLCSharp.WinForms" Version="3.6.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.0-preview.5.21301.9" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="6.0.0-preview.5.21301.9">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="6.0.0-preview.5.21301.9" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="6.0.0-preview.5.21301.9">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Windows.Compatibility" Version="6.0.0-preview.5.21301.5" />
+    <PackageReference Include="Octokit" Version="0.50.0" />
+    <PackageReference Include="Serilog" Version="2.10.1-dev-01343" />
+    <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="1.0.3" />
+    <PackageReference Include="SshKeyGenerator" Version="1.1.40" />
+    <PackageReference Include="VideoLAN.LibVLC.Windows" Version="3.0.16" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\OpenpilotSdk\OpenpilotSdk.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="MaterialSkinCore">
+      <HintPath>Libs\MaterialSkinCore.dll</HintPath>
+    </Reference>
+    <Reference Include="Renci.SshNet">
+      <HintPath>..\OpenpilotSdk\Libs\Renci.SshNet.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="OpenpilotToolkitForm.cs" />
+    <Compile Update="OpenpilotToolkitForm.Designer.cs">
+      <DependentUpon>OpenpilotToolkitForm.cs</DependentUpon>
+    </Compile>
+    <Compile Update="Properties\Resources.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Controls\ucTaskProgress.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Update="Controls\ucTaskProgress.Designer.cs">
+      <DependentUpon>ucTaskProgress.cs</DependentUpon>
+    </Compile>
+    <Compile Update="Properties\Settings.Designer.cs">
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="OpenpilotToolkitForm.resx">
+      <DependentUpon>OpenpilotToolkitForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Controls\ucTaskProgress.resx">
+      <DependentUpon>ucTaskProgress.cs</DependentUpon>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+  </ItemGroup>
+
+  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+    <Exec Command="if not exist &quot;$(TargetDir)tmp&quot; mkdir &quot;$(TargetDir)tmp&quot;" />
+  </Target>
+
+	<Target Name="CefSharpAfterBuildDiagnostic" AfterTargets="AfterBuild">
+		<Message Importance="high" Text="CefSharp After Build Diagnostic" />
+		<Message Importance="high" Text="RuntimeIdentifier = $(RuntimeIdentifier)" />
+		<Message Importance="high" Text="Platform = $(Platform)" />
+		<Message Importance="high" Text="PlatformName = $(PlatformName)" />
+		<Message Importance="high" Text="Platforms = $(Platforms)" />
+		<Message Importance="high" Text="PlatformTarget = $(PlatformTarget)" />
+		<Message Importance="high" Text="PlatformTargetAsMSBuildArchitecture = $(PlatformTargetAsMSBuildArchitecture)" />
+		<Message Importance="high" Text="TargetFramework = $(TargetFramework)" />
+		<Message Importance="high" Text="TargetFrameworkVersion = $(TargetFrameworkVersion)" />
+		<Message Importance="high" Text="NuGetProjectStyle = $(NuGetProjectStyle)" />
+		<Message Importance="high" Text="OutDir = $(OutDir)" />
+	</Target>
+
+</Project>
