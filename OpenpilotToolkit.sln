@@ -1,0 +1,35 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30907.101
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenpilotSdk", "OpenpilotSdk\OpenpilotSdk.csproj", "{1880FC90-F116-4EEB-80B9-7EAB88367800}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AvaloniaApplication1", "AvaloniaApplication1\AvaloniaApplication1.csproj", "{C47FEF50-2FEA-4D2B-8E29-48180D78722B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenpilotToolkit", "OpenpilotToolkit\OpenpilotToolkit.csproj", "{62140EB0-73AF-43E7-9327-DC4C779A7314}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1880FC90-F116-4EEB-80B9-7EAB88367800}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1880FC90-F116-4EEB-80B9-7EAB88367800}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1880FC90-F116-4EEB-80B9-7EAB88367800}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C47FEF50-2FEA-4D2B-8E29-48180D78722B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C47FEF50-2FEA-4D2B-8E29-48180D78722B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C47FEF50-2FEA-4D2B-8E29-48180D78722B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{62140EB0-73AF-43E7-9327-DC4C779A7314}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{62140EB0-73AF-43E7-9327-DC4C779A7314}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{62140EB0-73AF-43E7-9327-DC4C779A7314}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{62140EB0-73AF-43E7-9327-DC4C779A7314}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {FA159187-0B54-4781-9698-975FB71F5610}
+	EndGlobalSection
+EndGlobal

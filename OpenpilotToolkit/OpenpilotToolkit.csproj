@@ -1,0 +1,68 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net6.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+	<DebugType>embedded</DebugType>
+	<ApplicationIcon>Resources\ic_launcher-web.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="LibUsbDotNet" Version="2.2.29" />
+    <PackageReference Include="Microsoft.Windows.Compatibility" Version="6.0.0-preview.5.21301.5" />
+    <PackageReference Include="Serilog" Version="2.10.1-dev-01343" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="4.0.0-dev-00839" />
+    <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="1.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\OpenpilotSdk\OpenpilotSdk.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="MaterialSkin">
+      <HintPath>Libs\MaterialSkin.dll</HintPath>
+    </Reference>
+    <Reference Include="Renci.SshNet">
+      <HintPath>..\OpenpilotSdk\Libs\Renci.SshNet.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="OpenpilotToolkitForm.cs" />
+    <Compile Update="OpenpilotToolkitForm.Designer.cs">
+      <DependentUpon>OpenpilotToolkitForm.cs</DependentUpon>
+    </Compile>
+    <Compile Update="Properties\Resources.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Controls\ucTaskProgress.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Update="Controls\ucTaskProgress.Designer.cs">
+      <DependentUpon>ucTaskProgress.cs</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="OpenpilotToolkitForm.resx">
+      <DependentUpon>OpenpilotToolkitForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Controls\ucTaskProgress.resx">
+      <DependentUpon>ucTaskProgress.cs</DependentUpon>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+    <Exec Command="if not exist &quot;$(TargetDir)tmp&quot; mkdir &quot;$(TargetDir)tmp&quot;" />
+  </Target>
+
+</Project>

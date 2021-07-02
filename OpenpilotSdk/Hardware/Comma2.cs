@@ -1,0 +1,414 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Drawing;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Text;
+using System.Threading.Tasks;
+using GeoCoordinatePortable;
+using NetTopologySuite.IO;
+using OpenpilotSdk.Exceptions;
+using OpenpilotSdk.OpenPilot;
+using Renci.SshNet.Sftp;
+using Extensions = OpenpilotSdk.Sftp.Extensions;
+
+namespace OpenpilotSdk.Hardware
+{
+    public class Comma2 : OpenpilotDevice
+    {
+        public Comma2(IPAddress hostAddress)
+        {
+            IpAddress = hostAddress;
+        }
+
+        public Bitmap GetThumbnail(Drive drive)
+        {
+            var firstSegment = drive.Segments.FirstOrDefault();
+            if (firstSegment != null)
+            {
+                return GetThumbnail(firstSegment);
+            }
+
+            return null;
+        }
+
+        public async Task ExportDriveAsync(string path, Drive drive, IProgress<int> progress = null)
+        {
+            if (!SftpClient.IsConnected)
+            {
+                throw new NotConnectedException("No connection has been made to the comma2");
+            }
+
+            if (!Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
+            }
+
+            var m3uFileName = drive.ToString() + ".m3u";
+            var m3uList = new List<string>();
+
+            foreach (var segment in drive.Segments)
+            {
+                var fileName = await ExportSegmentAsync(path, segment, progress);
+                m3uList.Add(fileName);
+            }
+
+            using (var driveOutput = File.Create(Path.Combine(path, drive.Date.ToShortDateString()) + ".hevc"))
+            {
+                foreach (var fileName in m3uList)
+                {
+                    using (var file = File.OpenRead(Path.Combine(path, fileName)))
+                    {
+                        await file.CopyToAsync(driveOutput);
+                    }
+                }
+            }
+            
+            using (var file = File.CreateText(Path.Combine(path, m3uFileName)))
+            {
+                await file.WriteAsync(string.Join(Environment.NewLine, m3uList));
+            }
+        }
+
+        public void ExportDrive(string path, Drive drive, IProgress<int> progress = null)
+        {
+            if (!SftpClient.IsConnected)
+            {
+                throw new NotConnectedException("No connection has been made to the comma2");
+            }
+
+            if (!Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
+            }
+
+            var m3uFileName = drive.ToString() + ".m3u";
+            var m3uList = new StringBuilder();
+
+            foreach (var segment in drive.Segments)
+            {
+                m3uList.AppendLine(ExportSegment(path, segment));
+            }
+
+            using (var file = File.CreateText(Path.Combine(path, m3uFileName)))
+            {
+                file.WriteAsync(m3uList.ToString());
+            }
+        }
+
+        public async Task<string> ExportSegmentAsync(string path, DriveSegment driveSegment,
+            IProgress<int> progress = null)
+        {
+            if (!SftpClient.IsConnected)
+            {
+                throw new NotConnectedException("No connection has been made to the comma2");
+            }
+
+            var newFileName = new DirectoryInfo(Path.GetDirectoryName(driveSegment.FrontCamera.FullName)).Name +
+                              Path.GetExtension(driveSegment.FrontCamera.FullName);
+
+            if (!File.Exists(Path.Combine(path, newFileName)))
+            {
+                using (var outputFile = File.Create(Path.Combine(path, newFileName)))
+                {
+                    if (Directory.Exists(Path.GetDirectoryName(path)))
+                    {
+                        await Task.Factory.FromAsync(
+                            SftpClient.BeginDownloadFile(driveSegment.FrontCamera.FullName, outputFile),
+                            SftpClient.EndDownloadFile);
+                    }
+                }
+            }
+            /*
+            if (driveSegment.RawLog != null)
+            {
+                newFileName = new DirectoryInfo(Path.GetDirectoryName(driveSegment.RawLog.FullName)).Name +
+                              Path.GetExtension(driveSegment.RawLog.FullName);
+
+                if (!File.Exists(Path.Combine(path, newFileName)))
+                {
+                    using (var outputFile = File.Create(Path.Combine(path, newFileName)))
+                    {
+                        if (Directory.Exists(Path.GetDirectoryName(path)))
+                        {
+                            await Task.Factory.FromAsync(
+                                SftpClient.BeginDownloadFile(driveSegment.RawLog.FullName, outputFile),
+                                SftpClient.EndDownloadFile);
+                        }
+                    }
+                }
+            }
+            */
+
+
+            if (progress != null)
+            {
+                progress.Report(driveSegment.Index);
+            }
+
+            return newFileName;
+        }
+
+        public string ExportSegment(string path, DriveSegment driveSegment)
+        {
+            if (!SftpClient.IsConnected)
+            {
+                throw new NotConnectedException("No connection has been made to the comma2");
+            }
+
+            var newFileName = new DirectoryInfo(Path.GetDirectoryName(driveSegment.FrontCamera.FullName)).Name +
+                              Path.GetExtension(driveSegment.FrontCamera.FullName);
+
+            var filePath = Path.Combine(path, newFileName);
+            if (!File.Exists(filePath))
+            {
+                using (var outputFile = File.Create(Path.Combine(path, newFileName)))
+                {
+                    if (Directory.Exists(Path.GetDirectoryName(path)))
+                    {
+                        SftpClient.DownloadFile(driveSegment.FrontCamera.FullName, outputFile, obj => { });
+                    }
+                }
+            }
+
+            return newFileName;
+        }
+
+        public Bitmap GetThumbnail(DriveSegment driveSegment)
+        {
+            var drive = new DirectoryInfo(Path.GetDirectoryName(driveSegment.FrontCamera.FullName)).Name;
+            var newFileName = drive +
+                              Path.GetExtension(driveSegment.FrontCamera.FullName);
+            var outputFile = Path.Combine(TempDirectory, newFileName);
+            if (!File.Exists(outputFile))
+            {
+                using (var output = File.Create(outputFile))
+                {
+                    SftpClient.DownloadFile(driveSegment.FrontCamera.FullName, output);
+                }
+            }
+
+            var bitmap = Path.Combine(TempDirectory, drive + ".jpg");
+            return OpenPilot.Extensions.GetThumbnail(outputFile, bitmap);
+        }
+
+        public DriveSegment GetSegment(DateTime driveDate, int index)
+        {
+            var segmentFolder = driveDate.ToString("yyyy-MM-dd--HH-mm-ss--" + index);
+            var segmentFiles = Extensions.GetFiles(SftpClient, segmentFolder);
+
+            SftpFile frontCamera = null;
+            SftpFile driverCamera = null;
+            SftpFile quickLog = null;
+            SftpFile rawLog = null;
+
+            foreach (var segmentFile in segmentFiles)
+            {
+                if (segmentFile.Name.Equals("fcamera.hevc", StringComparison.OrdinalIgnoreCase))
+                {
+                    frontCamera = segmentFile;
+                }
+                else if (segmentFile.Name.Equals("dcamera.hevc", StringComparison.OrdinalIgnoreCase))
+                {
+                    driverCamera = segmentFile;
+                }
+                else if (segmentFile.Name.Equals("rlog.bz2", StringComparison.OrdinalIgnoreCase))
+                {
+                    rawLog = segmentFile;
+                }
+                else if (segmentFile.Name.Equals("qlog.bz2", StringComparison.OrdinalIgnoreCase))
+                {
+                    quickLog = segmentFile;
+                }
+            }
+
+
+            //
+            //directoryItem.Name.Equals("rlog.bz2", StringComparison.OrdinalIgnoreCase))
+
+
+            return new DriveSegment(index, frontCamera, quickLog, rawLog, driverCamera);
+        }
+
+        public async Task<List<GpxWaypoint>> MapillaryExportAsync(Drive drive)
+        {
+            var waypoints = new List<GpxWaypoint>();
+
+            foreach (var driveSegment in drive.Segments.OrderBy(segment => segment.Index))
+            {
+                waypoints.AddRange(await OpenPilot.Logging.LogFile.GetWayPointsAsync(SftpClient.OpenRead(driveSegment.RawLog.FullName)));
+
+            }
+
+            List<GpxWaypoint> waypointsToExport = new List<GpxWaypoint>();
+            if (waypoints.Count > 1)
+            {
+                var firstWaypoint = waypoints.First();
+                waypointsToExport.Add(firstWaypoint);
+                var geoCoordinate = new GeoCoordinate(firstWaypoint.Latitude, firstWaypoint.Longitude,
+                    (double)firstWaypoint.ElevationInMeters);
+
+                for (int i = 1; i < waypoints.Count; i++)
+                {
+                    var nextCoordinate = new GeoCoordinate(waypoints[i].Latitude, waypoints[i].Latitude,
+                        (double)waypoints[i].ElevationInMeters);
+
+                    var distance = geoCoordinate.GetDistanceTo(nextCoordinate);
+                    if (distance >= 5)
+                    {
+                        waypointsToExport.Add(waypoints[i]);
+                        geoCoordinate = nextCoordinate;
+                    }
+                }
+
+                waypointsToExport.Add(waypoints[waypoints.Count - 1]);
+            }
+
+            var waypointTable = new ImmutableGpxWaypointTable(waypointsToExport.Take(100));
+            var trackSegment = new GpxTrackSegment(waypointTable, null);
+            var track = new GpxTrack(drive.Date.ToString(), null, null, "openpilot", ImmutableArray<GpxWebLink>.Empty, null, null, null, ImmutableArray.Create(trackSegment));
+            var gpxFile = new GpxFile();
+            gpxFile.Tracks.Add(track);
+            File.WriteAllText(@"D:\OpenPilot\testf\test.gpx", gpxFile.BuildString(new GpxWriterSettings()));
+
+            return waypointsToExport;
+        }
+
+        public async Task<GpxFile> GenerateGpxFileAsync(Drive drive, IProgress<int> progress = null)
+        {
+            var waypoints = new List<GpxWaypoint>();
+            
+            foreach (var driveSegment in drive.Segments.OrderBy(segment => segment.Index))
+            {
+                waypoints.AddRange(await OpenPilot.Logging.LogFile.GetWayPointsAsync(SftpClient.OpenRead(driveSegment.RawLog.FullName)));
+                
+                if (progress != null)
+                {
+                    progress.Report(driveSegment.Index);
+                }
+            }
+
+            
+            
+            var waypointTable = new ImmutableGpxWaypointTable(waypoints);
+            var trackSegment = new GpxTrackSegment(waypointTable, null);
+            var track = new GpxTrack(drive.Date.ToString(), null, null, "openpilot", ImmutableArray<GpxWebLink>.Empty, null, null, null, ImmutableArray.Create(trackSegment));
+            var gpxFile = new GpxFile();
+            gpxFile.Tracks.Add(track);
+            
+            return gpxFile;
+        }
+
+        public IEnumerable<SftpFile> GetFiles()
+        {
+            var directoryListing = SftpClient.ListDirectory(".");
+            return directoryListing;
+        }
+
+        public IEnumerable<Drive> GetDrives()
+        {
+            if (!SftpClient.IsConnected)
+            {
+                throw new NotConnectedException("No connection has been made to the comma2");
+            }
+            
+            SftpClient.ChangeDirectory(@"/storage/emulated/0/realdata");
+
+
+            var directoryListing = SftpClient.ListDirectory(".").Where(dir => OpenPilot.Extensions.FolderRegex.IsMatch(dir.Name))
+                .OrderBy(dir =>
+                {
+                    var matches = OpenPilot.Extensions.FolderRegex.Match(dir.Name);
+                    var date = DateTime.Parse(matches.Groups[1].Value + " " +
+                                              matches.Groups[2].Value.Replace("-", ":"));
+                    return date;
+                }).ThenBy(dir =>
+                    {
+                        var matches = OpenPilot.Extensions.FolderRegex.Match(dir.Name);
+                        var index = int.Parse(matches.Groups[3].Value);
+                        return index;
+                    }
+                );
+
+            DateTime? previousSegmentDate = null;
+            DateTime driveDate = DateTime.Today;
+            var segmentList = new List<DriveSegment>();
+
+            foreach (var segmentFolder in directoryListing)
+            {
+                var matches = OpenPilot.Extensions.FolderRegex.Match(segmentFolder.Name);
+                driveDate = DateTime.Parse(matches.Groups[1].Value + " " + matches.Groups[2].Value.Replace("-", ":"));
+                if (previousSegmentDate == null)
+                {
+                    previousSegmentDate = driveDate;
+                }
+
+                var segmentIndex = int.Parse(matches.Groups[3].Value);
+                var driveSegment = GetSegment(driveDate, segmentIndex);
+
+                if (previousSegmentDate == driveDate)
+                {
+                    segmentList.Add(driveSegment);
+                }
+                else
+                {
+                    yield return new Drive((DateTime) previousSegmentDate, segmentList);
+                    previousSegmentDate = driveDate;
+                    segmentList = new List<DriveSegment> {driveSegment};
+                }
+            }
+
+            if (segmentList.Count > 0)
+            {
+                yield return new Drive(driveDate, segmentList);
+            }
+        }
+
+        public override string ToString()
+        {
+            return IpAddress.ToString();
+        }
+
+        protected bool Equals(Comma2 other)
+        {
+            return Equals(IpAddress, other.IpAddress);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj))
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, obj))
+            {
+                return true;
+            }
+
+            if (obj.GetType() != GetType())
+            {
+                return false;
+            }
+
+            return Equals((Comma2) obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return IpAddress != null ? IpAddress.GetHashCode() : 0;
+        }
+
+        public static bool operator ==(Comma2 left, Comma2 right)
+        {
+            return Equals(left, right);
+        }
+
+        public static bool operator !=(Comma2 left, Comma2 right)
+        {
+            return !Equals(left, right);
+        }
+    }
+}
