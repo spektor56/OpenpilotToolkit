@@ -62,12 +62,12 @@ namespace OpenpilotToolkit
             this.materialListBox2 = new MaterialSkin.Controls.MaterialListBox();
             this.tpFingerprint = new System.Windows.Forms.TabPage();
             this.tpSSH = new System.Windows.Forms.TabPage();
-            this.ucWizard1 = new OpenpilotToolkit.Controls.Wizards.ucWizard();
+            this.ucSshWizard = new OpenpilotToolkit.Controls.Wizards.ucSshWizard();
             this.tpFlash = new System.Windows.Forms.TabPage();
-            this.ucWizard2 = new OpenpilotToolkit.Controls.Wizards.ucWizard();
             this.tabPage8 = new System.Windows.Forms.TabPage();
             this.themePanel = new System.Windows.Forms.FlowLayoutPanel();
             this.wifiConnected = new MaterialSkin.Controls.MaterialButton();
+            this.sqliteCommand1 = new Microsoft.Data.Sqlite.SqliteCommand();
             ((System.ComponentModel.ISupportInitialize)(this.pbPreview)).BeginInit();
             this.tcSettings.SuspendLayout();
             this.tpExport.SuspendLayout();
@@ -75,7 +75,6 @@ namespace OpenpilotToolkit
             this.tpExplore.SuspendLayout();
             this.panel1.SuspendLayout();
             this.tpSSH.SuspendLayout();
-            this.tpFlash.SuspendLayout();
             this.themePanel.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -519,7 +518,7 @@ namespace OpenpilotToolkit
             // 
             // tpSSH
             // 
-            this.tpSSH.Controls.Add(this.ucWizard1);
+            this.tpSSH.Controls.Add(this.ucSshWizard);
             this.tpSSH.ImageKey = "outline_ssh_black_24dp.png";
             this.tpSSH.Location = new System.Drawing.Point(4, 31);
             this.tpSSH.Name = "tpSSH";
@@ -529,17 +528,17 @@ namespace OpenpilotToolkit
             this.tpSSH.Text = "SSH Wizard";
             this.tpSSH.UseVisualStyleBackColor = true;
             // 
-            // ucWizard1
+            // ucSshWizard
             // 
-            this.ucWizard1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.ucWizard1.Location = new System.Drawing.Point(3, 3);
-            this.ucWizard1.Name = "ucWizard1";
-            this.ucWizard1.Size = new System.Drawing.Size(1228, 631);
-            this.ucWizard1.TabIndex = 1;
+            this.ucSshWizard.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.ucSshWizard.Location = new System.Drawing.Point(3, 3);
+            this.ucSshWizard.Name = "ucSshWizard";
+            this.ucSshWizard.Size = new System.Drawing.Size(1228, 631);
+            this.ucSshWizard.TabIndex = 1;
+            this.ucSshWizard.WizardCompleted += new System.EventHandler(this.ucSshWizard_WizardCompleted);
             // 
             // tpFlash
             // 
-            this.tpFlash.Controls.Add(this.ucWizard2);
             this.tpFlash.ImageKey = "outline_flash_on_white_24dp.png";
             this.tpFlash.Location = new System.Drawing.Point(4, 31);
             this.tpFlash.Name = "tpFlash";
@@ -548,14 +547,6 @@ namespace OpenpilotToolkit
             this.tpFlash.TabIndex = 6;
             this.tpFlash.Text = "Flash Wizard";
             this.tpFlash.UseVisualStyleBackColor = true;
-            // 
-            // ucWizard2
-            // 
-            this.ucWizard2.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.ucWizard2.Location = new System.Drawing.Point(3, 3);
-            this.ucWizard2.Name = "ucWizard2";
-            this.ucWizard2.Size = new System.Drawing.Size(1228, 631);
-            this.ucWizard2.TabIndex = 2;
             // 
             // tabPage8
             // 
@@ -580,6 +571,7 @@ namespace OpenpilotToolkit
             this.themePanel.Name = "themePanel";
             this.themePanel.Size = new System.Drawing.Size(999, 40);
             this.themePanel.TabIndex = 34;
+            this.themePanel.Paint += new System.Windows.Forms.PaintEventHandler(this.themePanel_Paint);
             // 
             // wifiConnected
             // 
@@ -606,6 +598,13 @@ namespace OpenpilotToolkit
             this.wifiConnected.UseAccentColor = false;
             this.wifiConnected.UseVisualStyleBackColor = true;
             // 
+            // sqliteCommand1
+            // 
+            this.sqliteCommand1.CommandTimeout = 30;
+            this.sqliteCommand1.Connection = null;
+            this.sqliteCommand1.Transaction = null;
+            this.sqliteCommand1.UpdatedRowSource = System.Data.UpdateRowSource.None;
+            // 
             // OpenpilotToolkitForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
@@ -620,7 +619,7 @@ namespace OpenpilotToolkit
             this.DrawerTabControl = this.tcSettings;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.MinimumSize = new System.Drawing.Size(974, 207);
+            this.MinimumSize = new System.Drawing.Size(1085, 412);
             this.Name = "OpenpilotToolkitForm";
             this.Text = "Openpilot Toolkit";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.ExportDrivesForm_FormClosing);
@@ -633,7 +632,6 @@ namespace OpenpilotToolkit
             this.tpExplore.ResumeLayout(false);
             this.panel1.ResumeLayout(false);
             this.tpSSH.ResumeLayout(false);
-            this.tpFlash.ResumeLayout(false);
             this.themePanel.ResumeLayout(false);
             this.ResumeLayout(false);
 
@@ -674,8 +672,10 @@ namespace OpenpilotToolkit
         private MaterialButton wifiConnected;
         private System.Windows.Forms.TabPage tpFlash;
         private System.Windows.Forms.TableLayoutPanel tlpTasks;
-        private ucWizard ucWizard1;
-        private ucWizard ucWizard2;
+        private ucSshWizard ucWizard1;
+        private ucSshWizard ucWizard2;
+        private Microsoft.Data.Sqlite.SqliteCommand sqliteCommand1;
+        private ucSshWizard ucSshWizard;
     }
 }
 

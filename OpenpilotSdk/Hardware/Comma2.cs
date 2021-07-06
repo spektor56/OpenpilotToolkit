@@ -54,8 +54,8 @@ namespace OpenpilotSdk.Hardware
                 var fileName = await ExportSegmentAsync(path, segment, progress);
                 m3uList.Add(fileName);
             }
-
-            using (var driveOutput = File.Create(Path.Combine(path, drive.Date.ToShortDateString()) + ".hevc"))
+            
+            using (var driveOutput = File.Create(Path.Combine(path, drive.ToString()) + ".hevc"))
             {
                 foreach (var fileName in m3uList)
                 {
@@ -268,7 +268,7 @@ namespace OpenpilotSdk.Hardware
 
             var waypointTable = new ImmutableGpxWaypointTable(waypointsToExport.Take(100));
             var trackSegment = new GpxTrackSegment(waypointTable, null);
-            var track = new GpxTrack(drive.Date.ToString(), null, null, "openpilot", ImmutableArray<GpxWebLink>.Empty, null, null, null, ImmutableArray.Create(trackSegment));
+            var track = new GpxTrack(drive.ToString(), null, null, "openpilot", ImmutableArray<GpxWebLink>.Empty, null, null, null, ImmutableArray.Create(trackSegment));
             var gpxFile = new GpxFile();
             gpxFile.Tracks.Add(track);
             File.WriteAllText(@"D:\OpenPilot\testf\test.gpx", gpxFile.BuildString(new GpxWriterSettings()));
@@ -294,7 +294,7 @@ namespace OpenpilotSdk.Hardware
             
             var waypointTable = new ImmutableGpxWaypointTable(waypoints);
             var trackSegment = new GpxTrackSegment(waypointTable, null);
-            var track = new GpxTrack(drive.Date.ToString(), null, null, "openpilot", ImmutableArray<GpxWebLink>.Empty, null, null, null, ImmutableArray.Create(trackSegment));
+            var track = new GpxTrack(drive.ToString(), null, null, "openpilot", ImmutableArray<GpxWebLink>.Empty, null, null, null, ImmutableArray.Create(trackSegment));
             var gpxFile = new GpxFile();
             gpxFile.Tracks.Add(track);
             

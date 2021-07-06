@@ -6,15 +6,29 @@
     <UseWindowsForms>true</UseWindowsForms>
 	<DebugType>embedded</DebugType>
 	<ApplicationIcon>Resources\ic_launcher-web.ico</ApplicationIcon>
+	<Platforms>AnyCPU;x64</Platforms>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="CefSharp.Common.NETCore" Version="91.1.211" />
+    <PackageReference Include="CefSharp.WinForms.NETCore" Version="91.1.211" />
     <PackageReference Include="LibUsbDotNet" Version="2.2.29" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.0-preview.5.21301.9" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="6.0.0-preview.5.21301.9">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="6.0.0-preview.5.21301.9" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="6.0.0-preview.5.21301.9">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="Microsoft.Windows.Compatibility" Version="6.0.0-preview.5.21301.5" />
+    <PackageReference Include="Octokit" Version="0.50.0" />
     <PackageReference Include="Serilog" Version="2.10.1-dev-01343" />
-    <PackageReference Include="Serilog.Sinks.Console" Version="4.0.0-dev-00839" />
     <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
     <PackageReference Include="SixLabors.ImageSharp" Version="1.0.3" />
+    <PackageReference Include="SshKeyGenerator" Version="1.1.40" />
   </ItemGroup>
 
   <ItemGroup>
@@ -22,8 +36,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="MaterialSkin">
-      <HintPath>Libs\MaterialSkin.dll</HintPath>
+    <Reference Include="MaterialSkinCore">
+      <HintPath>Libs\MaterialSkinCore.dll</HintPath>
     </Reference>
     <Reference Include="Renci.SshNet">
       <HintPath>..\OpenpilotSdk\Libs\Renci.SshNet.dll</HintPath>
@@ -46,6 +60,11 @@
     <Compile Update="Controls\ucTaskProgress.Designer.cs">
       <DependentUpon>ucTaskProgress.cs</DependentUpon>
     </Compile>
+    <Compile Update="Properties\Settings.Designer.cs">
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+    </Compile>
   </ItemGroup>
 
   <ItemGroup>
@@ -59,6 +78,13 @@
     <EmbeddedResource Update="Controls\ucTaskProgress.resx">
       <DependentUpon>ucTaskProgress.cs</DependentUpon>
     </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
   </ItemGroup>
 
   <Target Name="PreBuild" BeforeTargets="PreBuildEvent">

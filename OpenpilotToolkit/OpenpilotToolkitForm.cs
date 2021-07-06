@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -11,17 +12,22 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using CefSharp;
+using CefSharp.WinForms;
 using MaterialSkin;
 using MaterialSkin.Controls;
+using Microsoft.EntityFrameworkCore;
 using NetTopologySuite.IO;
 using OpenpilotSdk.Hardware;
 using OpenpilotSdk.OpenPilot;
 using OpenpilotToolkit.Android;
 using OpenpilotToolkit.Controls;
 using OpenpilotToolkit.Json;
+using OpenpilotToolkit.Models;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Metadata.Profiles.Exif;
 using Image = SixLabors.ImageSharp.Image;
+using OpenpilotDevice = OpenpilotSdk.Hardware.OpenpilotDevice;
 
 namespace OpenpilotToolkit
 {
@@ -30,6 +36,7 @@ namespace OpenpilotToolkit
         private readonly ConcurrentDictionary<string,Task> _activeTaskList = new ConcurrentDictionary<string, Task>();
         private string _adbConnectedMessage = "Device in fastboot mode connected";
         private string _adbDisconnectedMessage = "Device in fastboot mode disconnected";
+        private int _connectedFastbootDevices = 0;
         public System.Drawing.Color ToColor(int argb)
         {
             return System.Drawing.Color.FromArgb(
@@ -62,7 +69,17 @@ namespace OpenpilotToolkit
 
         private async void Form1_Load(object sender, EventArgs e)
         {
+            var settings = new CefSettings
+            {
+                //BrowserSubprocessPath = Path.Combine(AppContext.BaseDirectory, "CefSharp.BrowserSubprocess.exe")
+            };
+            Cef.Initialize(settings);
+
+            SetTheme(Properties.Settings.Default.DarkMode);
+            txtExportFolder.Text = Properties.Settings.Default.ExportFolder;
+
             var devices = Fastboot.GetDevices();
+            _connectedFastbootDevices = devices.Length;
             if (devices.Any())
             {
                 var message = new MaterialSnackBar(_adbConnectedMessage, "OK", false);
@@ -80,11 +97,8 @@ namespace OpenpilotToolkit
             {
                 Debug.Print("IN HERE");
                 var devices = Fastboot.GetDevices();
-                foreach (var device in devices)
-                {
-                    Debug.Print("Found" + device);
-                }
-                if (devices.Length > 0)
+
+                if(devices.Length > _connectedFastbootDevices)
                 {
                     BeginInvoke(new MethodInvoker(() =>
                     {
@@ -94,7 +108,7 @@ namespace OpenpilotToolkit
                     }));
                     
                 }
-                else
+                else if (devices.Length < _connectedFastbootDevices)
                 {
                     BeginInvoke(new MethodInvoker(() =>
                     {
@@ -103,6 +117,8 @@ namespace OpenpilotToolkit
                         message.Show(this);
                     }));
                 }
+
+                _connectedFastbootDevices = devices.Length;
             };
             watcher.Query = query;
             watcher.Start();
@@ -122,6 +138,7 @@ namespace OpenpilotToolkit
                                 lbCommaList.Items.Add(device);
                                 if (lbCommaList.Items.Count == 1)
                                 {
+                                    wifiConnected.SetEnabled(true);
                                     lbCommaList.SelectedIndex = 0;
                                 }
                             }
@@ -306,7 +323,7 @@ namespace OpenpilotToolkit
 
         }
 
-        private void ExportDrivesForm_FormClosing(object sender, FormClosingEventArgs e)
+        private async void ExportDrivesForm_FormClosing(object sender, FormClosingEventArgs e)
         {
             if (_activeTaskList.Any())
             {
@@ -314,6 +331,11 @@ namespace OpenpilotToolkit
                 e.Cancel = true;
                 return;
             }
+
+            Properties.Settings.Default.DarkMode = MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.DARK;
+            Properties.Settings.Default.ExportFolder = txtExportFolder.Text;
+            Properties.Settings.Default.Save();
+            Cef.Shutdown();
         }
 
         private HttpClient _client;
@@ -559,9 +581,9 @@ namespace OpenpilotToolkit
                 txtExportFolder.Text = fbdExportFolder.SelectedPath;
         }
 
-        private void themeButton_Click(object sender, EventArgs e)
+        public void SetTheme(bool darkMode)
         {
-            if (MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT)
+            if (darkMode)
             {
                 themeButton.Icon = Properties.Resources.light_mode_white;
                 MaterialSkinManager.Instance.Theme = MaterialSkinManager.Themes.DARK;
@@ -576,6 +598,11 @@ namespace OpenpilotToolkit
             lbCommaList.BackColor = MaterialSkinManager.Instance.BackgroundColor;
             lbDrives.ForeColor = MaterialSkinManager.Instance.TextHighEmphasisColor;
             lbCommaList.ForeColor = MaterialSkinManager.Instance.TextHighEmphasisColor;
+        }
+
+        private void themeButton_Click(object sender, EventArgs e)
+        {
+            SetTheme(MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT);
         }
 
         private void themePanel_LocationChanged(object sender, EventArgs e)
@@ -641,6 +668,17 @@ namespace OpenpilotToolkit
         private void materialButton2_Click(object sender, EventArgs e)
         {
 
+        }
+
+        private void themePanel_Paint(object sender, PaintEventArgs e)
+        {
+
+        }
+
+        private void ucSshWizard_WizardCompleted(object sender, EventArgs e)
+        {
+            tcSettings.SelectedTab = tpExport;
+            ucSshWizard.Reset();
         }
     }
 
