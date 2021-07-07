@@ -31,23 +31,24 @@ namespace OpenpilotToolkit.Controls.Wizards
         private void InitializeComponent()
         {
             this.tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
+            this.mtcSSHWizard = new MaterialSkin.Controls.MaterialTabControl();
+            this.tpGithubLogin = new System.Windows.Forms.TabPage();
+            this.txtUsername = new MaterialSkin.Controls.MaterialTextBox();
+            this.btnLogin = new MaterialSkin.Controls.MaterialButton();
+            this.tpGenerateKey = new System.Windows.Forms.TabPage();
+            this.btnGenerateSSHKey = new MaterialSkin.Controls.MaterialButton();
+            this.tpSettings = new System.Windows.Forms.TabPage();
+            this.pictureBox1 = new System.Windows.Forms.PictureBox();
             this.panel1 = new System.Windows.Forms.Panel();
             this.btnPrevious = new MaterialSkin.Controls.MaterialButton();
             this.btnNext = new MaterialSkin.Controls.MaterialButton();
-            this.tpSettings = new System.Windows.Forms.TabPage();
-            this.pictureBox1 = new System.Windows.Forms.PictureBox();
-            this.tpGenerateKey = new System.Windows.Forms.TabPage();
-            this.btnGenerateSSHKey = new MaterialSkin.Controls.MaterialButton();
-            this.tpGithubLogin = new System.Windows.Forms.TabPage();
-            this.btnLogin = new MaterialSkin.Controls.MaterialButton();
-            this.mtcSSHWizard = new MaterialSkin.Controls.MaterialTabControl();
             this.tableLayoutPanel1.SuspendLayout();
-            this.panel1.SuspendLayout();
+            this.mtcSSHWizard.SuspendLayout();
+            this.tpGithubLogin.SuspendLayout();
+            this.tpGenerateKey.SuspendLayout();
             this.tpSettings.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
-            this.tpGenerateKey.SuspendLayout();
-            this.tpGithubLogin.SuspendLayout();
-            this.mtcSSHWizard.SuspendLayout();
+            this.panel1.SuspendLayout();
             this.SuspendLayout();
             // 
             // tableLayoutPanel1
@@ -65,80 +66,77 @@ namespace OpenpilotToolkit.Controls.Wizards
             this.tableLayoutPanel1.Size = new System.Drawing.Size(553, 367);
             this.tableLayoutPanel1.TabIndex = 0;
             // 
-            // panel1
+            // mtcSSHWizard
             // 
-            this.panel1.Controls.Add(this.btnPrevious);
-            this.panel1.Controls.Add(this.btnNext);
-            this.panel1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.panel1.Location = new System.Drawing.Point(3, 314);
-            this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(547, 50);
-            this.panel1.TabIndex = 1;
+            this.mtcSSHWizard.Controls.Add(this.tpGithubLogin);
+            this.mtcSSHWizard.Controls.Add(this.tpGenerateKey);
+            this.mtcSSHWizard.Controls.Add(this.tpSettings);
+            this.mtcSSHWizard.Depth = 0;
+            this.mtcSSHWizard.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.mtcSSHWizard.Location = new System.Drawing.Point(3, 3);
+            this.mtcSSHWizard.MouseState = MaterialSkin.MouseState.HOVER;
+            this.mtcSSHWizard.Multiline = true;
+            this.mtcSSHWizard.Name = "mtcSSHWizard";
+            this.mtcSSHWizard.SelectedIndex = 0;
+            this.mtcSSHWizard.Size = new System.Drawing.Size(547, 305);
+            this.mtcSSHWizard.TabIndex = 0;
+            this.mtcSSHWizard.Selected += new System.Windows.Forms.TabControlEventHandler(this.mtcSSHWizard_Selected);
+            this.mtcSSHWizard.TabIndexChanged += new System.EventHandler(this.materialTabControl1_TabIndexChanged);
             // 
-            // btnPrevious
+            // tpGithubLogin
             // 
-            this.btnPrevious.AccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(64)))), ((int)(((byte)(129)))));
-            this.btnPrevious.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnPrevious.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.btnPrevious.Density = MaterialSkin.Controls.MaterialButton.MaterialButtonDensity.Default;
-            this.btnPrevious.Depth = 0;
-            this.btnPrevious.HighEmphasis = true;
-            this.btnPrevious.Icon = null;
-            this.btnPrevious.Location = new System.Drawing.Point(380, 8);
-            this.btnPrevious.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
-            this.btnPrevious.MouseState = MaterialSkin.MouseState.HOVER;
-            this.btnPrevious.Name = "btnPrevious";
-            this.btnPrevious.NoAccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(81)))), ((int)(((byte)(181)))));
-            this.btnPrevious.Size = new System.Drawing.Size(91, 36);
-            this.btnPrevious.TabIndex = 1;
-            this.btnPrevious.Text = "Previous";
-            this.btnPrevious.Type = MaterialSkin.Controls.MaterialButton.MaterialButtonType.Contained;
-            this.btnPrevious.UseAccentColor = false;
-            this.btnPrevious.UseVisualStyleBackColor = true;
-            this.btnPrevious.Click += new System.EventHandler(this.btnPrevious_Click);
+            this.tpGithubLogin.Controls.Add(this.txtUsername);
+            this.tpGithubLogin.Controls.Add(this.btnLogin);
+            this.tpGithubLogin.Location = new System.Drawing.Point(4, 24);
+            this.tpGithubLogin.Name = "tpGithubLogin";
+            this.tpGithubLogin.Padding = new System.Windows.Forms.Padding(3);
+            this.tpGithubLogin.Size = new System.Drawing.Size(539, 277);
+            this.tpGithubLogin.TabIndex = 0;
+            this.tpGithubLogin.Text = "Github Login";
+            this.tpGithubLogin.UseVisualStyleBackColor = true;
             // 
-            // btnNext
+            // txtUsername
             // 
-            this.btnNext.AccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(64)))), ((int)(((byte)(129)))));
-            this.btnNext.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnNext.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.btnNext.Density = MaterialSkin.Controls.MaterialButton.MaterialButtonDensity.Default;
-            this.btnNext.Depth = 0;
-            this.btnNext.HighEmphasis = true;
-            this.btnNext.Icon = null;
-            this.btnNext.Location = new System.Drawing.Point(479, 8);
-            this.btnNext.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
-            this.btnNext.MouseState = MaterialSkin.MouseState.HOVER;
-            this.btnNext.Name = "btnNext";
-            this.btnNext.NoAccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(81)))), ((int)(((byte)(181)))));
-            this.btnNext.Size = new System.Drawing.Size(64, 36);
-            this.btnNext.TabIndex = 0;
-            this.btnNext.Text = "Next";
-            this.btnNext.Type = MaterialSkin.Controls.MaterialButton.MaterialButtonType.Contained;
-            this.btnNext.UseAccentColor = false;
-            this.btnNext.UseVisualStyleBackColor = true;
-            this.btnNext.Click += new System.EventHandler(this.btnNext_Click);
+            this.txtUsername.Anchor = System.Windows.Forms.AnchorStyles.None;
+            this.txtUsername.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.txtUsername.Depth = 0;
+            this.txtUsername.Font = new System.Drawing.Font("Roboto", 16F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel);
+            this.txtUsername.Hint = "Username";
+            this.txtUsername.LeadingIcon = null;
+            this.txtUsername.Location = new System.Drawing.Point(99, 91);
+            this.txtUsername.MaxLength = 50;
+            this.txtUsername.MouseState = MaterialSkin.MouseState.OUT;
+            this.txtUsername.Multiline = false;
+            this.txtUsername.Name = "txtUsername";
+            this.txtUsername.Size = new System.Drawing.Size(341, 50);
+            this.txtUsername.TabIndex = 30;
+            this.txtUsername.Text = "";
+            this.txtUsername.TrailingIcon = null;
+            this.txtUsername.TextChanged += new System.EventHandler(this.txtUsername_TextChanged);
             // 
-            // tpSettings
+            // btnLogin
             // 
-            this.tpSettings.Controls.Add(this.pictureBox1);
-            this.tpSettings.Location = new System.Drawing.Point(4, 24);
-            this.tpSettings.Name = "tpSettings";
-            this.tpSettings.Size = new System.Drawing.Size(539, 277);
-            this.tpSettings.TabIndex = 2;
-            this.tpSettings.Text = "Settings";
-            this.tpSettings.UseVisualStyleBackColor = true;
-            // 
-            // pictureBox1
-            // 
-            this.pictureBox1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.pictureBox1.Image = global::OpenpilotToolkit.Properties.Resources.ssh;
-            this.pictureBox1.Location = new System.Drawing.Point(0, 0);
-            this.pictureBox1.Name = "pictureBox1";
-            this.pictureBox1.Size = new System.Drawing.Size(539, 277);
-            this.pictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
-            this.pictureBox1.TabIndex = 0;
-            this.pictureBox1.TabStop = false;
+            this.btnLogin.AccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(64)))), ((int)(((byte)(129)))));
+            this.btnLogin.Anchor = System.Windows.Forms.AnchorStyles.None;
+            this.btnLogin.AutoSize = false;
+            this.btnLogin.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.btnLogin.Density = MaterialSkin.Controls.MaterialButton.MaterialButtonDensity.Default;
+            this.btnLogin.Depth = 0;
+            this.btnLogin.Enabled = false;
+            this.btnLogin.HighEmphasis = true;
+            this.btnLogin.Icon = null;
+            this.btnLogin.Location = new System.Drawing.Point(99, 150);
+            this.btnLogin.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+            this.btnLogin.MouseState = MaterialSkin.MouseState.HOVER;
+            this.btnLogin.Name = "btnLogin";
+            this.btnLogin.NoAccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(81)))), ((int)(((byte)(181)))));
+            this.btnLogin.Size = new System.Drawing.Size(341, 36);
+            this.btnLogin.TabIndex = 29;
+            this.btnLogin.Text = "Login";
+            this.btnLogin.Type = MaterialSkin.Controls.MaterialButton.MaterialButtonType.Contained;
+            this.btnLogin.UseAccentColor = true;
+            this.btnLogin.UseVisualStyleBackColor = true;
+            this.btnLogin.Click += new System.EventHandler(this.btnLogin_Click);
             // 
             // tpGenerateKey
             // 
@@ -174,73 +172,97 @@ namespace OpenpilotToolkit.Controls.Wizards
             this.btnGenerateSSHKey.UseVisualStyleBackColor = true;
             this.btnGenerateSSHKey.Click += new System.EventHandler(this.btnGenerateSSHKey_Click);
             // 
-            // tpGithubLogin
+            // tpSettings
             // 
-            this.tpGithubLogin.Controls.Add(this.btnLogin);
-            this.tpGithubLogin.Location = new System.Drawing.Point(4, 24);
-            this.tpGithubLogin.Name = "tpGithubLogin";
-            this.tpGithubLogin.Padding = new System.Windows.Forms.Padding(3);
-            this.tpGithubLogin.Size = new System.Drawing.Size(539, 277);
-            this.tpGithubLogin.TabIndex = 0;
-            this.tpGithubLogin.Text = "Github Login";
-            this.tpGithubLogin.UseVisualStyleBackColor = true;
+            this.tpSettings.Controls.Add(this.pictureBox1);
+            this.tpSettings.Location = new System.Drawing.Point(4, 24);
+            this.tpSettings.Name = "tpSettings";
+            this.tpSettings.Size = new System.Drawing.Size(539, 277);
+            this.tpSettings.TabIndex = 2;
+            this.tpSettings.Text = "Settings";
+            this.tpSettings.UseVisualStyleBackColor = true;
             // 
-            // btnLogin
+            // pictureBox1
             // 
-            this.btnLogin.AccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(64)))), ((int)(((byte)(129)))));
-            this.btnLogin.Anchor = System.Windows.Forms.AnchorStyles.None;
-            this.btnLogin.AutoSize = false;
-            this.btnLogin.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.btnLogin.Density = MaterialSkin.Controls.MaterialButton.MaterialButtonDensity.Default;
-            this.btnLogin.Depth = 0;
-            this.btnLogin.HighEmphasis = true;
-            this.btnLogin.Icon = null;
-            this.btnLogin.Location = new System.Drawing.Point(99, 120);
-            this.btnLogin.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
-            this.btnLogin.MouseState = MaterialSkin.MouseState.HOVER;
-            this.btnLogin.Name = "btnLogin";
-            this.btnLogin.NoAccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(81)))), ((int)(((byte)(181)))));
-            this.btnLogin.Size = new System.Drawing.Size(341, 36);
-            this.btnLogin.TabIndex = 29;
-            this.btnLogin.Text = "Login";
-            this.btnLogin.Type = MaterialSkin.Controls.MaterialButton.MaterialButtonType.Contained;
-            this.btnLogin.UseAccentColor = false;
-            this.btnLogin.UseVisualStyleBackColor = true;
-            this.btnLogin.Click += new System.EventHandler(this.btnLogin_Click);
+            this.pictureBox1.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.pictureBox1.Image = global::OpenpilotToolkit.Properties.Resources.ssh;
+            this.pictureBox1.Location = new System.Drawing.Point(0, 0);
+            this.pictureBox1.Name = "pictureBox1";
+            this.pictureBox1.Size = new System.Drawing.Size(539, 277);
+            this.pictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
+            this.pictureBox1.TabIndex = 0;
+            this.pictureBox1.TabStop = false;
             // 
-            // mtcSSHWizard
+            // panel1
             // 
-            this.mtcSSHWizard.Controls.Add(this.tpGithubLogin);
-            this.mtcSSHWizard.Controls.Add(this.tpGenerateKey);
-            this.mtcSSHWizard.Controls.Add(this.tpSettings);
-            this.mtcSSHWizard.Depth = 0;
-            this.mtcSSHWizard.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.mtcSSHWizard.Location = new System.Drawing.Point(3, 3);
-            this.mtcSSHWizard.MouseState = MaterialSkin.MouseState.HOVER;
-            this.mtcSSHWizard.Multiline = true;
-            this.mtcSSHWizard.Name = "mtcSSHWizard";
-            this.mtcSSHWizard.SelectedIndex = 0;
-            this.mtcSSHWizard.Size = new System.Drawing.Size(547, 305);
-            this.mtcSSHWizard.TabIndex = 0;
-            this.mtcSSHWizard.Selected += new System.Windows.Forms.TabControlEventHandler(this.mtcSSHWizard_Selected);
-            this.mtcSSHWizard.TabIndexChanged += new System.EventHandler(this.materialTabControl1_TabIndexChanged);
+            this.panel1.Controls.Add(this.btnPrevious);
+            this.panel1.Controls.Add(this.btnNext);
+            this.panel1.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.panel1.Location = new System.Drawing.Point(3, 314);
+            this.panel1.Name = "panel1";
+            this.panel1.Size = new System.Drawing.Size(547, 50);
+            this.panel1.TabIndex = 1;
             // 
-            // ucWizard
+            // btnPrevious
+            // 
+            this.btnPrevious.AccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(64)))), ((int)(((byte)(129)))));
+            this.btnPrevious.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnPrevious.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.btnPrevious.Density = MaterialSkin.Controls.MaterialButton.MaterialButtonDensity.Default;
+            this.btnPrevious.Depth = 0;
+            this.btnPrevious.HighEmphasis = true;
+            this.btnPrevious.Icon = null;
+            this.btnPrevious.Location = new System.Drawing.Point(380, 8);
+            this.btnPrevious.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+            this.btnPrevious.MouseState = MaterialSkin.MouseState.HOVER;
+            this.btnPrevious.Name = "btnPrevious";
+            this.btnPrevious.NoAccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(81)))), ((int)(((byte)(181)))));
+            this.btnPrevious.Size = new System.Drawing.Size(91, 36);
+            this.btnPrevious.TabIndex = 1;
+            this.btnPrevious.Text = "Previous";
+            this.btnPrevious.Type = MaterialSkin.Controls.MaterialButton.MaterialButtonType.Contained;
+            this.btnPrevious.UseAccentColor = true;
+            this.btnPrevious.UseVisualStyleBackColor = true;
+            this.btnPrevious.Click += new System.EventHandler(this.btnPrevious_Click);
+            // 
+            // btnNext
+            // 
+            this.btnNext.AccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(64)))), ((int)(((byte)(129)))));
+            this.btnNext.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnNext.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.btnNext.Density = MaterialSkin.Controls.MaterialButton.MaterialButtonDensity.Default;
+            this.btnNext.Depth = 0;
+            this.btnNext.HighEmphasis = true;
+            this.btnNext.Icon = null;
+            this.btnNext.Location = new System.Drawing.Point(479, 8);
+            this.btnNext.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+            this.btnNext.MouseState = MaterialSkin.MouseState.HOVER;
+            this.btnNext.Name = "btnNext";
+            this.btnNext.NoAccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(81)))), ((int)(((byte)(181)))));
+            this.btnNext.Size = new System.Drawing.Size(64, 36);
+            this.btnNext.TabIndex = 0;
+            this.btnNext.Text = "Next";
+            this.btnNext.Type = MaterialSkin.Controls.MaterialButton.MaterialButtonType.Contained;
+            this.btnNext.UseAccentColor = true;
+            this.btnNext.UseVisualStyleBackColor = true;
+            this.btnNext.Click += new System.EventHandler(this.btnNext_Click);
+            // 
+            // ucSshWizard
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.tableLayoutPanel1);
-            this.Name = "ucWizard";
+            this.Name = "ucSshWizard";
             this.Size = new System.Drawing.Size(553, 367);
             this.Load += new System.EventHandler(this.ucWizard_Load);
             this.tableLayoutPanel1.ResumeLayout(false);
-            this.panel1.ResumeLayout(false);
-            this.panel1.PerformLayout();
+            this.mtcSSHWizard.ResumeLayout(false);
+            this.tpGithubLogin.ResumeLayout(false);
+            this.tpGenerateKey.ResumeLayout(false);
             this.tpSettings.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
-            this.tpGenerateKey.ResumeLayout(false);
-            this.tpGithubLogin.ResumeLayout(false);
-            this.mtcSSHWizard.ResumeLayout(false);
+            this.panel1.ResumeLayout(false);
+            this.panel1.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -258,5 +280,6 @@ namespace OpenpilotToolkit.Controls.Wizards
         private MaterialSkin.Controls.MaterialButton btnGenerateSSHKey;
         private System.Windows.Forms.TabPage tpSettings;
         private System.Windows.Forms.PictureBox pictureBox1;
+        private MaterialSkin.Controls.MaterialTextBox txtUsername;
     }
 }

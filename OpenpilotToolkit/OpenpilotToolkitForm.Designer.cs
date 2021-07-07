@@ -74,6 +74,7 @@ namespace OpenpilotToolkit
             this.tpLogFile.SuspendLayout();
             this.tpExplore.SuspendLayout();
             this.panel1.SuspendLayout();
+            this.tpFingerprint.SuspendLayout();
             this.tpSSH.SuspendLayout();
             this.themePanel.SuspendLayout();
             this.SuspendLayout();
@@ -631,6 +632,7 @@ namespace OpenpilotToolkit
             this.tpLogFile.ResumeLayout(false);
             this.tpExplore.ResumeLayout(false);
             this.panel1.ResumeLayout(false);
+            this.tpFingerprint.ResumeLayout(false);
             this.tpSSH.ResumeLayout(false);
             this.themePanel.ResumeLayout(false);
             this.ResumeLayout(false);

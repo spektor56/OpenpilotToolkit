@@ -41,17 +41,17 @@ namespace OpenpilotSdk.OpenPilot
                     {
                         using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
                         {
-                            var result = socket.ConnectAsync(sender.Reply.Address, 22);
+                            var result = socket.ConnectAsync(sender.Reply.Address, 8022);
                             await Task.WhenAny(result, Task.Delay(2000));
 
                             if (socket.Connected)
                             {
-                                Log.Information("Connected to {Address} on port {port}", sender.Reply.Address, 22);
+                                Log.Information("Connected to {Address} on port {port}", sender.Reply.Address, 8022);
 
                                 socket.Shutdown(SocketShutdown.Both);
                                 socket.Disconnect(false);
                                 
-                                var connectionInfo = new ConnectionInfo(sender.Reply.Address.ToString(), 22,
+                                var connectionInfo = new ConnectionInfo(sender.Reply.Address.ToString(), 8022,
                                     "root",
                                     new PrivateKeyAuthenticationMethod("root",
                                         new PrivateKeyFile(Path.Combine(
@@ -62,7 +62,7 @@ namespace OpenpilotSdk.OpenPilot
                                     client.Connect();
                                     if (client.IsConnected)
                                     {
-                                        Log.Information("Connected to Comma device at {Address} on port {port}", sender.Reply.Address, 22);
+                                        Log.Information("Connected to Comma device at {Address} on port {port}", sender.Reply.Address, 8022);
                                         tcs.SetResult(new Comma2(sender.Reply.Address));
                                         return;
                                     }

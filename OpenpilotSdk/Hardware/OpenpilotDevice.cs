@@ -14,7 +14,7 @@ namespace OpenpilotSdk.Hardware
     public abstract class OpenpilotDevice
     {
         protected readonly string TempDirectory = Path.Combine(AppContext.BaseDirectory, "tmp");
-        public int Port { get; set; } = 22;
+        public int Port { get; set; } = 8022;
         public IPAddress IpAddress { get; set; }
         protected SftpClient SftpClient;
 
@@ -97,7 +97,7 @@ namespace OpenpilotSdk.Hardware
         {
             if (SftpClient == null || !SftpClient.IsConnected)
             {
-                var connectionInfo = new ConnectionInfo(IpAddress.ToString(), 22,
+                var connectionInfo = new ConnectionInfo(IpAddress.ToString(), Port,
                     "root",
                     new PrivateKeyAuthenticationMethod("root",
                         new PrivateKeyFile(Path.Combine(AppContext.BaseDirectory,

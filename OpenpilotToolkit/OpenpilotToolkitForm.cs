@@ -46,6 +46,7 @@ namespace OpenpilotToolkit
         }
         public OpenpilotToolkitForm()
         {
+            
             InitializeComponent();
             
             var materialSkinManager = MaterialSkinManager.Instance;
@@ -69,6 +70,8 @@ namespace OpenpilotToolkit
 
         private async void Form1_Load(object sender, EventArgs e)
         {
+            themePanel.Height = this.DrawerTabControl.Height;
+
             var settings = new CefSettings
             {
                 //BrowserSubprocessPath = Path.Combine(AppContext.BaseDirectory, "CefSharp.BrowserSubprocess.exe")
@@ -679,6 +682,7 @@ namespace OpenpilotToolkit
         {
             tcSettings.SelectedTab = tpExport;
             ucSshWizard.Reset();
+            btnScan.PerformClick();
         }
     }
 

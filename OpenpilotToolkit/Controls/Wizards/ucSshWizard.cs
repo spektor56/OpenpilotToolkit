@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Drawing;
 using System.IO;
-using System.Linq;
 using System.Text;
 using System.Web;
 using System.Windows.Forms;
 using CefSharp;
-using CefSharp.Fluent;
 using CefSharp.WinForms;
 using Octokit;
 
@@ -43,29 +41,16 @@ namespace OpenpilotToolkit.Controls.Wizards
             _clientId = Encoding.UTF8.GetString(Convert.FromBase64String(_clientId));
             _clientSecret = Encoding.UTF8.GetString(Convert.FromBase64String(_clientSecret));
             
-            if (!string.IsNullOrWhiteSpace(Properties.Settings.Default.GithubToken))
+            if (!this.DesignMode)
             {
-                _githubClient.Credentials = new Credentials(Properties.Settings.Default.GithubToken, AuthenticationType.Oauth);
-                NextStep();
-            }
-            
-        }
-
-        private void BrowserOnAddressChanged(object? sender, AddressChangedEventArgs e)
-        {
-            if (!string.IsNullOrWhiteSpace(e.Address))
-            {
-                var uri = new Uri(e.Address);
-                if (!string.IsNullOrWhiteSpace(uri.Query))
+                
+                if (!string.IsNullOrWhiteSpace(Properties.Settings.Default.GithubToken))
                 {
-                    var oauthCode = HttpUtility.ParseQueryString(uri.Query).Get("code");
-                    _oauthCode = oauthCode;
-
-                    if (!string.IsNullOrWhiteSpace(_oauthCode))
-                    {
-                        _loginDialog.Invoke(new MethodInvoker(() => { _loginDialog.Close(); }));
-                    }
+                    _githubClient.Credentials =
+                        new Credentials(Properties.Settings.Default.GithubToken, AuthenticationType.Oauth);
+                    NextStep();
                 }
+                
             }
         }
 
@@ -73,13 +58,16 @@ namespace OpenpilotToolkit.Controls.Wizards
         {
             btnLogin.Enabled = false;
             
-            var oauthLoginRequest = new OauthLoginRequest(_clientId);
+            var oauthLoginRequest = new OauthLoginRequest(_clientId)
+            {
+                Login = txtUsername.Text
+            };
             oauthLoginRequest.Scopes.Add("write:public_key");
             var loginUrl = _githubClient.Oauth.GetGitHubLoginUrl(oauthLoginRequest);
-
+    
             using (var browser = new ChromiumWebBrowser(loginUrl.ToString()))
             {
-                browser.AddressChanged += BrowserOnAddressChanged;
+                browser.FrameLoadStart += BrowserOnFrameLoadStart;
                 using (_loginDialog = new Form())
                 {
                     _loginDialog.Size = new Size(374, 662);
@@ -100,7 +88,43 @@ namespace OpenpilotToolkit.Controls.Wizards
             }
             else
             {
-                btnLogin.Enabled = true;
+                SetLoginButtonEnabled(true);
+            }
+        }
+
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        {
+            if (keyData == Keys.Enter)
+            {
+                if (mtcSSHWizard.SelectedTab == tpGithubLogin)
+                {
+                    btnLogin.PerformClick();
+                }
+                else
+                {
+                    btnNext.PerformClick();
+                }
+                
+                return true;
+            }
+            return base.ProcessCmdKey(ref msg, keyData);
+        }
+
+        private void BrowserOnFrameLoadStart(object? sender, FrameLoadStartEventArgs e)
+        {
+            if (!string.IsNullOrWhiteSpace(e.Url))
+            {
+                var uri = new Uri(e.Url);
+                if (!string.IsNullOrWhiteSpace(uri.Query))
+                {
+                    var oauthCode = HttpUtility.ParseQueryString(uri.Query).Get("code");
+                    _oauthCode = oauthCode;
+
+                    if (!string.IsNullOrWhiteSpace(_oauthCode))
+                    {
+                        _loginDialog.Invoke(new MethodInvoker(() => { _loginDialog.Close(); }));
+                    }
+                }
             }
         }
 
@@ -169,6 +193,23 @@ namespace OpenpilotToolkit.Controls.Wizards
                     btnNext.Visible = false;
                 }
             }
+        }
+
+        private void SetLoginButtonEnabled(bool enable)
+        {
+            if (txtUsername.Text.Length > 0 && enable)
+            {
+                btnLogin.Enabled = true;
+            }
+            else
+            {
+                btnLogin.Enabled = false;
+            }
+        }
+
+        private void txtUsername_TextChanged(object sender, EventArgs e)
+        {
+            SetLoginButtonEnabled(true);
         }
     }
 }
