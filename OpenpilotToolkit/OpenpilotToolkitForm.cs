@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -8,6 +9,7 @@ using System.Management;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -37,6 +39,9 @@ namespace OpenpilotToolkit
         private string _adbConnectedMessage = "Device in fastboot mode connected";
         private string _adbDisconnectedMessage = "Device in fastboot mode disconnected";
         private int _connectedFastbootDevices = 0;
+        BindingList<OpenpilotDevice> _devices = new BindingList<OpenpilotDevice>();
+        private Stack<string> _workingDirectory = new Stack<string>();
+
         public System.Drawing.Color ToColor(int argb)
         {
             return System.Drawing.Color.FromArgb(
@@ -57,7 +62,6 @@ namespace OpenpilotToolkit
 
 
             themePanel.BackColor = materialSkinManager.ColorScheme.PrimaryColor;
-            themePanel23.BackColor = materialSkinManager.ColorScheme.PrimaryColor; ;
 
             //tlpTasks.BackColor = MaterialSkinManager.Instance.BackgroundColor;
             lbDrives.BackColor = MaterialSkinManager.Instance.BackgroundColor;
@@ -70,6 +74,31 @@ namespace OpenpilotToolkit
 
         private async void Form1_Load(object sender, EventArgs e)
         {
+            
+            foreach (PropertyInfo property in MaterialSkinManager.Instance.GetType().GetProperties())
+            {
+                if(property.Name.EndsWith("Color"))
+                {
+                    var button = new Button();
+                    button.Text = property.Name;
+                    button.AutoSize = true;
+                    button.UseVisualStyleBackColor = false;
+                    var colour = (System.Drawing.Color)property.GetValue(MaterialSkinManager.Instance);
+                    button.BackColor = colour;
+                    flpColours.Controls.Add(button);
+                }
+                
+                Console.WriteLine();
+            }
+
+            
+            //flowLayoutPanel1.Parent = txtWorkingDirectory;
+            //themePanel.Parent = this.UserArea;
+            //actionbar bounds on paint events
+
+            lbCommaList.DataSource = _devices;
+            cmbDevice.DataSource = _devices; 
+            
             themePanel.Height = this.DrawerTabControl.Height;
 
             var settings = new CefSettings
@@ -136,12 +165,13 @@ namespace OpenpilotToolkit
                     {
                         Invoke(new MethodInvoker(() =>
                         {
-                            if (!lbCommaList.Items.Contains(device))
+                            if (!_devices.Contains(device))
                             {
-                                lbCommaList.Items.Add(device);
-                                if (lbCommaList.Items.Count == 1)
+                                _devices.Add(device);
+                                if (_devices.Count == 1)
                                 {
                                     wifiConnected.SetEnabled(true);
+                                    lbCommaList.SelectedIndex = -1;
                                     lbCommaList.SelectedIndex = 0;
                                 }
                             }
@@ -194,10 +224,10 @@ namespace OpenpilotToolkit
 
         private async void btnScan_Click(object sender, EventArgs e)
         {
-            
-            lbCommaList.Items.Clear();
+            _devices.Clear();
             wifiConnected.SetEnabled(false);
             btnScan.Enabled = false;
+            
             try
             {
                 await Task.Run(async () =>
@@ -206,12 +236,13 @@ namespace OpenpilotToolkit
                     {
                         Invoke(new MethodInvoker(() =>
                         {
-                            if (!lbCommaList.Items.Contains(device))
+                            if (!_devices.Contains(device))
                             {
-                                lbCommaList.Items.Add(device);
-                                if (lbCommaList.Items.Count == 1)
+                                _devices.Add(device);
+                                if (_devices.Count == 1)
                                 {
                                     wifiConnected.SetEnabled(true);
+                                    lbCommaList.SelectedIndex = -1;
                                     lbCommaList.SelectedIndex = 0;
                                 }
                             }
@@ -223,7 +254,6 @@ namespace OpenpilotToolkit
                 {
                     wifiConnected.SetEnabled(true);
                 }
-
             }
             finally
             {
@@ -601,17 +631,13 @@ namespace OpenpilotToolkit
             lbCommaList.BackColor = MaterialSkinManager.Instance.BackgroundColor;
             lbDrives.ForeColor = MaterialSkinManager.Instance.TextHighEmphasisColor;
             lbCommaList.ForeColor = MaterialSkinManager.Instance.TextHighEmphasisColor;
+
+            
         }
 
         private void themeButton_Click(object sender, EventArgs e)
         {
             SetTheme(MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT);
-        }
-
-        private void themePanel_LocationChanged(object sender, EventArgs e)
-        {
-            themePanel23.Location = new System.Drawing.Point(this.Width - themePanel23.Width - this.Margin.Right, 26);
-            themePanel23.LocationChanged -= themePanel_LocationChanged;
         }
 
         private async void tcSettings_Selected(object sender, TabControlEventArgs e)
@@ -633,27 +659,27 @@ namespace OpenpilotToolkit
             }
             else if (e.TabPage != null && e.TabPage == tpExplore)
             {
+                _workingDirectory.Clear();
                 if (lbCommaList.SelectedItem is Comma2 comma2)
                 {
+                    txtWorkingDirectory.Text = comma2.WorkingDirectory;
+                    IEnumerable<Renci.SshNet.Sftp.SftpFile> files = null;
+
+                    var directories = comma2.WorkingDirectory.Split("/");
+                    foreach (var directory in directories)
+                    {
+                        _workingDirectory.Push(directory);
+                    }
+
                     await Task.Run(() =>
                     {
-                        var files = comma2.GetFiles().OrderBy(file => file.Name);
-                        Invoke(new MethodInvoker(() => { materialListBox2.Clear(); }));
-                        foreach (var file in files)
-                        {
-                            //var button = new MaterialButton();
-                            //button.Icon = global::DriveExporter.Properties.Resources.outline_description_black_24dp;
-                            //button.Text = file.Name;
-                            Invoke(new MethodInvoker(() => { materialListBox2.AddItem(new MaterialListBoxItem(file.Name)); }));
-                            
-                        }
+                        var currentWorkingDirectory = string.Join("/", _workingDirectory.Reverse());
+                        files = comma2.EnumerateFiles(currentWorkingDirectory);
                     });
-                    
+                    dgvExplorer.DataSource = files.OrderBy(file => file.Name).ToArray();
                 }
                 
             }
-            
-
         }
 
         private void materialButton8_Click(object sender, EventArgs e)
@@ -683,6 +709,92 @@ namespace OpenpilotToolkit
             tcSettings.SelectedTab = tpExport;
             ucSshWizard.Reset();
             btnScan.PerformClick();
+        }
+
+
+        private void dgvExplorer_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
+        {
+            DataGridViewColumn column = dgvExplorer.Columns[e.ColumnIndex];
+            if (column.DataPropertyName.Contains("."))
+            {
+                string cellValue = "";
+                object data = dgvExplorer.Rows[e.RowIndex].DataBoundItem;
+                var fileName = ((Renci.SshNet.Sftp.SftpFile)data).Name;
+
+                string[] properties = column.DataPropertyName.Split('.');
+                for (int i = 0; i < properties.Length && data != null; i++)
+                {
+                    data = data.GetType().GetProperty(properties[i]).GetValue(data);
+                }
+                
+                if (data is bool)
+                {
+                    if(fileName == "..")
+                    {
+                        cellValue = "Parent Directory";
+                    }
+                    else if (fileName == ".")
+                    {
+                        cellValue = "Refresh";
+                    }
+                    else
+                    {
+                        cellValue = (bool)data ? "File Folder" : "File";
+                    }
+                }
+                else
+                {
+                    cellValue = data.ToString();
+                }
+                dgvExplorer.Rows[e.RowIndex].Cells[e.ColumnIndex].Value = cellValue;
+            }
+        }
+
+        private async void dgvExplorer_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (dgvExplorer.SelectedRows.Count < 1)
+            {
+                return;
+            }
+
+            if (lbCommaList.SelectedItem is Comma2 comma2)
+            {
+                var selectedRow = dgvExplorer.SelectedRows[0];
+                var selectedItem = ((Renci.SshNet.Sftp.SftpFile)selectedRow.DataBoundItem);
+                if(!(selectedItem.IsDirectory && !selectedItem.IsRegularFile))
+                {
+                    return;
+                }
+                var path = selectedItem.Name;
+                if (path == "..")
+                {
+                    if (_workingDirectory.Count > 1)
+                    {
+                        _workingDirectory.Pop();
+                    }
+                    else
+                    {
+                        return;
+                    }
+                }
+                else if (path != ".")
+                {
+                    _workingDirectory.Push(path);
+                }
+                var newPath = string.Join("/", _workingDirectory.Reverse());
+                newPath = newPath.Length < 1 ? "/" : newPath;
+
+                IEnumerable<Renci.SshNet.Sftp.SftpFile> files = null;
+                await Task.Run(() =>
+                {
+                    var currentWorkingDirectory = string.Join("/", newPath);
+                    files = comma2.EnumerateFiles(currentWorkingDirectory);
+                });
+                dgvExplorer.DataSource = files.OrderBy(file => file.Name).ToArray();
+
+                txtWorkingDirectory.Text = newPath;
+
+            }
         }
     }
 

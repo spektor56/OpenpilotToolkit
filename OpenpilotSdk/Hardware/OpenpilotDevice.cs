@@ -7,6 +7,8 @@ using System.Net.Sockets;
 using System.Threading.Tasks;
 using OpenpilotSdk.OpenPilot;
 using Renci.SshNet;
+using Renci.SshNet.Sftp;
+using OpenpilotSdk.Sftp;
 using Serilog;
 
 namespace OpenpilotSdk.Hardware
@@ -17,6 +19,31 @@ namespace OpenpilotSdk.Hardware
         public int Port { get; set; } = 8022;
         public IPAddress IpAddress { get; set; }
         protected SftpClient SftpClient;
+
+        public string WorkingDirectory
+        {
+            get
+            {
+                return SftpClient.WorkingDirectory;
+            }
+        }
+
+        public void ChangeDirectory(string path)
+        {
+            SftpClient.ChangeDirectory(path);
+        }
+
+        public IEnumerable<SftpFile> EnumerateFileSystemEntries(string path = "/")
+        {
+            var fileSystemEntries = SftpClient.EnumerateFileSystemEntries(path);
+            return fileSystemEntries;
+        }
+
+        public IEnumerable<SftpFile> EnumerateFiles(string path = ".")
+        {
+            var directoryListing = SftpClient.ListDirectory(path);
+            return directoryListing;
+        }
 
         public static async IAsyncEnumerable<OpenpilotDevice> DiscoverAsync()
         {
@@ -76,7 +103,7 @@ namespace OpenpilotSdk.Hardware
                         var hostAddress = Convert.ToString(hostBytes[0]) + "." + Convert.ToString(hostBytes[1]) + "." +
                                           Convert.ToString(hostBytes[2]) + "." + Convert.ToString(hostBytes[3]);
 
-                        pingRequests.Add(Extensions.GetOpenpilotDevice(hostAddress));
+                        pingRequests.Add(OpenPilot.Extensions.GetOpenpilotDevice(hostAddress));
                     }
                 }
             }

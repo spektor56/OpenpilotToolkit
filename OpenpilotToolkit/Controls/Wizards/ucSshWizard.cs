@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Text;
@@ -16,7 +17,7 @@ namespace OpenpilotToolkit.Controls.Wizards
         private string _clientId = "MDExMDk0NjJlYzU2YzliODM1ZDI=";
         private string _clientSecret = "M2ViZmJkNjI5ZjhiNWM4M2RjYjNjZDk5Y2I3MGM5Y2Y2OTgyOTE3OQ==";
         private string _oauthCode = "";
-        private Form _loginDialog;
+        private ToolkitForm _loginDialog;
 
         public event EventHandler WizardCompleted;
 
@@ -43,8 +44,17 @@ namespace OpenpilotToolkit.Controls.Wizards
             
             if (!this.DesignMode)
             {
+                string githubToken = "";
+                try
+                {
+                    githubToken = Properties.Settings.Default.GithubToken;
+                }
+                catch(Exception)
+                {
+                    Debug.Print("Uri Exception");
+                }
                 
-                if (!string.IsNullOrWhiteSpace(Properties.Settings.Default.GithubToken))
+                if (!string.IsNullOrWhiteSpace(githubToken))
                 {
                     _githubClient.Credentials =
                         new Credentials(Properties.Settings.Default.GithubToken, AuthenticationType.Oauth);
@@ -68,8 +78,9 @@ namespace OpenpilotToolkit.Controls.Wizards
             using (var browser = new ChromiumWebBrowser(loginUrl.ToString()))
             {
                 browser.FrameLoadStart += BrowserOnFrameLoadStart;
-                using (_loginDialog = new Form())
+                using (_loginDialog = new ToolkitForm())
                 {
+                    _loginDialog.Text = "Github Login";
                     _loginDialog.Size = new Size(374, 662);
                     _loginDialog.StartPosition = FormStartPosition.CenterScreen;
                     _loginDialog.Controls.Add(browser);

@@ -34,6 +34,8 @@ namespace OpenpilotToolkit
         {
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(OpenpilotToolkitForm));
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
             this.lbDrives = new System.Windows.Forms.ListBox();
             this.lbCommaList = new System.Windows.Forms.ListBox();
             this.pbPreview = new System.Windows.Forms.PictureBox();
@@ -47,7 +49,6 @@ namespace OpenpilotToolkit
             this.btnScan = new MaterialSkin.Controls.MaterialButton();
             this.txtExportFolder = new MaterialSkin.Controls.MaterialTextBox();
             this.lblDrives = new MaterialSkin.Controls.MaterialLabel();
-            this.themePanel23 = new System.Windows.Forms.Panel();
             this.adbConnected = new MaterialSkin.Controls.MaterialButton();
             this.ilTabs = new System.Windows.Forms.ImageList(this.components);
             this.themeButton = new MaterialSkin.Controls.MaterialButton();
@@ -59,11 +60,20 @@ namespace OpenpilotToolkit
             this.txtLog = new MaterialSkin.Controls.MaterialMultiLineTextBox();
             this.tpExplore = new System.Windows.Forms.TabPage();
             this.panel1 = new System.Windows.Forms.Panel();
-            this.materialListBox2 = new MaterialSkin.Controls.MaterialListBox();
+            this.dgvExplorer = new OpenpilotToolkit.Controls.MaterialSkinDataGridView();
+            this.colName = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.colSize = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.colType = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.colChanged = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.txtSearch = new MaterialSkin.Controls.MaterialTextBox();
+            this.txtWorkingDirectory = new MaterialSkin.Controls.MaterialTextBox();
+            this.cmbDevice = new MaterialSkin.Controls.MaterialComboBox();
             this.tpFingerprint = new System.Windows.Forms.TabPage();
             this.tpSSH = new System.Windows.Forms.TabPage();
             this.ucSshWizard = new OpenpilotToolkit.Controls.Wizards.ucSshWizard();
             this.tpFlash = new System.Windows.Forms.TabPage();
+            this.tabPage1 = new System.Windows.Forms.TabPage();
+            this.flpColours = new System.Windows.Forms.FlowLayoutPanel();
             this.tabPage8 = new System.Windows.Forms.TabPage();
             this.themePanel = new System.Windows.Forms.FlowLayoutPanel();
             this.wifiConnected = new MaterialSkin.Controls.MaterialButton();
@@ -74,8 +84,9 @@ namespace OpenpilotToolkit
             this.tpLogFile.SuspendLayout();
             this.tpExplore.SuspendLayout();
             this.panel1.SuspendLayout();
-            this.tpFingerprint.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.dgvExplorer)).BeginInit();
             this.tpSSH.SuspendLayout();
+            this.tabPage1.SuspendLayout();
             this.themePanel.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -295,17 +306,6 @@ namespace OpenpilotToolkit
             this.lblDrives.TabIndex = 27;
             this.lblDrives.Text = "Drive List";
             // 
-            // themePanel23
-            // 
-            this.themePanel23.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.themePanel23.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.themePanel23.BackColor = System.Drawing.Color.Transparent;
-            this.themePanel23.Location = new System.Drawing.Point(894, 26);
-            this.themePanel23.Name = "themePanel23";
-            this.themePanel23.Size = new System.Drawing.Size(348, 36);
-            this.themePanel23.TabIndex = 32;
-            this.themePanel23.LocationChanged += new System.EventHandler(this.themePanel_LocationChanged);
-            // 
             // adbConnected
             // 
             this.adbConnected.AccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(64)))), ((int)(((byte)(129)))));
@@ -378,6 +378,7 @@ namespace OpenpilotToolkit
             this.tcSettings.Controls.Add(this.tpFingerprint);
             this.tcSettings.Controls.Add(this.tpSSH);
             this.tcSettings.Controls.Add(this.tpFlash);
+            this.tcSettings.Controls.Add(this.tabPage1);
             this.tcSettings.Depth = 0;
             this.tcSettings.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tcSettings.ImageList = this.ilTabs;
@@ -484,27 +485,157 @@ namespace OpenpilotToolkit
             // panel1
             // 
             this.panel1.AutoScroll = true;
-            this.panel1.Controls.Add(this.materialListBox2);
+            this.panel1.Controls.Add(this.dgvExplorer);
+            this.panel1.Controls.Add(this.txtSearch);
+            this.panel1.Controls.Add(this.txtWorkingDirectory);
+            this.panel1.Controls.Add(this.cmbDevice);
             this.panel1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panel1.Location = new System.Drawing.Point(3, 3);
             this.panel1.Name = "panel1";
             this.panel1.Size = new System.Drawing.Size(1228, 631);
             this.panel1.TabIndex = 0;
             // 
-            // materialListBox2
+            // dgvExplorer
             // 
-            this.materialListBox2.BackColor = System.Drawing.Color.White;
-            this.materialListBox2.BorderColor = System.Drawing.Color.LightGray;
-            this.materialListBox2.Depth = 0;
-            this.materialListBox2.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.materialListBox2.Font = new System.Drawing.Font("Microsoft Sans Serif", 16F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel);
-            this.materialListBox2.Location = new System.Drawing.Point(0, 0);
-            this.materialListBox2.MouseState = MaterialSkin.MouseState.HOVER;
-            this.materialListBox2.Name = "materialListBox2";
-            this.materialListBox2.SelectedIndex = -1;
-            this.materialListBox2.SelectedItem = null;
-            this.materialListBox2.Size = new System.Drawing.Size(1228, 631);
-            this.materialListBox2.TabIndex = 0;
+            this.dgvExplorer.AllowUserToAddRows = false;
+            this.dgvExplorer.AllowUserToDeleteRows = false;
+            this.dgvExplorer.AllowUserToOrderColumns = true;
+            this.dgvExplorer.AllowUserToResizeRows = false;
+            this.dgvExplorer.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.dgvExplorer.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill;
+            this.dgvExplorer.BackgroundColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(255)))), ((int)(((byte)(255)))));
+            this.dgvExplorer.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.dgvExplorer.CellBorderStyle = System.Windows.Forms.DataGridViewCellBorderStyle.SingleHorizontal;
+            this.dgvExplorer.ColumnHeadersBorderStyle = System.Windows.Forms.DataGridViewHeaderBorderStyle.Custom;
+            dataGridViewCellStyle1.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(255)))), ((int)(((byte)(255)))));
+            dataGridViewCellStyle1.Font = new System.Drawing.Font("Microsoft Sans Serif", 16F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel);
+            dataGridViewCellStyle1.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(222)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
+            dataGridViewCellStyle1.SelectionBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
+            dataGridViewCellStyle1.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle1.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+            this.dgvExplorer.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle1;
+            this.dgvExplorer.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            this.dgvExplorer.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
+            this.colName,
+            this.colSize,
+            this.colType,
+            this.colChanged});
+            dataGridViewCellStyle2.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle2.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(255)))), ((int)(((byte)(255)))));
+            dataGridViewCellStyle2.Font = new System.Drawing.Font("Microsoft Sans Serif", 16F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel);
+            dataGridViewCellStyle2.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(153)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
+            dataGridViewCellStyle2.SelectionBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
+            dataGridViewCellStyle2.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle2.WrapMode = System.Windows.Forms.DataGridViewTriState.False;
+            this.dgvExplorer.DefaultCellStyle = dataGridViewCellStyle2;
+            this.dgvExplorer.Depth = 0;
+            this.dgvExplorer.EnableHeadersVisualStyles = false;
+            this.dgvExplorer.Font = new System.Drawing.Font("Microsoft Sans Serif", 16F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel);
+            this.dgvExplorer.GridColor = System.Drawing.Color.FromArgb(((int)(((byte)(225)))), ((int)(((byte)(225)))), ((int)(((byte)(225)))));
+            this.dgvExplorer.Location = new System.Drawing.Point(3, 60);
+            this.dgvExplorer.MouseState = MaterialSkin.MouseState.HOVER;
+            this.dgvExplorer.Name = "dgvExplorer";
+            this.dgvExplorer.ReadOnly = true;
+            this.dgvExplorer.RowHeadersVisible = false;
+            this.dgvExplorer.RowTemplate.Height = 25;
+            this.dgvExplorer.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
+            this.dgvExplorer.ShowCellToolTips = false;
+            this.dgvExplorer.Size = new System.Drawing.Size(1222, 568);
+            this.dgvExplorer.TabIndex = 32;
+            this.dgvExplorer.CellDoubleClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dgvExplorer_CellDoubleClick);
+            this.dgvExplorer.CellFormatting += new System.Windows.Forms.DataGridViewCellFormattingEventHandler(this.dgvExplorer_CellFormatting);
+            // 
+            // colName
+            // 
+            this.colName.DataPropertyName = "Name";
+            this.colName.HeaderText = "Name";
+            this.colName.Name = "colName";
+            this.colName.ReadOnly = true;
+            // 
+            // colSize
+            // 
+            this.colSize.DataPropertyName = "Attributes.Size";
+            this.colSize.HeaderText = "Size";
+            this.colSize.Name = "colSize";
+            this.colSize.ReadOnly = true;
+            // 
+            // colType
+            // 
+            this.colType.DataPropertyName = "Attributes.IsDirectory";
+            this.colType.HeaderText = "Type";
+            this.colType.Name = "colType";
+            this.colType.ReadOnly = true;
+            // 
+            // colChanged
+            // 
+            this.colChanged.DataPropertyName = "LastWriteTimeUTC";
+            this.colChanged.HeaderText = "Changed";
+            this.colChanged.Name = "colChanged";
+            this.colChanged.ReadOnly = true;
+            // 
+            // txtSearch
+            // 
+            this.txtSearch.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.txtSearch.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.txtSearch.Depth = 0;
+            this.txtSearch.Font = new System.Drawing.Font("Roboto", 16F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel);
+            this.txtSearch.Hint = "Search";
+            this.txtSearch.LeadingIcon = null;
+            this.txtSearch.Location = new System.Drawing.Point(971, 4);
+            this.txtSearch.MaxLength = 50;
+            this.txtSearch.MouseState = MaterialSkin.MouseState.OUT;
+            this.txtSearch.Multiline = false;
+            this.txtSearch.Name = "txtSearch";
+            this.txtSearch.Size = new System.Drawing.Size(254, 50);
+            this.txtSearch.TabIndex = 28;
+            this.txtSearch.Text = "";
+            this.txtSearch.TrailingIcon = null;
+            // 
+            // txtWorkingDirectory
+            // 
+            this.txtWorkingDirectory.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.txtWorkingDirectory.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.txtWorkingDirectory.Depth = 0;
+            this.txtWorkingDirectory.Font = new System.Drawing.Font("Roboto", 16F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel);
+            this.txtWorkingDirectory.Hint = "Working Directory";
+            this.txtWorkingDirectory.LeadingIcon = null;
+            this.txtWorkingDirectory.Location = new System.Drawing.Point(275, 4);
+            this.txtWorkingDirectory.MaxLength = 50;
+            this.txtWorkingDirectory.MouseState = MaterialSkin.MouseState.OUT;
+            this.txtWorkingDirectory.Multiline = false;
+            this.txtWorkingDirectory.Name = "txtWorkingDirectory";
+            this.txtWorkingDirectory.ReadOnly = true;
+            this.txtWorkingDirectory.Size = new System.Drawing.Size(690, 50);
+            this.txtWorkingDirectory.TabIndex = 27;
+            this.txtWorkingDirectory.Text = "Current Directory";
+            this.txtWorkingDirectory.TrailingIcon = null;
+            // 
+            // cmbDevice
+            // 
+            this.cmbDevice.AutoResize = false;
+            this.cmbDevice.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(255)))), ((int)(((byte)(255)))));
+            this.cmbDevice.Depth = 0;
+            this.cmbDevice.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawVariable;
+            this.cmbDevice.DropDownHeight = 174;
+            this.cmbDevice.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cmbDevice.DropDownWidth = 121;
+            this.cmbDevice.Font = new System.Drawing.Font("Microsoft Sans Serif", 14F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Pixel);
+            this.cmbDevice.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(222)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
+            this.cmbDevice.FormattingEnabled = true;
+            this.cmbDevice.Hint = "Openpilot Device";
+            this.cmbDevice.IntegralHeight = false;
+            this.cmbDevice.ItemHeight = 43;
+            this.cmbDevice.Location = new System.Drawing.Point(3, 3);
+            this.cmbDevice.MaxDropDownItems = 4;
+            this.cmbDevice.MouseState = MaterialSkin.MouseState.OUT;
+            this.cmbDevice.Name = "cmbDevice";
+            this.cmbDevice.Size = new System.Drawing.Size(266, 49);
+            this.cmbDevice.StartIndex = 0;
+            this.cmbDevice.TabIndex = 1;
             // 
             // tpFingerprint
             // 
@@ -548,6 +679,25 @@ namespace OpenpilotToolkit
             this.tpFlash.TabIndex = 6;
             this.tpFlash.Text = "Flash Wizard";
             this.tpFlash.UseVisualStyleBackColor = true;
+            // 
+            // tabPage1
+            // 
+            this.tabPage1.Controls.Add(this.flpColours);
+            this.tabPage1.Location = new System.Drawing.Point(4, 31);
+            this.tabPage1.Name = "tabPage1";
+            this.tabPage1.Padding = new System.Windows.Forms.Padding(3);
+            this.tabPage1.Size = new System.Drawing.Size(1234, 637);
+            this.tabPage1.TabIndex = 7;
+            this.tabPage1.Text = "tabPage1";
+            this.tabPage1.UseVisualStyleBackColor = true;
+            // 
+            // flpColours
+            // 
+            this.flpColours.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.flpColours.Location = new System.Drawing.Point(3, 3);
+            this.flpColours.Name = "flpColours";
+            this.flpColours.Size = new System.Drawing.Size(1228, 631);
+            this.flpColours.TabIndex = 0;
             // 
             // tabPage8
             // 
@@ -613,7 +763,6 @@ namespace OpenpilotToolkit
             this.ClientSize = new System.Drawing.Size(1248, 739);
             this.Controls.Add(this.tcSettings);
             this.Controls.Add(this.themePanel);
-            this.Controls.Add(this.themePanel23);
             this.DrawerAutoHide = false;
             this.DrawerBackgroundWithAccent = true;
             this.DrawerShowIconsWhenHidden = true;
@@ -632,8 +781,9 @@ namespace OpenpilotToolkit
             this.tpLogFile.ResumeLayout(false);
             this.tpExplore.ResumeLayout(false);
             this.panel1.ResumeLayout(false);
-            this.tpFingerprint.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.dgvExplorer)).EndInit();
             this.tpSSH.ResumeLayout(false);
+            this.tabPage1.ResumeLayout(false);
             this.themePanel.ResumeLayout(false);
             this.ResumeLayout(false);
 
@@ -655,7 +805,6 @@ namespace OpenpilotToolkit
         private MaterialSkin.Controls.MaterialTextBox txtExportFolder;
         private MaterialSkin.Controls.MaterialLabel lblDrives;
         private MaterialSkin.Controls.MaterialListBox materialListBox1;
-        private System.Windows.Forms.Panel themePanel23;
         private MaterialButton themeButton;
         private MaterialSkin.Controls.MaterialTabControl tcSettings;
         private System.Windows.Forms.TabPage tpExport;
@@ -667,7 +816,6 @@ namespace OpenpilotToolkit
         private System.Windows.Forms.Panel panel1;
         private System.Windows.Forms.TabPage tpFingerprint;
         private System.Windows.Forms.TabPage tabPage8;
-        private MaterialSkin.Controls.MaterialListBox materialListBox2;
         private System.Windows.Forms.TabPage tpSSH;
         private MaterialButton adbConnected;
         private System.Windows.Forms.FlowLayoutPanel themePanel;
@@ -678,6 +826,16 @@ namespace OpenpilotToolkit
         private ucSshWizard ucWizard2;
         private Microsoft.Data.Sqlite.SqliteCommand sqliteCommand1;
         private ucSshWizard ucSshWizard;
+        private MaterialComboBox cmbDevice;
+        private MaterialTextBox txtWorkingDirectory;
+        private MaterialTextBox txtSearch;
+        private System.Windows.Forms.TabPage tabPage1;
+        private System.Windows.Forms.FlowLayoutPanel flpColours;
+        private Controls.MaterialSkinDataGridView dgvExplorer;
+        private System.Windows.Forms.DataGridViewTextBoxColumn colName;
+        private System.Windows.Forms.DataGridViewTextBoxColumn colSize;
+        private System.Windows.Forms.DataGridViewTextBoxColumn colType;
+        private System.Windows.Forms.DataGridViewTextBoxColumn colChanged;
     }
 }
 

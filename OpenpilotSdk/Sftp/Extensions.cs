@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Renci.SshNet;
+using System.IO;
 
 namespace OpenpilotSdk.Sftp
 {
@@ -13,7 +14,7 @@ namespace OpenpilotSdk.Sftp
             var directoryListing = client.ListDirectory(directory).OrderBy(dir => dir.FullName);
             foreach (var directoryItem in directoryListing)
             {
-                if (directoryItem.Name.Length <= 2)
+                if (directoryItem.Name == ".." || directoryItem.Name == ".")
                 {
                     continue;
                 }
@@ -30,7 +31,36 @@ namespace OpenpilotSdk.Sftp
                 {
                     yield return directoryItem;
                 }
+
+                
             }
+        }
+
+        public static IEnumerable<SftpFile> EnumerateFileSystemEntries(this SftpClient client, string directory)
+        {
+            var directoryListing = client.ListDirectory(directory).OrderBy(dir => dir.FullName);
+            foreach (var directoryItem in directoryListing)
+            {
+                if (directoryItem.Name == ".." || directoryItem.Name == ".")
+                {
+                    continue;
+                }
+
+                if (directoryItem.IsDirectory && !directoryItem.IsRegularFile)
+                {
+                    if(directoryItem.FullName == "/dev/block/loop0")
+                    {
+
+                    }
+                    foreach(var fileItem in client.EnumerateFileSystemEntries(directoryItem.FullName))
+                    {
+                        yield return fileItem;
+                    }
+                }
+                
+                yield return directoryItem;
+            }
+             
         }
     }
 }

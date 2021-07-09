@@ -101,7 +101,7 @@ namespace OpenpilotToolkit.Controls.Wizards
             this.txtUsername.BorderStyle = System.Windows.Forms.BorderStyle.None;
             this.txtUsername.Depth = 0;
             this.txtUsername.Font = new System.Drawing.Font("Roboto", 16F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel);
-            this.txtUsername.Hint = "Username";
+            this.txtUsername.Hint = "Github Username";
             this.txtUsername.LeadingIcon = null;
             this.txtUsername.Location = new System.Drawing.Point(99, 91);
             this.txtUsername.MaxLength = 50;
@@ -168,7 +168,7 @@ namespace OpenpilotToolkit.Controls.Wizards
             this.btnGenerateSSHKey.TabIndex = 30;
             this.btnGenerateSSHKey.Text = "Generate new SSH Key";
             this.btnGenerateSSHKey.Type = MaterialSkin.Controls.MaterialButton.MaterialButtonType.Contained;
-            this.btnGenerateSSHKey.UseAccentColor = false;
+            this.btnGenerateSSHKey.UseAccentColor = true;
             this.btnGenerateSSHKey.UseVisualStyleBackColor = true;
             this.btnGenerateSSHKey.Click += new System.EventHandler(this.btnGenerateSSHKey_Click);
             // 

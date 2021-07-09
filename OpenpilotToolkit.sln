@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.30907.101
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31423.177
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenpilotSdk", "OpenpilotSdk\OpenpilotSdk.csproj", "{1880FC90-F116-4EEB-80B9-7EAB88367800}"
 EndProject
@@ -19,6 +19,7 @@ Global
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{1880FC90-F116-4EEB-80B9-7EAB88367800}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{1880FC90-F116-4EEB-80B9-7EAB88367800}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{1880FC90-F116-4EEB-80B9-7EAB88367800}.Debug|x64.Build.0 = Debug|Any CPU
 		{1880FC90-F116-4EEB-80B9-7EAB88367800}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1880FC90-F116-4EEB-80B9-7EAB88367800}.Release|Any CPU.Build.0 = Release|Any CPU
 		{1880FC90-F116-4EEB-80B9-7EAB88367800}.Release|x64.ActiveCfg = Release|Any CPU

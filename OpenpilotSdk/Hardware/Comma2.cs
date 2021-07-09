@@ -12,7 +12,7 @@ using NetTopologySuite.IO;
 using OpenpilotSdk.Exceptions;
 using OpenpilotSdk.OpenPilot;
 using Renci.SshNet.Sftp;
-using Extensions = OpenpilotSdk.Sftp.Extensions;
+using OpenpilotSdk.Sftp;
 
 namespace OpenpilotSdk.Hardware
 {
@@ -196,8 +196,9 @@ namespace OpenpilotSdk.Hardware
 
         public DriveSegment GetSegment(DateTime driveDate, int index)
         {
-            var segmentFolder = driveDate.ToString("yyyy-MM-dd--HH-mm-ss--" + index);
-            var segmentFiles = Extensions.GetFiles(SftpClient, segmentFolder);
+            var segmentFolder = @"/storage/emulated/0/realdata/" + driveDate.ToString("yyyy-MM-dd--HH-mm-ss--" + index);
+            var segmentFiles = SftpClient.GetFiles(segmentFolder);
+            
 
             SftpFile frontCamera = null;
             SftpFile driverCamera = null;
@@ -301,11 +302,7 @@ namespace OpenpilotSdk.Hardware
             return gpxFile;
         }
 
-        public IEnumerable<SftpFile> GetFiles()
-        {
-            var directoryListing = SftpClient.ListDirectory(".");
-            return directoryListing;
-        }
+        
 
         public IEnumerable<Drive> GetDrives()
         {
@@ -314,10 +311,7 @@ namespace OpenpilotSdk.Hardware
                 throw new NotConnectedException("No connection has been made to the comma2");
             }
             
-            SftpClient.ChangeDirectory(@"/storage/emulated/0/realdata");
-
-
-            var directoryListing = SftpClient.ListDirectory(".").Where(dir => OpenPilot.Extensions.FolderRegex.IsMatch(dir.Name))
+            var directoryListing = SftpClient.ListDirectory(@"/storage/emulated/0/realdata").Where(dir => OpenPilot.Extensions.FolderRegex.IsMatch(dir.Name))
                 .OrderBy(dir =>
                 {
                     var matches = OpenPilot.Extensions.FolderRegex.Match(dir.Name);
