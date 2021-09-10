@@ -2,10 +2,10 @@
 
 ***WORK IN PROGRESS***
 
-Class library and toolkit for interacting with your openpilot / comma 2 devices.
+Class library and toolkit for interacting with your openpilot / comma devices.
 
 Working Features:
-- Drive video preview and raw export
+- Drive video preview and raw export (no wide angle or front facing yet)
 - SSH wizard to generate and install SSH keys
 - Fork installer
 - Fingerprint V2 viewer

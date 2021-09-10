@@ -143,6 +143,16 @@ namespace OpenpilotToolkit.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap outline_console_black_24dp {
+            get {
+                object obj = ResourceManager.GetObject("outline_console_black_24dp", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap outline_description_black_24dp {
             get {
                 object obj = ResourceManager.GetObject("outline_description_black_24dp", resourceCulture);

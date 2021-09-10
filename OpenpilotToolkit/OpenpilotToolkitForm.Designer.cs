@@ -40,10 +40,8 @@ namespace OpenpilotToolkit
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
             this.lbDrives = new System.Windows.Forms.ListBox();
-            this.lbCommaList = new System.Windows.Forms.ListBox();
             this.pbPreview = new System.Windows.Forms.PictureBox();
             this.fbdExportFolder = new System.Windows.Forms.FolderBrowserDialog();
-            this.lblCommaList = new MaterialSkin.Controls.MaterialLabel();
             this.btnBrowse = new MaterialSkin.Controls.MaterialButton();
             this.btnRefreshVideos = new MaterialSkin.Controls.MaterialButton();
             this.btnExportMapillary = new MaterialSkin.Controls.MaterialButton();
@@ -51,14 +49,24 @@ namespace OpenpilotToolkit
             this.btnExport = new MaterialSkin.Controls.MaterialButton();
             this.btnScan = new MaterialSkin.Controls.MaterialButton();
             this.txtExportFolder = new MaterialSkin.Controls.MaterialTextBox();
-            this.lblDrives = new MaterialSkin.Controls.MaterialLabel();
             this.adbConnected = new MaterialSkin.Controls.MaterialButton();
             this.ilTabs = new System.Windows.Forms.ImageList(this.components);
             this.themeButton = new MaterialSkin.Controls.MaterialButton();
             this.tcSettings = new MaterialSkin.Controls.MaterialTabControl();
             this.tpExport = new System.Windows.Forms.TabPage();
+            this.groupBox2 = new System.Windows.Forms.GroupBox();
+            this.cbFrontCamera = new MaterialSkin.Controls.MaterialCheckbox();
+            this.cbDriverCamera = new MaterialSkin.Controls.MaterialCheckbox();
+            this.cbWideCamera = new MaterialSkin.Controls.MaterialCheckbox();
+            this.panel2 = new System.Windows.Forms.Panel();
             this.vlcVideoPlayer = new OpenpilotToolkit.Controls.Media.VideoPlayer();
             this.tlpTasks = new System.Windows.Forms.TableLayoutPanel();
+            this.tpRemote = new System.Windows.Forms.TabPage();
+            this.btnCloseSettings = new MaterialSkin.Controls.MaterialButton();
+            this.btnFlashPanda = new MaterialSkin.Controls.MaterialButton();
+            this.btnOpenSettings = new MaterialSkin.Controls.MaterialButton();
+            this.btnShutdown = new MaterialSkin.Controls.MaterialButton();
+            this.btnReboot = new MaterialSkin.Controls.MaterialButton();
             this.tpSettings = new System.Windows.Forms.TabPage();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.cbCombineSegments = new MaterialSkin.Controls.MaterialCheckbox();
@@ -73,7 +81,6 @@ namespace OpenpilotToolkit
             this.colChanged = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.txtSearch = new MaterialSkin.Controls.MaterialTextBox();
             this.txtWorkingDirectory = new MaterialSkin.Controls.MaterialTextBox();
-            this.cmbDevice = new MaterialSkin.Controls.MaterialComboBox();
             this.tpFingerprint = new System.Windows.Forms.TabPage();
             this.txtFingerprint = new MaterialSkin.Controls.MaterialMultiLineTextBox();
             this.tpSSH = new System.Windows.Forms.TabPage();
@@ -83,6 +90,10 @@ namespace OpenpilotToolkit
             this.txtForkUsername = new MaterialSkin.Controls.MaterialTextBox();
             this.btnInstallFork = new MaterialSkin.Controls.MaterialButton();
             this.tpFlash = new System.Windows.Forms.TabPage();
+            this.tpShell = new System.Windows.Forms.TabPage();
+            this.tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
+            this.txtSshCommand = new MaterialSkin.Controls.MaterialTextBox();
+            this.txtTerminalText = new MaterialSkin.Controls.MaterialMultiLineTextBox();
             this.tpDonate = new System.Windows.Forms.TabPage();
             this.label1 = new System.Windows.Forms.Label();
             this.btnPaypal = new MaterialSkin.Controls.MaterialButton();
@@ -93,10 +104,15 @@ namespace OpenpilotToolkit
             this.tabPage8 = new System.Windows.Forms.TabPage();
             this.themePanel = new System.Windows.Forms.FlowLayoutPanel();
             this.wifiConnected = new MaterialSkin.Controls.MaterialButton();
+            this.cmbDevices = new MaterialSkin.Controls.MaterialComboBox();
+            this.lblActiveDevice = new System.Windows.Forms.Label();
             this.sqliteCommand1 = new Microsoft.Data.Sqlite.SqliteCommand();
             ((System.ComponentModel.ISupportInitialize)(this.pbPreview)).BeginInit();
             this.tcSettings.SuspendLayout();
             this.tpExport.SuspendLayout();
+            this.groupBox2.SuspendLayout();
+            this.panel2.SuspendLayout();
+            this.tpRemote.SuspendLayout();
             this.tpSettings.SuspendLayout();
             this.groupBox1.SuspendLayout();
             this.tpLogFile.SuspendLayout();
@@ -106,6 +122,8 @@ namespace OpenpilotToolkit
             this.tpFingerprint.SuspendLayout();
             this.tpSSH.SuspendLayout();
             this.tpFork.SuspendLayout();
+            this.tpShell.SuspendLayout();
+            this.tableLayoutPanel1.SuspendLayout();
             this.tpDonate.SuspendLayout();
             this.tabPage1.SuspendLayout();
             this.themePanel.SuspendLayout();
@@ -117,50 +135,26 @@ namespace OpenpilotToolkit
             | System.Windows.Forms.AnchorStyles.Left)));
             this.lbDrives.FormattingEnabled = true;
             this.lbDrives.ItemHeight = 15;
-            this.lbDrives.Location = new System.Drawing.Point(120, 107);
+            this.lbDrives.Location = new System.Drawing.Point(217, 123);
             this.lbDrives.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.lbDrives.Name = "lbDrives";
-            this.lbDrives.Size = new System.Drawing.Size(143, 454);
+            this.lbDrives.SelectionMode = System.Windows.Forms.SelectionMode.MultiExtended;
+            this.lbDrives.Size = new System.Drawing.Size(143, 379);
             this.lbDrives.TabIndex = 0;
             this.lbDrives.SelectedIndexChanged += new System.EventHandler(this.lbDrives_SelectedIndexChanged);
-            // 
-            // lbCommaList
-            // 
-            this.lbCommaList.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left)));
-            this.lbCommaList.FormattingEnabled = true;
-            this.lbCommaList.ItemHeight = 15;
-            this.lbCommaList.Location = new System.Drawing.Point(7, 107);
-            this.lbCommaList.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.lbCommaList.Name = "lbCommaList";
-            this.lbCommaList.Size = new System.Drawing.Size(106, 454);
-            this.lbCommaList.TabIndex = 5;
-            this.lbCommaList.SelectedIndexChanged += new System.EventHandler(this.lbCommaList_SelectedIndexChanged);
             // 
             // pbPreview
             // 
             this.pbPreview.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.pbPreview.Location = new System.Drawing.Point(271, 106);
+            this.pbPreview.Location = new System.Drawing.Point(368, 123);
             this.pbPreview.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.pbPreview.Name = "pbPreview";
-            this.pbPreview.Size = new System.Drawing.Size(709, 461);
+            this.pbPreview.Size = new System.Drawing.Size(530, 373);
             this.pbPreview.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
             this.pbPreview.TabIndex = 8;
             this.pbPreview.TabStop = false;
-            // 
-            // lblCommaList
-            // 
-            this.lblCommaList.AutoSize = true;
-            this.lblCommaList.Depth = 0;
-            this.lblCommaList.Font = new System.Drawing.Font("Roboto", 14F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel);
-            this.lblCommaList.Location = new System.Drawing.Point(7, 85);
-            this.lblCommaList.MouseState = MaterialSkin.MouseState.HOVER;
-            this.lblCommaList.Name = "lblCommaList";
-            this.lblCommaList.Size = new System.Drawing.Size(96, 19);
-            this.lblCommaList.TabIndex = 19;
-            this.lblCommaList.Text = "Comma2 List";
             // 
             // btnBrowse
             // 
@@ -171,7 +165,7 @@ namespace OpenpilotToolkit
             this.btnBrowse.Depth = 0;
             this.btnBrowse.HighEmphasis = true;
             this.btnBrowse.Icon = null;
-            this.btnBrowse.Location = new System.Drawing.Point(324, 9);
+            this.btnBrowse.Location = new System.Drawing.Point(1003, 9);
             this.btnBrowse.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
             this.btnBrowse.MouseState = MaterialSkin.MouseState.HOVER;
             this.btnBrowse.Name = "btnBrowse";
@@ -187,18 +181,20 @@ namespace OpenpilotToolkit
             // btnRefreshVideos
             // 
             this.btnRefreshVideos.AccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(64)))), ((int)(((byte)(129)))));
-            this.btnRefreshVideos.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnRefreshVideos.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnRefreshVideos.AutoSize = false;
             this.btnRefreshVideos.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.btnRefreshVideos.Density = MaterialSkin.Controls.MaterialButton.MaterialButtonDensity.Default;
             this.btnRefreshVideos.Depth = 0;
             this.btnRefreshVideos.HighEmphasis = true;
             this.btnRefreshVideos.Icon = null;
-            this.btnRefreshVideos.Location = new System.Drawing.Point(412, 9);
+            this.btnRefreshVideos.Location = new System.Drawing.Point(4, 6);
             this.btnRefreshVideos.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
             this.btnRefreshVideos.MouseState = MaterialSkin.MouseState.HOVER;
             this.btnRefreshVideos.Name = "btnRefreshVideos";
             this.btnRefreshVideos.NoAccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(81)))), ((int)(((byte)(181)))));
-            this.btnRefreshVideos.Size = new System.Drawing.Size(162, 36);
+            this.btnRefreshVideos.Size = new System.Drawing.Size(196, 36);
             this.btnRefreshVideos.TabIndex = 21;
             this.btnRefreshVideos.Text = "Refresh Drive List";
             this.btnRefreshVideos.Type = MaterialSkin.Controls.MaterialButton.MaterialButtonType.Contained;
@@ -209,21 +205,23 @@ namespace OpenpilotToolkit
             // btnExportMapillary
             // 
             this.btnExportMapillary.AccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(64)))), ((int)(((byte)(129)))));
-            this.btnExportMapillary.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnExportMapillary.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnExportMapillary.AutoSize = false;
             this.btnExportMapillary.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.btnExportMapillary.Density = MaterialSkin.Controls.MaterialButton.MaterialButtonDensity.Default;
             this.btnExportMapillary.Depth = 0;
             this.btnExportMapillary.Enabled = false;
             this.btnExportMapillary.HighEmphasis = true;
             this.btnExportMapillary.Icon = null;
-            this.btnExportMapillary.Location = new System.Drawing.Point(582, 9);
+            this.btnExportMapillary.Location = new System.Drawing.Point(4, 102);
             this.btnExportMapillary.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
             this.btnExportMapillary.MouseState = MaterialSkin.MouseState.HOVER;
             this.btnExportMapillary.Name = "btnExportMapillary";
             this.btnExportMapillary.NoAccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(81)))), ((int)(((byte)(181)))));
-            this.btnExportMapillary.Size = new System.Drawing.Size(101, 36);
+            this.btnExportMapillary.Size = new System.Drawing.Size(194, 36);
             this.btnExportMapillary.TabIndex = 22;
-            this.btnExportMapillary.Text = "Mapillary";
+            this.btnExportMapillary.Text = "Mapillary Export";
             this.btnExportMapillary.Type = MaterialSkin.Controls.MaterialButton.MaterialButtonType.Contained;
             this.btnExportMapillary.UseAccentColor = true;
             this.btnExportMapillary.UseVisualStyleBackColor = true;
@@ -232,21 +230,23 @@ namespace OpenpilotToolkit
             // btnExportGpx
             // 
             this.btnExportGpx.AccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(64)))), ((int)(((byte)(129)))));
-            this.btnExportGpx.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnExportGpx.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnExportGpx.AutoSize = false;
             this.btnExportGpx.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.btnExportGpx.Density = MaterialSkin.Controls.MaterialButton.MaterialButtonDensity.Default;
             this.btnExportGpx.Depth = 0;
             this.btnExportGpx.Enabled = false;
             this.btnExportGpx.HighEmphasis = true;
             this.btnExportGpx.Icon = null;
-            this.btnExportGpx.Location = new System.Drawing.Point(691, 9);
+            this.btnExportGpx.Location = new System.Drawing.Point(4, 150);
             this.btnExportGpx.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
             this.btnExportGpx.MouseState = MaterialSkin.MouseState.HOVER;
             this.btnExportGpx.Name = "btnExportGpx";
             this.btnExportGpx.NoAccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(81)))), ((int)(((byte)(181)))));
-            this.btnExportGpx.Size = new System.Drawing.Size(64, 36);
+            this.btnExportGpx.Size = new System.Drawing.Size(194, 36);
             this.btnExportGpx.TabIndex = 23;
-            this.btnExportGpx.Text = "GPX";
+            this.btnExportGpx.Text = "GPX Export";
             this.btnExportGpx.Type = MaterialSkin.Controls.MaterialButton.MaterialButtonType.Contained;
             this.btnExportGpx.UseAccentColor = true;
             this.btnExportGpx.UseVisualStyleBackColor = true;
@@ -255,20 +255,22 @@ namespace OpenpilotToolkit
             // btnExport
             // 
             this.btnExport.AccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(64)))), ((int)(((byte)(129)))));
-            this.btnExport.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnExport.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnExport.AutoSize = false;
             this.btnExport.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.btnExport.Density = MaterialSkin.Controls.MaterialButton.MaterialButtonDensity.Default;
             this.btnExport.Depth = 0;
             this.btnExport.HighEmphasis = true;
             this.btnExport.Icon = null;
-            this.btnExport.Location = new System.Drawing.Point(763, 9);
+            this.btnExport.Location = new System.Drawing.Point(4, 54);
             this.btnExport.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
             this.btnExport.MouseState = MaterialSkin.MouseState.HOVER;
             this.btnExport.Name = "btnExport";
             this.btnExport.NoAccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(81)))), ((int)(((byte)(181)))));
-            this.btnExport.Size = new System.Drawing.Size(195, 36);
+            this.btnExport.Size = new System.Drawing.Size(194, 36);
             this.btnExport.TabIndex = 24;
-            this.btnExport.Text = "Export Selected Drive";
+            this.btnExport.Text = "Export Selected Drive(s)";
             this.btnExport.Type = MaterialSkin.Controls.MaterialButton.MaterialButtonType.Contained;
             this.btnExport.UseAccentColor = true;
             this.btnExport.UseVisualStyleBackColor = true;
@@ -279,20 +281,20 @@ namespace OpenpilotToolkit
             this.btnScan.AccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(64)))), ((int)(((byte)(129)))));
             this.btnScan.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.btnScan.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.btnScan.Density = MaterialSkin.Controls.MaterialButton.MaterialButtonDensity.Default;
+            this.btnScan.Density = MaterialSkin.Controls.MaterialButton.MaterialButtonDensity.Dense;
             this.btnScan.Depth = 0;
             this.btnScan.HighEmphasis = true;
             this.btnScan.Icon = null;
-            this.btnScan.Location = new System.Drawing.Point(966, 9);
-            this.btnScan.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+            this.btnScan.Location = new System.Drawing.Point(546, 2);
+            this.btnScan.Margin = new System.Windows.Forms.Padding(2);
             this.btnScan.MouseState = MaterialSkin.MouseState.HOVER;
             this.btnScan.Name = "btnScan";
             this.btnScan.NoAccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(81)))), ((int)(((byte)(181)))));
-            this.btnScan.Size = new System.Drawing.Size(232, 36);
+            this.btnScan.Size = new System.Drawing.Size(177, 36);
             this.btnScan.TabIndex = 25;
-            this.btnScan.Text = "Scan Network For Comma2";
+            this.btnScan.Text = "Scan For OP Devices";
             this.btnScan.Type = MaterialSkin.Controls.MaterialButton.MaterialButtonType.Contained;
-            this.btnScan.UseAccentColor = true;
+            this.btnScan.UseAccentColor = false;
             this.btnScan.UseVisualStyleBackColor = true;
             this.btnScan.Click += new System.EventHandler(this.btnScan_Click);
             // 
@@ -310,22 +312,10 @@ namespace OpenpilotToolkit
             this.txtExportFolder.MouseState = MaterialSkin.MouseState.OUT;
             this.txtExportFolder.Multiline = false;
             this.txtExportFolder.Name = "txtExportFolder";
-            this.txtExportFolder.Size = new System.Drawing.Size(311, 50);
+            this.txtExportFolder.Size = new System.Drawing.Size(990, 50);
             this.txtExportFolder.TabIndex = 26;
             this.txtExportFolder.Text = "C:\\Openpilot";
             this.txtExportFolder.TrailingIcon = null;
-            // 
-            // lblDrives
-            // 
-            this.lblDrives.AutoSize = true;
-            this.lblDrives.Depth = 0;
-            this.lblDrives.Font = new System.Drawing.Font("Roboto", 14F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel);
-            this.lblDrives.Location = new System.Drawing.Point(120, 85);
-            this.lblDrives.MouseState = MaterialSkin.MouseState.HOVER;
-            this.lblDrives.Name = "lblDrives";
-            this.lblDrives.Size = new System.Drawing.Size(67, 19);
-            this.lblDrives.TabIndex = 27;
-            this.lblDrives.Text = "Drive List";
             // 
             // adbConnected
             // 
@@ -341,7 +331,7 @@ namespace OpenpilotToolkit
             this.adbConnected.Icon = global::OpenpilotToolkit.Properties.Resources.outline_adb_white_24dp;
             this.adbConnected.ImageKey = "outline_adb_white_24dp.png";
             this.adbConnected.ImageList = this.ilTabs;
-            this.adbConnected.Location = new System.Drawing.Point(883, 2);
+            this.adbConnected.Location = new System.Drawing.Point(771, 2);
             this.adbConnected.Margin = new System.Windows.Forms.Padding(2);
             this.adbConnected.MouseState = MaterialSkin.MouseState.HOVER;
             this.adbConnected.Name = "adbConnected";
@@ -368,6 +358,8 @@ namespace OpenpilotToolkit
             this.ilTabs.Images.SetKeyName(8, "outline_wifi_white_24dp.png");
             this.ilTabs.Images.SetKeyName(9, "outline_favorite_white_24dp.png");
             this.ilTabs.Images.SetKeyName(10, "git_fork_black.png");
+            this.ilTabs.Images.SetKeyName(11, "outline_console_black_24dp.png");
+            this.ilTabs.Images.SetKeyName(12, "outline_games_white_24dp.png");
             // 
             // themeButton
             // 
@@ -380,7 +372,7 @@ namespace OpenpilotToolkit
             this.themeButton.DrawShadows = false;
             this.themeButton.HighEmphasis = true;
             this.themeButton.Icon = global::OpenpilotToolkit.Properties.Resources.light_mode_white;
-            this.themeButton.Location = new System.Drawing.Point(927, 2);
+            this.themeButton.Location = new System.Drawing.Point(815, 2);
             this.themeButton.Margin = new System.Windows.Forms.Padding(2);
             this.themeButton.MouseState = MaterialSkin.MouseState.HOVER;
             this.themeButton.Name = "themeButton";
@@ -395,6 +387,7 @@ namespace OpenpilotToolkit
             // tcSettings
             // 
             this.tcSettings.Controls.Add(this.tpExport);
+            this.tcSettings.Controls.Add(this.tpRemote);
             this.tcSettings.Controls.Add(this.tpSettings);
             this.tcSettings.Controls.Add(this.tpLogFile);
             this.tcSettings.Controls.Add(this.tpExplore);
@@ -402,6 +395,7 @@ namespace OpenpilotToolkit
             this.tcSettings.Controls.Add(this.tpSSH);
             this.tcSettings.Controls.Add(this.tpFork);
             this.tcSettings.Controls.Add(this.tpFlash);
+            this.tcSettings.Controls.Add(this.tpShell);
             this.tcSettings.Controls.Add(this.tpDonate);
             this.tcSettings.Controls.Add(this.tabPage1);
             this.tcSettings.Depth = 0;
@@ -412,43 +406,109 @@ namespace OpenpilotToolkit
             this.tcSettings.Multiline = true;
             this.tcSettings.Name = "tcSettings";
             this.tcSettings.SelectedIndex = 0;
-            this.tcSettings.Size = new System.Drawing.Size(1212, 608);
+            this.tcSettings.Size = new System.Drawing.Size(1098, 537);
             this.tcSettings.TabIndex = 33;
             this.tcSettings.Selected += new System.Windows.Forms.TabControlEventHandler(this.tcSettings_Selected);
             // 
             // tpExport
             // 
+            this.tpExport.Controls.Add(this.groupBox2);
+            this.tpExport.Controls.Add(this.panel2);
             this.tpExport.Controls.Add(this.pbPreview);
             this.tpExport.Controls.Add(this.vlcVideoPlayer);
             this.tpExport.Controls.Add(this.txtExportFolder);
-            this.tpExport.Controls.Add(this.lblCommaList);
             this.tpExport.Controls.Add(this.lbDrives);
-            this.tpExport.Controls.Add(this.btnExport);
-            this.tpExport.Controls.Add(this.lblDrives);
-            this.tpExport.Controls.Add(this.btnExportGpx);
             this.tpExport.Controls.Add(this.tlpTasks);
-            this.tpExport.Controls.Add(this.lbCommaList);
             this.tpExport.Controls.Add(this.btnBrowse);
-            this.tpExport.Controls.Add(this.btnRefreshVideos);
-            this.tpExport.Controls.Add(this.btnScan);
-            this.tpExport.Controls.Add(this.btnExportMapillary);
             this.tpExport.ImageKey = "outline_file_download_white_24dp.png";
             this.tpExport.Location = new System.Drawing.Point(4, 31);
             this.tpExport.Name = "tpExport";
             this.tpExport.Padding = new System.Windows.Forms.Padding(3);
-            this.tpExport.Size = new System.Drawing.Size(1204, 573);
+            this.tpExport.Size = new System.Drawing.Size(1090, 502);
             this.tpExport.TabIndex = 0;
             this.tpExport.Text = "Export";
             this.tpExport.UseVisualStyleBackColor = true;
+            // 
+            // groupBox2
+            // 
+            this.groupBox2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.groupBox2.Controls.Add(this.cbFrontCamera);
+            this.groupBox2.Controls.Add(this.cbDriverCamera);
+            this.groupBox2.Controls.Add(this.cbWideCamera);
+            this.groupBox2.Location = new System.Drawing.Point(217, 62);
+            this.groupBox2.Name = "groupBox2";
+            this.groupBox2.Size = new System.Drawing.Size(866, 55);
+            this.groupBox2.TabIndex = 34;
+            this.groupBox2.TabStop = false;
+            this.groupBox2.Text = "Export Camera";
+            // 
+            // cbFrontCamera
+            // 
+            this.cbFrontCamera.AutoSize = true;
+            this.cbFrontCamera.Checked = true;
+            this.cbFrontCamera.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.cbFrontCamera.Depth = 0;
+            this.cbFrontCamera.Location = new System.Drawing.Point(3, 15);
+            this.cbFrontCamera.Margin = new System.Windows.Forms.Padding(0);
+            this.cbFrontCamera.MouseLocation = new System.Drawing.Point(-1, -1);
+            this.cbFrontCamera.MouseState = MaterialSkin.MouseState.HOVER;
+            this.cbFrontCamera.Name = "cbFrontCamera";
+            this.cbFrontCamera.Ripple = true;
+            this.cbFrontCamera.Size = new System.Drawing.Size(72, 37);
+            this.cbFrontCamera.TabIndex = 31;
+            this.cbFrontCamera.Text = "Front";
+            this.cbFrontCamera.UseVisualStyleBackColor = true;
+            // 
+            // cbDriverCamera
+            // 
+            this.cbDriverCamera.AutoSize = true;
+            this.cbDriverCamera.Depth = 0;
+            this.cbDriverCamera.Location = new System.Drawing.Point(145, 15);
+            this.cbDriverCamera.Margin = new System.Windows.Forms.Padding(0);
+            this.cbDriverCamera.MouseLocation = new System.Drawing.Point(-1, -1);
+            this.cbDriverCamera.MouseState = MaterialSkin.MouseState.HOVER;
+            this.cbDriverCamera.Name = "cbDriverCamera";
+            this.cbDriverCamera.Ripple = true;
+            this.cbDriverCamera.Size = new System.Drawing.Size(76, 37);
+            this.cbDriverCamera.TabIndex = 32;
+            this.cbDriverCamera.Text = "Driver";
+            this.cbDriverCamera.UseVisualStyleBackColor = true;
+            // 
+            // cbWideCamera
+            // 
+            this.cbWideCamera.AutoSize = true;
+            this.cbWideCamera.Depth = 0;
+            this.cbWideCamera.Location = new System.Drawing.Point(75, 15);
+            this.cbWideCamera.Margin = new System.Windows.Forms.Padding(0);
+            this.cbWideCamera.MouseLocation = new System.Drawing.Point(-1, -1);
+            this.cbWideCamera.MouseState = MaterialSkin.MouseState.HOVER;
+            this.cbWideCamera.Name = "cbWideCamera";
+            this.cbWideCamera.Ripple = true;
+            this.cbWideCamera.Size = new System.Drawing.Size(70, 37);
+            this.cbWideCamera.TabIndex = 33;
+            this.cbWideCamera.Text = "Wide";
+            this.cbWideCamera.UseVisualStyleBackColor = true;
+            // 
+            // panel2
+            // 
+            this.panel2.Controls.Add(this.btnRefreshVideos);
+            this.panel2.Controls.Add(this.btnExportMapillary);
+            this.panel2.Controls.Add(this.btnExportGpx);
+            this.panel2.Controls.Add(this.btnExport);
+            this.panel2.Location = new System.Drawing.Point(6, 62);
+            this.panel2.Name = "panel2";
+            this.panel2.Size = new System.Drawing.Size(204, 505);
+            this.panel2.TabIndex = 30;
             // 
             // vlcVideoPlayer
             // 
             this.vlcVideoPlayer.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.vlcVideoPlayer.Location = new System.Drawing.Point(271, 106);
+            this.vlcVideoPlayer.Location = new System.Drawing.Point(367, 123);
             this.vlcVideoPlayer.Name = "vlcVideoPlayer";
-            this.vlcVideoPlayer.Size = new System.Drawing.Size(709, 461);
+            this.vlcVideoPlayer.Size = new System.Drawing.Size(532, 373);
             this.vlcVideoPlayer.TabIndex = 29;
             // 
             // tlpTasks
@@ -459,13 +519,145 @@ namespace OpenpilotToolkit
             this.tlpTasks.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.tlpTasks.ColumnCount = 1;
             this.tlpTasks.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
-            this.tlpTasks.Location = new System.Drawing.Point(988, 106);
+            this.tlpTasks.Location = new System.Drawing.Point(906, 123);
             this.tlpTasks.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.tlpTasks.Name = "tlpTasks";
             this.tlpTasks.RowCount = 1;
             this.tlpTasks.RowStyles.Add(new System.Windows.Forms.RowStyle());
-            this.tlpTasks.Size = new System.Drawing.Size(209, 461);
+            this.tlpTasks.Size = new System.Drawing.Size(177, 373);
             this.tlpTasks.TabIndex = 16;
+            // 
+            // tpRemote
+            // 
+            this.tpRemote.Controls.Add(this.btnCloseSettings);
+            this.tpRemote.Controls.Add(this.btnFlashPanda);
+            this.tpRemote.Controls.Add(this.btnOpenSettings);
+            this.tpRemote.Controls.Add(this.btnShutdown);
+            this.tpRemote.Controls.Add(this.btnReboot);
+            this.tpRemote.ImageKey = "outline_games_white_24dp.png";
+            this.tpRemote.Location = new System.Drawing.Point(4, 31);
+            this.tpRemote.Name = "tpRemote";
+            this.tpRemote.Padding = new System.Windows.Forms.Padding(3);
+            this.tpRemote.Size = new System.Drawing.Size(1090, 502);
+            this.tpRemote.TabIndex = 11;
+            this.tpRemote.Text = "Remote";
+            this.tpRemote.UseVisualStyleBackColor = true;
+            this.tpRemote.Click += new System.EventHandler(this.tpRemote_Click);
+            // 
+            // btnCloseSettings
+            // 
+            this.btnCloseSettings.AccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(64)))), ((int)(((byte)(129)))));
+            this.btnCloseSettings.Anchor = System.Windows.Forms.AnchorStyles.None;
+            this.btnCloseSettings.AutoSize = false;
+            this.btnCloseSettings.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.btnCloseSettings.Density = MaterialSkin.Controls.MaterialButton.MaterialButtonDensity.Default;
+            this.btnCloseSettings.Depth = 0;
+            this.btnCloseSettings.HighEmphasis = true;
+            this.btnCloseSettings.Icon = null;
+            this.btnCloseSettings.Location = new System.Drawing.Point(392, 281);
+            this.btnCloseSettings.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+            this.btnCloseSettings.MouseState = MaterialSkin.MouseState.HOVER;
+            this.btnCloseSettings.Name = "btnCloseSettings";
+            this.btnCloseSettings.NoAccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(81)))), ((int)(((byte)(181)))));
+            this.btnCloseSettings.Size = new System.Drawing.Size(307, 36);
+            this.btnCloseSettings.TabIndex = 33;
+            this.btnCloseSettings.Text = "Close Settings";
+            this.btnCloseSettings.Type = MaterialSkin.Controls.MaterialButton.MaterialButtonType.Contained;
+            this.btnCloseSettings.UseAccentColor = true;
+            this.btnCloseSettings.UseVisualStyleBackColor = true;
+            this.btnCloseSettings.Click += new System.EventHandler(this.btnCloseSettings_Click);
+            // 
+            // btnFlashPanda
+            // 
+            this.btnFlashPanda.AccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(64)))), ((int)(((byte)(129)))));
+            this.btnFlashPanda.Anchor = System.Windows.Forms.AnchorStyles.None;
+            this.btnFlashPanda.AutoSize = false;
+            this.btnFlashPanda.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.btnFlashPanda.Density = MaterialSkin.Controls.MaterialButton.MaterialButtonDensity.Default;
+            this.btnFlashPanda.Depth = 0;
+            this.btnFlashPanda.HighEmphasis = true;
+            this.btnFlashPanda.Icon = null;
+            this.btnFlashPanda.Location = new System.Drawing.Point(392, 329);
+            this.btnFlashPanda.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+            this.btnFlashPanda.MouseState = MaterialSkin.MouseState.HOVER;
+            this.btnFlashPanda.Name = "btnFlashPanda";
+            this.btnFlashPanda.NoAccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(81)))), ((int)(((byte)(181)))));
+            this.btnFlashPanda.Size = new System.Drawing.Size(307, 36);
+            this.btnFlashPanda.TabIndex = 34;
+            this.btnFlashPanda.Text = "Flash Panda";
+            this.btnFlashPanda.Type = MaterialSkin.Controls.MaterialButton.MaterialButtonType.Contained;
+            this.btnFlashPanda.UseAccentColor = true;
+            this.btnFlashPanda.UseVisualStyleBackColor = true;
+            this.btnFlashPanda.Click += new System.EventHandler(this.btnFlashPanda_Click);
+            // 
+            // btnOpenSettings
+            // 
+            this.btnOpenSettings.AccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(64)))), ((int)(((byte)(129)))));
+            this.btnOpenSettings.Anchor = System.Windows.Forms.AnchorStyles.None;
+            this.btnOpenSettings.AutoSize = false;
+            this.btnOpenSettings.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.btnOpenSettings.Density = MaterialSkin.Controls.MaterialButton.MaterialButtonDensity.Default;
+            this.btnOpenSettings.Depth = 0;
+            this.btnOpenSettings.HighEmphasis = true;
+            this.btnOpenSettings.Icon = null;
+            this.btnOpenSettings.Location = new System.Drawing.Point(392, 233);
+            this.btnOpenSettings.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+            this.btnOpenSettings.MouseState = MaterialSkin.MouseState.HOVER;
+            this.btnOpenSettings.Name = "btnOpenSettings";
+            this.btnOpenSettings.NoAccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(81)))), ((int)(((byte)(181)))));
+            this.btnOpenSettings.Size = new System.Drawing.Size(307, 36);
+            this.btnOpenSettings.TabIndex = 32;
+            this.btnOpenSettings.Text = "Open Settings";
+            this.btnOpenSettings.Type = MaterialSkin.Controls.MaterialButton.MaterialButtonType.Contained;
+            this.btnOpenSettings.UseAccentColor = true;
+            this.btnOpenSettings.UseVisualStyleBackColor = true;
+            this.btnOpenSettings.Click += new System.EventHandler(this.btnOpenSettings_Click);
+            // 
+            // btnShutdown
+            // 
+            this.btnShutdown.AccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(64)))), ((int)(((byte)(129)))));
+            this.btnShutdown.Anchor = System.Windows.Forms.AnchorStyles.None;
+            this.btnShutdown.AutoSize = false;
+            this.btnShutdown.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.btnShutdown.Density = MaterialSkin.Controls.MaterialButton.MaterialButtonDensity.Default;
+            this.btnShutdown.Depth = 0;
+            this.btnShutdown.HighEmphasis = true;
+            this.btnShutdown.Icon = null;
+            this.btnShutdown.Location = new System.Drawing.Point(392, 185);
+            this.btnShutdown.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+            this.btnShutdown.MouseState = MaterialSkin.MouseState.HOVER;
+            this.btnShutdown.Name = "btnShutdown";
+            this.btnShutdown.NoAccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(81)))), ((int)(((byte)(181)))));
+            this.btnShutdown.Size = new System.Drawing.Size(307, 36);
+            this.btnShutdown.TabIndex = 31;
+            this.btnShutdown.Text = "shutdown";
+            this.btnShutdown.Type = MaterialSkin.Controls.MaterialButton.MaterialButtonType.Contained;
+            this.btnShutdown.UseAccentColor = true;
+            this.btnShutdown.UseVisualStyleBackColor = true;
+            this.btnShutdown.Click += new System.EventHandler(this.btnShutdown_Click);
+            // 
+            // btnReboot
+            // 
+            this.btnReboot.AccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(64)))), ((int)(((byte)(129)))));
+            this.btnReboot.Anchor = System.Windows.Forms.AnchorStyles.None;
+            this.btnReboot.AutoSize = false;
+            this.btnReboot.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.btnReboot.Density = MaterialSkin.Controls.MaterialButton.MaterialButtonDensity.Default;
+            this.btnReboot.Depth = 0;
+            this.btnReboot.HighEmphasis = true;
+            this.btnReboot.Icon = null;
+            this.btnReboot.Location = new System.Drawing.Point(392, 137);
+            this.btnReboot.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+            this.btnReboot.MouseState = MaterialSkin.MouseState.HOVER;
+            this.btnReboot.Name = "btnReboot";
+            this.btnReboot.NoAccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(81)))), ((int)(((byte)(181)))));
+            this.btnReboot.Size = new System.Drawing.Size(307, 36);
+            this.btnReboot.TabIndex = 30;
+            this.btnReboot.Text = "reboot";
+            this.btnReboot.Type = MaterialSkin.Controls.MaterialButton.MaterialButtonType.Contained;
+            this.btnReboot.UseAccentColor = true;
+            this.btnReboot.UseVisualStyleBackColor = true;
+            this.btnReboot.Click += new System.EventHandler(this.materialButton1_Click);
             // 
             // tpSettings
             // 
@@ -474,7 +666,7 @@ namespace OpenpilotToolkit
             this.tpSettings.Location = new System.Drawing.Point(4, 31);
             this.tpSettings.Name = "tpSettings";
             this.tpSettings.Padding = new System.Windows.Forms.Padding(3);
-            this.tpSettings.Size = new System.Drawing.Size(1204, 573);
+            this.tpSettings.Size = new System.Drawing.Size(1090, 502);
             this.tpSettings.TabIndex = 1;
             this.tpSettings.Text = "Settings";
             this.tpSettings.UseVisualStyleBackColor = true;
@@ -512,7 +704,7 @@ namespace OpenpilotToolkit
             this.tpLogFile.Location = new System.Drawing.Point(4, 31);
             this.tpLogFile.Name = "tpLogFile";
             this.tpLogFile.Padding = new System.Windows.Forms.Padding(3);
-            this.tpLogFile.Size = new System.Drawing.Size(1204, 573);
+            this.tpLogFile.Size = new System.Drawing.Size(1090, 502);
             this.tpLogFile.TabIndex = 2;
             this.tpLogFile.Text = "Log";
             this.tpLogFile.UseVisualStyleBackColor = true;
@@ -529,7 +721,7 @@ namespace OpenpilotToolkit
             this.txtLog.MouseState = MaterialSkin.MouseState.HOVER;
             this.txtLog.Name = "txtLog";
             this.txtLog.ReadOnly = true;
-            this.txtLog.Size = new System.Drawing.Size(1198, 567);
+            this.txtLog.Size = new System.Drawing.Size(1084, 496);
             this.txtLog.TabIndex = 2;
             this.txtLog.Text = "";
             // 
@@ -540,7 +732,7 @@ namespace OpenpilotToolkit
             this.tpExplore.Location = new System.Drawing.Point(4, 31);
             this.tpExplore.Name = "tpExplore";
             this.tpExplore.Padding = new System.Windows.Forms.Padding(3);
-            this.tpExplore.Size = new System.Drawing.Size(1204, 573);
+            this.tpExplore.Size = new System.Drawing.Size(1090, 502);
             this.tpExplore.TabIndex = 3;
             this.tpExplore.Text = "Explorer";
             this.tpExplore.UseVisualStyleBackColor = true;
@@ -551,11 +743,10 @@ namespace OpenpilotToolkit
             this.panel1.Controls.Add(this.dgvExplorer);
             this.panel1.Controls.Add(this.txtSearch);
             this.panel1.Controls.Add(this.txtWorkingDirectory);
-            this.panel1.Controls.Add(this.cmbDevice);
             this.panel1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panel1.Location = new System.Drawing.Point(3, 3);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(1198, 567);
+            this.panel1.Size = new System.Drawing.Size(1084, 496);
             this.panel1.TabIndex = 0;
             // 
             // dgvExplorer
@@ -606,7 +797,7 @@ namespace OpenpilotToolkit
             this.dgvExplorer.RowTemplate.Height = 25;
             this.dgvExplorer.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
             this.dgvExplorer.ShowCellToolTips = false;
-            this.dgvExplorer.Size = new System.Drawing.Size(1192, 504);
+            this.dgvExplorer.Size = new System.Drawing.Size(1078, 433);
             this.dgvExplorer.TabIndex = 32;
             this.dgvExplorer.CellDoubleClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dgvExplorer_CellDoubleClick);
             this.dgvExplorer.CellFormatting += new System.Windows.Forms.DataGridViewCellFormattingEventHandler(this.dgvExplorer_CellFormatting);
@@ -654,7 +845,7 @@ namespace OpenpilotToolkit
             this.txtSearch.Font = new System.Drawing.Font("Roboto", 16F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel);
             this.txtSearch.Hint = "Search";
             this.txtSearch.LeadingIcon = null;
-            this.txtSearch.Location = new System.Drawing.Point(941, 4);
+            this.txtSearch.Location = new System.Drawing.Point(827, 4);
             this.txtSearch.MaxLength = 50;
             this.txtSearch.MouseState = MaterialSkin.MouseState.OUT;
             this.txtSearch.Multiline = false;
@@ -673,39 +864,16 @@ namespace OpenpilotToolkit
             this.txtWorkingDirectory.Font = new System.Drawing.Font("Roboto", 16F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel);
             this.txtWorkingDirectory.Hint = "Working Directory";
             this.txtWorkingDirectory.LeadingIcon = null;
-            this.txtWorkingDirectory.Location = new System.Drawing.Point(275, 4);
+            this.txtWorkingDirectory.Location = new System.Drawing.Point(3, 4);
             this.txtWorkingDirectory.MaxLength = 50;
             this.txtWorkingDirectory.MouseState = MaterialSkin.MouseState.OUT;
             this.txtWorkingDirectory.Multiline = false;
             this.txtWorkingDirectory.Name = "txtWorkingDirectory";
             this.txtWorkingDirectory.ReadOnly = true;
-            this.txtWorkingDirectory.Size = new System.Drawing.Size(660, 50);
+            this.txtWorkingDirectory.Size = new System.Drawing.Size(818, 50);
             this.txtWorkingDirectory.TabIndex = 27;
             this.txtWorkingDirectory.Text = "Current Directory";
             this.txtWorkingDirectory.TrailingIcon = null;
-            // 
-            // cmbDevice
-            // 
-            this.cmbDevice.AutoResize = false;
-            this.cmbDevice.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(255)))), ((int)(((byte)(255)))));
-            this.cmbDevice.Depth = 0;
-            this.cmbDevice.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawVariable;
-            this.cmbDevice.DropDownHeight = 174;
-            this.cmbDevice.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.cmbDevice.DropDownWidth = 121;
-            this.cmbDevice.Font = new System.Drawing.Font("Microsoft Sans Serif", 14F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Pixel);
-            this.cmbDevice.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(222)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
-            this.cmbDevice.FormattingEnabled = true;
-            this.cmbDevice.Hint = "Openpilot Device";
-            this.cmbDevice.IntegralHeight = false;
-            this.cmbDevice.ItemHeight = 43;
-            this.cmbDevice.Location = new System.Drawing.Point(3, 3);
-            this.cmbDevice.MaxDropDownItems = 4;
-            this.cmbDevice.MouseState = MaterialSkin.MouseState.OUT;
-            this.cmbDevice.Name = "cmbDevice";
-            this.cmbDevice.Size = new System.Drawing.Size(266, 49);
-            this.cmbDevice.StartIndex = 0;
-            this.cmbDevice.TabIndex = 1;
             // 
             // tpFingerprint
             // 
@@ -714,7 +882,7 @@ namespace OpenpilotToolkit
             this.tpFingerprint.Location = new System.Drawing.Point(4, 31);
             this.tpFingerprint.Name = "tpFingerprint";
             this.tpFingerprint.Padding = new System.Windows.Forms.Padding(3);
-            this.tpFingerprint.Size = new System.Drawing.Size(1204, 573);
+            this.tpFingerprint.Size = new System.Drawing.Size(1090, 502);
             this.tpFingerprint.TabIndex = 4;
             this.tpFingerprint.Text = "Fingerprint";
             this.tpFingerprint.UseVisualStyleBackColor = true;
@@ -731,7 +899,7 @@ namespace OpenpilotToolkit
             this.txtFingerprint.MouseState = MaterialSkin.MouseState.HOVER;
             this.txtFingerprint.Name = "txtFingerprint";
             this.txtFingerprint.ReadOnly = true;
-            this.txtFingerprint.Size = new System.Drawing.Size(1198, 567);
+            this.txtFingerprint.Size = new System.Drawing.Size(1084, 496);
             this.txtFingerprint.TabIndex = 3;
             this.txtFingerprint.Text = "";
             // 
@@ -742,7 +910,7 @@ namespace OpenpilotToolkit
             this.tpSSH.Location = new System.Drawing.Point(4, 31);
             this.tpSSH.Name = "tpSSH";
             this.tpSSH.Padding = new System.Windows.Forms.Padding(3);
-            this.tpSSH.Size = new System.Drawing.Size(1204, 573);
+            this.tpSSH.Size = new System.Drawing.Size(1090, 502);
             this.tpSSH.TabIndex = 5;
             this.tpSSH.Text = "SSH Wizard";
             this.tpSSH.UseVisualStyleBackColor = true;
@@ -752,7 +920,7 @@ namespace OpenpilotToolkit
             this.ucSshWizard.Dock = System.Windows.Forms.DockStyle.Fill;
             this.ucSshWizard.Location = new System.Drawing.Point(3, 3);
             this.ucSshWizard.Name = "ucSshWizard";
-            this.ucSshWizard.Size = new System.Drawing.Size(1198, 567);
+            this.ucSshWizard.Size = new System.Drawing.Size(1084, 496);
             this.ucSshWizard.TabIndex = 1;
             this.ucSshWizard.WizardCompleted += new System.EventHandler(this.ucSshWizard_WizardCompleted);
             // 
@@ -764,7 +932,7 @@ namespace OpenpilotToolkit
             this.tpFork.ImageKey = "git_fork_black.png";
             this.tpFork.Location = new System.Drawing.Point(4, 31);
             this.tpFork.Name = "tpFork";
-            this.tpFork.Size = new System.Drawing.Size(1204, 573);
+            this.tpFork.Size = new System.Drawing.Size(1090, 502);
             this.tpFork.TabIndex = 9;
             this.tpFork.Text = "Fork Installer";
             this.tpFork.UseVisualStyleBackColor = true;
@@ -777,7 +945,7 @@ namespace OpenpilotToolkit
             this.txtForkBranch.Font = new System.Drawing.Font("Roboto", 16F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel);
             this.txtForkBranch.Hint = "Branch Name";
             this.txtForkBranch.LeadingIcon = null;
-            this.txtForkBranch.Location = new System.Drawing.Point(432, 221);
+            this.txtForkBranch.Location = new System.Drawing.Point(375, 232);
             this.txtForkBranch.MaxLength = 50;
             this.txtForkBranch.MouseState = MaterialSkin.MouseState.OUT;
             this.txtForkBranch.Multiline = false;
@@ -795,7 +963,7 @@ namespace OpenpilotToolkit
             this.txtForkUsername.Font = new System.Drawing.Font("Roboto", 16F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel);
             this.txtForkUsername.Hint = "Fork Username";
             this.txtForkUsername.LeadingIcon = null;
-            this.txtForkUsername.Location = new System.Drawing.Point(432, 165);
+            this.txtForkUsername.Location = new System.Drawing.Point(375, 176);
             this.txtForkUsername.MaxLength = 50;
             this.txtForkUsername.MouseState = MaterialSkin.MouseState.OUT;
             this.txtForkUsername.Multiline = false;
@@ -815,7 +983,7 @@ namespace OpenpilotToolkit
             this.btnInstallFork.Depth = 0;
             this.btnInstallFork.HighEmphasis = true;
             this.btnInstallFork.Icon = null;
-            this.btnInstallFork.Location = new System.Drawing.Point(432, 280);
+            this.btnInstallFork.Location = new System.Drawing.Point(375, 291);
             this.btnInstallFork.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
             this.btnInstallFork.MouseState = MaterialSkin.MouseState.HOVER;
             this.btnInstallFork.Name = "btnInstallFork";
@@ -834,10 +1002,73 @@ namespace OpenpilotToolkit
             this.tpFlash.Location = new System.Drawing.Point(4, 31);
             this.tpFlash.Name = "tpFlash";
             this.tpFlash.Padding = new System.Windows.Forms.Padding(3);
-            this.tpFlash.Size = new System.Drawing.Size(1204, 573);
+            this.tpFlash.Size = new System.Drawing.Size(1090, 502);
             this.tpFlash.TabIndex = 6;
             this.tpFlash.Text = "Flash Wizard";
             this.tpFlash.UseVisualStyleBackColor = true;
+            // 
+            // tpShell
+            // 
+            this.tpShell.Controls.Add(this.tableLayoutPanel1);
+            this.tpShell.ImageKey = "outline_console_black_24dp.png";
+            this.tpShell.Location = new System.Drawing.Point(4, 31);
+            this.tpShell.Name = "tpShell";
+            this.tpShell.Padding = new System.Windows.Forms.Padding(3);
+            this.tpShell.Size = new System.Drawing.Size(1090, 502);
+            this.tpShell.TabIndex = 10;
+            this.tpShell.Text = "Terminal";
+            this.tpShell.UseVisualStyleBackColor = true;
+            // 
+            // tableLayoutPanel1
+            // 
+            this.tableLayoutPanel1.ColumnCount = 1;
+            this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tableLayoutPanel1.Controls.Add(this.txtSshCommand, 0, 1);
+            this.tableLayoutPanel1.Controls.Add(this.txtTerminalText, 0, 0);
+            this.tableLayoutPanel1.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tableLayoutPanel1.Location = new System.Drawing.Point(3, 3);
+            this.tableLayoutPanel1.Name = "tableLayoutPanel1";
+            this.tableLayoutPanel1.RowCount = 2;
+            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle());
+            this.tableLayoutPanel1.Size = new System.Drawing.Size(1084, 496);
+            this.tableLayoutPanel1.TabIndex = 31;
+            // 
+            // txtSshCommand
+            // 
+            this.txtSshCommand.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.txtSshCommand.Depth = 0;
+            this.txtSshCommand.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.txtSshCommand.Font = new System.Drawing.Font("Roboto", 16F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel);
+            this.txtSshCommand.LeadingIcon = null;
+            this.txtSshCommand.Location = new System.Drawing.Point(3, 443);
+            this.txtSshCommand.MaxLength = 50;
+            this.txtSshCommand.MouseState = MaterialSkin.MouseState.OUT;
+            this.txtSshCommand.Multiline = false;
+            this.txtSshCommand.Name = "txtSshCommand";
+            this.txtSshCommand.Size = new System.Drawing.Size(1078, 50);
+            this.txtSshCommand.TabIndex = 29;
+            this.txtSshCommand.Text = "";
+            this.txtSshCommand.TrailingIcon = null;
+            this.txtSshCommand.KeyDown += new System.Windows.Forms.KeyEventHandler(this.txtSshCommand_KeyDown);
+            // 
+            // txtTerminalText
+            // 
+            this.txtTerminalText.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(255)))), ((int)(((byte)(255)))));
+            this.txtTerminalText.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.txtTerminalText.Depth = 0;
+            this.txtTerminalText.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.txtTerminalText.Font = new System.Drawing.Font("Microsoft Sans Serif", 14F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel);
+            this.txtTerminalText.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(222)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
+            this.txtTerminalText.HideSelection = false;
+            this.txtTerminalText.Location = new System.Drawing.Point(3, 3);
+            this.txtTerminalText.MouseState = MaterialSkin.MouseState.HOVER;
+            this.txtTerminalText.Name = "txtTerminalText";
+            this.txtTerminalText.ReadOnly = true;
+            this.txtTerminalText.Size = new System.Drawing.Size(1078, 434);
+            this.txtTerminalText.TabIndex = 30;
+            this.txtTerminalText.Text = "";
+            this.txtTerminalText.TextChanged += new System.EventHandler(this.txtTerminalText_TextChanged);
             // 
             // tpDonate
             // 
@@ -849,7 +1080,7 @@ namespace OpenpilotToolkit
             this.tpDonate.Location = new System.Drawing.Point(4, 31);
             this.tpDonate.Name = "tpDonate";
             this.tpDonate.Padding = new System.Windows.Forms.Padding(3);
-            this.tpDonate.Size = new System.Drawing.Size(1204, 573);
+            this.tpDonate.Size = new System.Drawing.Size(1090, 502);
             this.tpDonate.TabIndex = 8;
             this.tpDonate.Text = "Donate";
             this.tpDonate.UseVisualStyleBackColor = true;
@@ -861,7 +1092,7 @@ namespace OpenpilotToolkit
             this.label1.Font = new System.Drawing.Font("Segoe UI", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.label1.Location = new System.Drawing.Point(6, 3);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(1222, 109);
+            this.label1.Size = new System.Drawing.Size(1078, 109);
             this.label1.TabIndex = 25;
             this.label1.Text = "If you wish to donate to support development you can do so on the following platf" +
     "orms:";
@@ -876,7 +1107,7 @@ namespace OpenpilotToolkit
             this.btnPaypal.Depth = 0;
             this.btnPaypal.HighEmphasis = true;
             this.btnPaypal.Icon = null;
-            this.btnPaypal.Location = new System.Drawing.Point(579, 166);
+            this.btnPaypal.Location = new System.Drawing.Point(507, 233);
             this.btnPaypal.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
             this.btnPaypal.MouseState = MaterialSkin.MouseState.HOVER;
             this.btnPaypal.Name = "btnPaypal";
@@ -898,7 +1129,7 @@ namespace OpenpilotToolkit
             this.btnKofi.Depth = 0;
             this.btnKofi.HighEmphasis = true;
             this.btnKofi.Icon = null;
-            this.btnKofi.Location = new System.Drawing.Point(585, 118);
+            this.btnKofi.Location = new System.Drawing.Point(513, 185);
             this.btnKofi.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
             this.btnKofi.MouseState = MaterialSkin.MouseState.HOVER;
             this.btnKofi.Name = "btnKofi";
@@ -920,7 +1151,7 @@ namespace OpenpilotToolkit
             this.btnBuyMeCoffee.Depth = 0;
             this.btnBuyMeCoffee.HighEmphasis = true;
             this.btnBuyMeCoffee.Icon = null;
-            this.btnBuyMeCoffee.Location = new System.Drawing.Point(545, 214);
+            this.btnBuyMeCoffee.Location = new System.Drawing.Point(473, 281);
             this.btnBuyMeCoffee.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
             this.btnBuyMeCoffee.MouseState = MaterialSkin.MouseState.HOVER;
             this.btnBuyMeCoffee.Name = "btnBuyMeCoffee";
@@ -939,7 +1170,7 @@ namespace OpenpilotToolkit
             this.tabPage1.Location = new System.Drawing.Point(4, 31);
             this.tabPage1.Name = "tabPage1";
             this.tabPage1.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage1.Size = new System.Drawing.Size(1204, 573);
+            this.tabPage1.Size = new System.Drawing.Size(1090, 502);
             this.tabPage1.TabIndex = 7;
             this.tabPage1.Text = "tabPage1";
             this.tabPage1.UseVisualStyleBackColor = true;
@@ -949,7 +1180,7 @@ namespace OpenpilotToolkit
             this.flpColours.Dock = System.Windows.Forms.DockStyle.Fill;
             this.flpColours.Location = new System.Drawing.Point(3, 3);
             this.flpColours.Name = "flpColours";
-            this.flpColours.Size = new System.Drawing.Size(1198, 567);
+            this.flpColours.Size = new System.Drawing.Size(1084, 496);
             this.flpColours.TabIndex = 0;
             // 
             // tabPage8
@@ -970,10 +1201,13 @@ namespace OpenpilotToolkit
             this.themePanel.Controls.Add(this.themeButton);
             this.themePanel.Controls.Add(this.adbConnected);
             this.themePanel.Controls.Add(this.wifiConnected);
+            this.themePanel.Controls.Add(this.btnScan);
+            this.themePanel.Controls.Add(this.cmbDevices);
+            this.themePanel.Controls.Add(this.lblActiveDevice);
             this.themePanel.FlowDirection = System.Windows.Forms.FlowDirection.RightToLeft;
-            this.themePanel.Location = new System.Drawing.Point(246, 24);
+            this.themePanel.Location = new System.Drawing.Point(244, 24);
             this.themePanel.Name = "themePanel";
-            this.themePanel.Size = new System.Drawing.Size(969, 40);
+            this.themePanel.Size = new System.Drawing.Size(857, 40);
             this.themePanel.TabIndex = 34;
             this.themePanel.Paint += new System.Windows.Forms.PaintEventHandler(this.themePanel_Paint);
             // 
@@ -991,7 +1225,7 @@ namespace OpenpilotToolkit
             this.wifiConnected.Icon = global::OpenpilotToolkit.Properties.Resources.outline_wifi_black_24dp;
             this.wifiConnected.ImageKey = "outline_wifi_white_24dp.png";
             this.wifiConnected.ImageList = this.ilTabs;
-            this.wifiConnected.Location = new System.Drawing.Point(839, 2);
+            this.wifiConnected.Location = new System.Drawing.Point(727, 2);
             this.wifiConnected.Margin = new System.Windows.Forms.Padding(2);
             this.wifiConnected.MouseState = MaterialSkin.MouseState.HOVER;
             this.wifiConnected.Name = "wifiConnected";
@@ -1001,6 +1235,42 @@ namespace OpenpilotToolkit
             this.wifiConnected.Type = MaterialSkin.Controls.MaterialButton.MaterialButtonType.Contained;
             this.wifiConnected.UseAccentColor = false;
             this.wifiConnected.UseVisualStyleBackColor = true;
+            // 
+            // cmbDevices
+            // 
+            this.cmbDevices.AutoResize = false;
+            this.cmbDevices.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(255)))), ((int)(((byte)(255)))));
+            this.cmbDevices.Depth = 0;
+            this.cmbDevices.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawVariable;
+            this.cmbDevices.DropDownHeight = 118;
+            this.cmbDevices.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cmbDevices.DropDownWidth = 121;
+            this.cmbDevices.Font = new System.Drawing.Font("Microsoft Sans Serif", 14F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Pixel);
+            this.cmbDevices.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(222)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
+            this.cmbDevices.FormattingEnabled = true;
+            this.cmbDevices.Hint = "Openpilot Device";
+            this.cmbDevices.IntegralHeight = false;
+            this.cmbDevices.ItemHeight = 29;
+            this.cmbDevices.Location = new System.Drawing.Point(275, 3);
+            this.cmbDevices.MaxDropDownItems = 4;
+            this.cmbDevices.MouseState = MaterialSkin.MouseState.OUT;
+            this.cmbDevices.Name = "cmbDevices";
+            this.cmbDevices.Size = new System.Drawing.Size(266, 35);
+            this.cmbDevices.StartIndex = 0;
+            this.cmbDevices.TabIndex = 33;
+            this.cmbDevices.UseTallSize = false;
+            this.cmbDevices.SelectedIndexChanged += new System.EventHandler(this.cmbDevices_SelectedIndexChanged);
+            // 
+            // lblActiveDevice
+            // 
+            this.lblActiveDevice.Font = new System.Drawing.Font("Microsoft Sans Serif", 14F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Pixel);
+            this.lblActiveDevice.ForeColor = System.Drawing.Color.White;
+            this.lblActiveDevice.Location = new System.Drawing.Point(112, 0);
+            this.lblActiveDevice.Name = "lblActiveDevice";
+            this.lblActiveDevice.Size = new System.Drawing.Size(157, 37);
+            this.lblActiveDevice.TabIndex = 35;
+            this.lblActiveDevice.Text = "ACTIVE DEVICE:";
+            this.lblActiveDevice.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
             // sqliteCommand1
             // 
@@ -1013,7 +1283,7 @@ namespace OpenpilotToolkit
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1218, 675);
+            this.ClientSize = new System.Drawing.Size(1104, 604);
             this.Controls.Add(this.tcSettings);
             this.Controls.Add(this.themePanel);
             this.DrawerAutoHide = false;
@@ -1022,9 +1292,10 @@ namespace OpenpilotToolkit
             this.DrawerTabControl = this.tcSettings;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.MinimumSize = new System.Drawing.Size(1085, 412);
+            this.MinimumSize = new System.Drawing.Size(1104, 604);
             this.Name = "OpenpilotToolkitForm";
-            this.Text = "Openpilot Toolkit";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
+            this.Text = "OPENPILOT TOOLKIT";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.ExportDrivesForm_FormClosing);
             this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.OpenpilotToolkitForm_FormClosed);
             this.Load += new System.EventHandler(this.Form1_Load);
@@ -1032,6 +1303,10 @@ namespace OpenpilotToolkit
             this.tcSettings.ResumeLayout(false);
             this.tpExport.ResumeLayout(false);
             this.tpExport.PerformLayout();
+            this.groupBox2.ResumeLayout(false);
+            this.groupBox2.PerformLayout();
+            this.panel2.ResumeLayout(false);
+            this.tpRemote.ResumeLayout(false);
             this.tpSettings.ResumeLayout(false);
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
@@ -1042,10 +1317,13 @@ namespace OpenpilotToolkit
             this.tpFingerprint.ResumeLayout(false);
             this.tpSSH.ResumeLayout(false);
             this.tpFork.ResumeLayout(false);
+            this.tpShell.ResumeLayout(false);
+            this.tableLayoutPanel1.ResumeLayout(false);
             this.tpDonate.ResumeLayout(false);
             this.tpDonate.PerformLayout();
             this.tabPage1.ResumeLayout(false);
             this.themePanel.ResumeLayout(false);
+            this.themePanel.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -1053,10 +1331,8 @@ namespace OpenpilotToolkit
         #endregion
 
         private System.Windows.Forms.ListBox lbDrives;
-        private System.Windows.Forms.ListBox lbCommaList;
         private System.Windows.Forms.PictureBox pbPreview;
         private System.Windows.Forms.FolderBrowserDialog fbdExportFolder;
-        private MaterialSkin.Controls.MaterialLabel lblCommaList;
         private MaterialButton btnBrowse;
         private MaterialButton btnRefreshVideos;
         private MaterialButton btnExportMapillary;
@@ -1064,7 +1340,6 @@ namespace OpenpilotToolkit
         private MaterialButton btnExport;
         private MaterialButton btnScan;
         private MaterialSkin.Controls.MaterialTextBox txtExportFolder;
-        private MaterialSkin.Controls.MaterialLabel lblDrives;
         private MaterialButton themeButton;
         private MaterialSkin.Controls.MaterialTabControl tcSettings;
         private System.Windows.Forms.TabPage tpExport;
@@ -1084,7 +1359,6 @@ namespace OpenpilotToolkit
         private System.Windows.Forms.TableLayoutPanel tlpTasks;
         private Microsoft.Data.Sqlite.SqliteCommand sqliteCommand1;
         private ucSshWizard ucSshWizard;
-        private MaterialComboBox cmbDevice;
         private MaterialTextBox txtWorkingDirectory;
         private MaterialTextBox txtSearch;
         private System.Windows.Forms.TabPage tabPage1;
@@ -1107,6 +1381,23 @@ namespace OpenpilotToolkit
         private MaterialTextBox txtForkBranch;
         private MaterialTextBox txtForkUsername;
         private MaterialButton btnInstallFork;
+        private System.Windows.Forms.TabPage tpShell;
+        private System.Windows.Forms.TableLayoutPanel tableLayoutPanel1;
+        private MaterialTextBox txtSshCommand;
+        private MaterialMultiLineTextBox txtTerminalText;
+        private System.Windows.Forms.TabPage tpRemote;
+        private MaterialButton btnFlashPanda;
+        private MaterialButton btnCloseSettings;
+        private MaterialButton btnOpenSettings;
+        private MaterialButton btnShutdown;
+        private MaterialButton btnReboot;
+        private MaterialComboBox cmbDevices;
+        private System.Windows.Forms.Label lblActiveDevice;
+        private System.Windows.Forms.Panel panel2;
+        private System.Windows.Forms.GroupBox groupBox2;
+        private MaterialCheckbox cbFrontCamera;
+        private MaterialCheckbox cbDriverCamera;
+        private MaterialCheckbox cbWideCamera;
     }
 }
 

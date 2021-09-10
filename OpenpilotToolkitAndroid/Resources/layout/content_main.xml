@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    app:layout_behavior="@string/appbar_scrolling_view_behavior"
+    tools:showIn="@layout/app_bar_main">
+	
+	<com.google.android.material.textfield.TextInputLayout
+		android:id="@+id/menu"
+		style="@style/Widget.App.ExposedDropdownMenu"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:layout_margin="32dp"
+		android:hint="@string/label"
+		android:layout_gravity="top"
+	>
+
+		<AutoCompleteTextView
+			android:id="@+id/autocomplete_comma"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:inputType="none"
+		/>
+
+	</com.google.android.material.textfield.TextInputLayout>
+
+	<LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_margin="32dp"
+        android:orientation="vertical"
+        android:layout_gravity="center_vertical"
+        android:gravity="center_vertical">
+
+        
+
+	    <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:id="@+id/progressSection">
+            <TextView
+                android:text="Scanning"
+                android:textAppearance="?android:attr/textAppearanceMedium"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+				android:gravity="center_vertical"
+                android:id="@+id/progressText" />
+
+            <com.google.android.material.progressindicator.CircularProgressIndicator
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:indeterminate="true"
+                android:id="@+id/progressBar"
+                android:max="100" />
+
+        </LinearLayout>
+
+	    <com.google.android.material.textfield.TextInputLayout
+		    android:id="@+id/tilForkUsername"
+		    android:layout_width="match_parent"
+		    android:layout_height="wrap_content"
+		    android:hint="@string/fork_username"
+		    >
+
+		    <com.google.android.material.textfield.TextInputEditText
+			    android:id="@+id/tietForkUsername"
+			    android:layout_width="match_parent"
+			    android:layout_height="wrap_content"
+		    />
+
+	    </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilForkBranch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/fork_branch"
+            android:layout_marginTop="5dp">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/tietForkBranch"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+			    
+		    />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <Button
+	        android:id="@+id/btnInstall"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="INSTALL"
+            android:onClick="InstallFork"
+        />
+
+        
+
+    </LinearLayout>
+
+</RelativeLayout>

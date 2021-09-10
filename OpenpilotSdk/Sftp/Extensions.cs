@@ -48,10 +48,12 @@ namespace OpenpilotSdk.Sftp
 
                 if (directoryItem.IsDirectory && !directoryItem.IsRegularFile)
                 {
+                    /* What was i testing here again
                     if(directoryItem.FullName == "/dev/block/loop0")
                     {
 
                     }
+                    */
                     foreach(var fileItem in client.EnumerateFileSystemEntries(directoryItem.FullName))
                     {
                         yield return fileItem;

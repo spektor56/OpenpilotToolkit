@@ -24,11 +24,11 @@
 	</PropertyGroup>
 
   <ItemGroup>
-	<PackageReference Include="CefSharp.WinForms.NetCore" Version="92.0.260" />
+	<PackageReference Include="CefSharp.WinForms.NetCore" Version="94.4.50" />
 	<PackageReference Include="CombinationStream" Version="2.2.2" />
 	<PackageReference Include="LibUsbDotNet" Version="2.2.29" />
-    <PackageReference Include="LibVLCSharp" Version="3.6.0" />
-    <PackageReference Include="LibVLCSharp.WinForms" Version="3.6.0" />
+    <PackageReference Include="LibVLCSharp" Version="3.6.1" />
+    <PackageReference Include="LibVLCSharp.WinForms" Version="3.6.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.0-preview.5.21301.9" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="6.0.0-preview.5.21301.9">
       <PrivateAssets>all</PrivateAssets>
@@ -43,7 +43,7 @@
     <PackageReference Include="Octokit" Version="0.50.0" />
     <PackageReference Include="Serilog" Version="2.10.1-dev-01343" />
     <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
-    <PackageReference Include="SixLabors.ImageSharp" Version="1.0.3" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="1.0.4" />
     <PackageReference Include="SshKeyGenerator" Version="1.1.40" />
     <PackageReference Include="VideoLAN.LibVLC.Windows" Version="3.0.16" />
   </ItemGroup>
@@ -98,6 +98,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="Libs\MaterialSkinCore.dll">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
     <None Update="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -121,5 +124,13 @@
 		<Message Importance="high" Text="NuGetProjectStyle = $(NuGetProjectStyle)" />
 		<Message Importance="high" Text="OutDir = $(OutDir)" />
 	</Target>
+
+	<ItemGroup>
+	  <PackageReference Update="chromiumembeddedframework.runtime.win-x64" Version="94.4.5" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <PackageReference Update="chromiumembeddedframework.runtime.win-x86" Version="94.4.5" />
+	</ItemGroup>
 
 </Project>

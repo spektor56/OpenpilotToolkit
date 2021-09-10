@@ -8,7 +8,7 @@
         public ForkResult(string message, bool success)
         {
             Success = success;
-            Message = message;
+            Message = message ?? "";
         }
     }
 }

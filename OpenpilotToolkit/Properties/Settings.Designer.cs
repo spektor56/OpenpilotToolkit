@@ -81,5 +81,41 @@ namespace OpenpilotToolkit.Properties {
                 this["Setting"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool FrontCamera {
+            get {
+                return ((bool)(this["FrontCamera"]));
+            }
+            set {
+                this["FrontCamera"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool WideCamera {
+            get {
+                return ((bool)(this["WideCamera"]));
+            }
+            set {
+                this["WideCamera"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool DriverCamera {
+            get {
+                return ((bool)(this["DriverCamera"]));
+            }
+            set {
+                this["DriverCamera"] = value;
+            }
+        }
     }
 }

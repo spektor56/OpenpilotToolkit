@@ -57,7 +57,6 @@ namespace OpenpilotToolkit.Controls
             this.materialProgressBar1.Name = "materialProgressBar1";
             this.materialProgressBar1.Size = new System.Drawing.Size(85, 5);
             this.materialProgressBar1.TabIndex = 29;
-            this.materialProgressBar1.Value = 50;
             // 
             // ucTaskProgress
             // 

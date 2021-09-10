@@ -5,6 +5,7 @@ namespace OpenpilotSdk.OpenPilot
     public class DriveSegment
     {
         public SftpFile DriverCamera { get; }
+        public SftpFile WideCamera { get; }
         public SftpFile FrontCamera { get; }
         public SftpFile QuickLog { get; }
         public SftpFile RawLog { get; }
@@ -12,7 +13,7 @@ namespace OpenpilotSdk.OpenPilot
 
         public int Index { get; }
 
-        public DriveSegment(int index, SftpFile frontCamera, SftpFile quickLog, SftpFile rawLog = null, SftpFile driverCamera = null, SftpFile frontCameraQuick = null )
+        public DriveSegment(int index, SftpFile frontCamera, SftpFile quickLog, SftpFile rawLog = null, SftpFile driverCamera = null, SftpFile frontCameraQuick = null, SftpFile wideCamera = null)
         {
             Index = index;
             FrontCamera = frontCamera;
@@ -20,6 +21,7 @@ namespace OpenpilotSdk.OpenPilot
             RawLog = rawLog;
             DriverCamera = driverCamera;
             FrontCameraQuick = frontCameraQuick;
+            WideCamera = wideCamera;
         }
 
         public override string ToString()
