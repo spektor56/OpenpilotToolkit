@@ -25,6 +25,7 @@ using NetTopologySuite.IO;
 using OpenpilotSdk.Git;
 using OpenpilotSdk.Hardware;
 using OpenpilotSdk.OpenPilot;
+using OpenpilotSdk.OpenPilot.Fork;
 using OpenpilotToolkit.Android;
 using OpenpilotToolkit.Controls;
 using OpenpilotToolkit.Json;
@@ -934,12 +935,13 @@ namespace OpenpilotToolkit
                 if (lbCommaList.SelectedItem is Comma2 comma2)
                 {
                     ForkResult result = null;
+                    var progress = new Progress<InstallProgress>();
                     using (new ToolkitProgressDialog("Installing fork, please wait", this))
                     {
                         await Task.Run(async () =>
                         {
                             result = await
-                                comma2.InstallFork(forkUser, forkBranch).ConfigureAwait(false);
+                                comma2.InstallFork(forkUser, forkBranch, progress).ConfigureAwait(false);
                         });
                     }
 

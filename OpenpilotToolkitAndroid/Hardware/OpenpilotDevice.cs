@@ -1,6 +1,14 @@
-﻿using System;
+﻿using Android.App;
+using Android.Content;
+using Android.OS;
+using Android.Runtime;
+using Android.Views;
+using Android.Widget;
+using OpenpilotSdk.Hardware;
+using Renci.SshNet;
+using Renci.SshNet.Common;
+using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -8,108 +16,31 @@ using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
-using OpenpilotSdk.Git;
-using OpenpilotSdk.OpenPilot.Fork;
-using Renci.SshNet;
-using Renci.SshNet.Sftp;
-using OpenpilotSdk.Sftp;
-using Renci.SshNet.Common;
-using Serilog;
-using Serilog.Formatting.Display;
+using OpenpilotToolkitAndroid.Git;
+using OpenpilotToolkitAndroid.Openpilot.Fork;
 
-namespace OpenpilotSdk.Hardware
+namespace OpenpilotToolkitAndroid.Hardware
 {
     public abstract class OpenpilotDevice
     {
-        private const int SshPort = 22;
-        
+        private const int SshPort = 8022;
+
         public bool IsAuthenticated { get; protected set; } = false;
-        protected readonly string TempDirectory = Path.Combine(AppContext.BaseDirectory, "tmp");
         public int Port { get; set; } = 8022;
         public IPAddress IpAddress { get; set; }
         protected SftpClient SftpClient;
         protected SshClient SshClient;
 
-        public string WorkingDirectory
-        {
-            get
-            {
-                return SftpClient.WorkingDirectory;
-            }
-        }
-
-        public override string ToString()
-        {
-            return IpAddress.ToString();
-        }
-
-        protected bool Equals(OpenpilotDevice other)
-        {
-            return Equals(IpAddress, other.IpAddress);
-        }
-
-        public override bool Equals(object obj)
-        {
-            if (ReferenceEquals(null, obj))
-            {
-                return false;
-            }
-
-            if (ReferenceEquals(this, obj))
-            {
-                return true;
-            }
-
-            if (obj.GetType() != GetType())
-            {
-                return false;
-            }
-
-            return Equals((OpenpilotDevice)obj);
-        }
-
-        public override int GetHashCode()
-        {
-            return IpAddress != null ? IpAddress.GetHashCode() : 0;
-        }
-
-        public static bool operator ==(OpenpilotDevice left, OpenpilotDevice right)
-        {
-            return Equals(left, right);
-        }
-
-        public static bool operator !=(OpenpilotDevice left, OpenpilotDevice right)
-        {
-            return !Equals(left, right);
-        }
-
-        public void ChangeDirectory(string path)
-        {
-            SftpClient.ChangeDirectory(path);
-        }
-
-        public IEnumerable<SftpFile> EnumerateFileSystemEntries(string path = "/")
-        {
-            var fileSystemEntries = SftpClient.EnumerateFileSystemEntries(path);
-            return fileSystemEntries;
-        }
-
-        public IEnumerable<SftpFile> EnumerateFiles(string path = ".")
-        {
-            var directoryListing = SftpClient.ListDirectory(path);
-            return directoryListing;
-        }
-
         public static async IAsyncEnumerable<OpenpilotDevice> DiscoverAsync()
         {
-            Log.Information("Scanning network for devices.");
             var pingRequests = new List<Task<OpenpilotDevice>>();
             HashSet<string> addressList = new HashSet<string>();
 
             foreach (var networkInterface in NetworkInterface.GetAllNetworkInterfaces())
             {
-                Log.Information("Found network interface: {interface}", networkInterface.Name);
+                Serilog.Log.Information("Found network interface: {interface}", networkInterface.Name);
 
                 var unicastAddresses = networkInterface.GetIPProperties().UnicastAddresses;
                 foreach (var unicastAddress in unicastAddresses)
@@ -141,7 +72,7 @@ namespace OpenpilotSdk.Hardware
                     var startIPAddress = Convert.ToString(startAddressBytes[0]) + "." + Convert.ToString(startAddressBytes[1]) + "." +
                         Convert.ToString(startAddressBytes[2]) + "." + Convert.ToString(startAddressBytes[3]);
 
-                    if (startIPAddress == "192.168.43.1")
+                    if(startIPAddress == "192.168.43.1")
                     {
                         if (!addressList.Contains(startIPAddress))
                         {
@@ -183,7 +114,7 @@ namespace OpenpilotSdk.Hardware
             {
                 var timeout = Task.Delay(10000);
                 var result = await Task.WhenAny(Task.WhenAny(pingRequests), timeout).ConfigureAwait(false);
-
+                
                 if (result != timeout)
                 {
                     var pingResult = await ((Task<Task<OpenpilotDevice>>)result).ConfigureAwait(false);
@@ -202,6 +133,7 @@ namespace OpenpilotSdk.Hardware
             }
         }
 
+     
         public static async Task<OpenpilotDevice> GetOpenpilotDevice(string address, int port, int timeout = 5000)
         {
             try
@@ -210,10 +142,10 @@ namespace OpenpilotSdk.Hardware
                 var socketConnected = false;
                 using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
                 {
-
+                 
                     var socketTask = socket.ConnectAsync(address, port);
                     await Task.WhenAny(Task.Delay(timeout), socketTask).ConfigureAwait(false);
-
+                       
                     socketConnected = socket.Connected;
 
                     if (socketConnected)
@@ -224,16 +156,14 @@ namespace OpenpilotSdk.Hardware
                     socket.Disconnect(false);
                     socket.Close();
                 }
-
+                   
                 if (socketConnected)
                 {
                     Serilog.Log.Information("Connected to {Address} on port {port}", address, port);
 
                     var privateKeys = new PrivateKeyFile[]
                     {
-                        new PrivateKeyFile(Path.Combine(
-                            AppContext.BaseDirectory,
-                            "opensshkey"))
+                        new PrivateKeyFile(Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.Personal), "opensshkey"))
                     };
 
                     bool foundDevice = false;
@@ -388,17 +318,61 @@ namespace OpenpilotSdk.Hardware
         {
             if (SftpClient == null || !SftpClient.IsConnected)
             {
-                var connectionInfo = new ConnectionInfo(IpAddress.ToString(), Port,
+                var connectionInfo = new ConnectionInfo(IpAddress.ToString(), SshPort,
                     "comma",
                     new PrivateKeyAuthenticationMethod("comma",
-                        new PrivateKeyFile(Path.Combine(AppContext.BaseDirectory,
-                            "opensshkey"))));
+                        new PrivateKeyFile(Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.Personal), "opensshkey"))));
                 SftpClient = new SftpClient(connectionInfo);
                 SshClient = new SshClient(connectionInfo);
-                
+
                 SftpClient.Connect();
                 SshClient.Connect();
             }
+        }
+
+        public override string ToString()
+        {
+            return IpAddress.ToString();
+        }
+
+        protected bool Equals(OpenpilotDevice other)
+        {
+            return Equals(IpAddress, other.IpAddress);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj))
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, obj))
+            {
+                return true;
+            }
+
+            if (obj.GetType() != GetType())
+            {
+                return false;
+            }
+
+            return Equals((OpenpilotDevice)obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return IpAddress != null ? IpAddress.GetHashCode() : 0;
+        }
+
+        public static bool operator ==(OpenpilotDevice left, OpenpilotDevice right)
+        {
+            return Equals(left, right);
+        }
+
+        public static bool operator !=(OpenpilotDevice left, OpenpilotDevice right)
+        {
+            return !Equals(left, right);
         }
     }
 }

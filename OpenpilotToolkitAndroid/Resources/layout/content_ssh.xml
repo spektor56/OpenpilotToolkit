@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    app:layout_behavior="@string/appbar_scrolling_view_behavior"
+    tools:showIn="@layout/app_bar_main">
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center_horizontal|center_vertical"
+        android:layout_gravity="center_vertical"
+        android:id="@+id/progressSectionSSH"
+        android:visibility="gone">
+        <TextView
+            android:text="Generating SSH key pair"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:id="@+id/progressTextSSH" />
+
+        <com.google.android.material.progressindicator.CircularProgressIndicator
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:indeterminate="true"/>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_margin="32dp"
+        android:orientation="vertical"
+        android:layout_gravity="center_vertical"
+        android:gravity="center_vertical"
+        android:id="@+id/sshLoginLayout">
+        
+	    
+    
+
+	        
+
+	    <EditText
+		    android:layout_height="65dp"
+		    android:layout_width="match_parent"
+		    android:inputType="text"
+		    android:hint="Github Username"
+		    android:id="@+id/txtUsername" />
+        
+	    <Button
+		    android:layout_width="match_parent"
+		    android:layout_height="wrap_content"
+		    android:text="LOGIN"
+		    android:onClick="GithubLogin" />
+
+        
+      
+    </LinearLayout>
+	<android.webkit.WebView
+		android:layout_width="match_parent"
+		android:layout_height="match_parent"
+		android:id="@+id/webView1" />
+
+</RelativeLayout>

@@ -1,4 +1,4 @@
-﻿namespace OpenpilotSdk.Git
+﻿namespace OpenpilotToolkitAndroid.Git
 {
     public class ForkResult
     {
@@ -8,7 +8,7 @@
         public ForkResult(string message, bool success)
         {
             Success = success;
-            Message = message ?? "";
+            Message = message;
         }
     }
 }

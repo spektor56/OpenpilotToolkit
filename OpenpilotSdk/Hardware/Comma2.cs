@@ -14,11 +14,9 @@ using FFMpegCore.Pipes;
 using GeoCoordinatePortable;
 using NetTopologySuite.IO;
 using OpenpilotSdk.Exceptions;
-using OpenpilotSdk.Git;
 using OpenpilotSdk.OpenPilot;
 using Renci.SshNet.Sftp;
 using OpenpilotSdk.Sftp;
-using Renci.SshNet;
 
 namespace OpenpilotSdk.Hardware
 {
@@ -367,7 +365,6 @@ namespace OpenpilotSdk.Hardware
             return firmwares;
         }
 
-
         public async Task<GpxFile> GenerateGpxFileAsync(Drive drive, IProgress<int> progress = null)
         {
             var waypoints = new List<GpxWaypoint>();
@@ -381,8 +378,6 @@ namespace OpenpilotSdk.Hardware
                     progress.Report(driveSegment.Index);
                 }
             }
-
-            
             
             var waypointTable = new ImmutableGpxWaypointTable(waypoints);
             var trackSegment = new GpxTrackSegment(waypointTable, null);
@@ -392,8 +387,6 @@ namespace OpenpilotSdk.Hardware
             
             return gpxFile;
         }
-
-        
 
         public IEnumerable<Drive> GetDrives()
         {
@@ -448,65 +441,6 @@ namespace OpenpilotSdk.Hardware
             if (segmentList.Count > 0)
             {
                 yield return new Drive(driveDate, segmentList);
-            }
-        }
-
-        public override string ToString()
-        {
-            return IpAddress.ToString();
-        }
-
-        protected bool Equals(Comma2 other)
-        {
-            return Equals(IpAddress, other.IpAddress);
-        }
-
-        public override bool Equals(object obj)
-        {
-            if (ReferenceEquals(null, obj))
-            {
-                return false;
-            }
-
-            if (ReferenceEquals(this, obj))
-            {
-                return true;
-            }
-
-            if (obj.GetType() != GetType())
-            {
-                return false;
-            }
-
-            return Equals((Comma2) obj);
-        }
-
-        public override int GetHashCode()
-        {
-            return IpAddress != null ? IpAddress.GetHashCode() : 0;
-        }
-
-        public static bool operator ==(Comma2 left, Comma2 right)
-        {
-            return Equals(left, right);
-        }
-
-        public static bool operator !=(Comma2 left, Comma2 right)
-        {
-            return !Equals(left, right);
-        }
-
-        public async Task<ForkResult> InstallFork(string username, string branch)
-        {
-            var installCommand =
-                string.Format(@"cd /data && rm -rf openpilot; git clone -b {1} --depth 1 --single-branch --recurse-submodules --shallow-submodules https://github.com/{0}/openpilot.git openpilot && reboot", username, branch);
-
-            using (var command = SshClient.CreateCommand(installCommand))
-            {
-                var result = await Task.Factory.FromAsync(command.BeginExecute(), command.EndExecute).ConfigureAwait(false);
-                var success = command.ExitStatus == 0 || !(string.IsNullOrWhiteSpace(result) && !string.IsNullOrWhiteSpace(command.Error));
-                return new ForkResult(string.IsNullOrWhiteSpace(result) ? command.Error : result,
-                    success);
             }
         }
     }
