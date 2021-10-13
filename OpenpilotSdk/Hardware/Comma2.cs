@@ -255,7 +255,7 @@ namespace OpenpilotSdk.Hardware
 
         public DriveSegment GetSegment(DateTime driveDate, int index)
         {
-            var segmentFolder = @"/storage/emulated/0/realdata/" + driveDate.ToString("yyyy-MM-dd--HH-mm-ss--" + index);
+            var segmentFolder = Path.Combine(StorageDirectory,driveDate.ToString("yyyy-MM-dd--HH-mm-ss--" + index));
             var segmentFiles = SftpClient.GetFiles(segmentFolder);
             
 
@@ -395,7 +395,7 @@ namespace OpenpilotSdk.Hardware
                 throw new NotConnectedException("No connection has been made to the comma2");
             }
             
-            var directoryListing = SftpClient.ListDirectory(@"/storage/emulated/0/realdata").Where(dir => OpenPilot.Extensions.FolderRegex.IsMatch(dir.Name))
+            var directoryListing = SftpClient.ListDirectory(StorageDirectory).Where(dir => OpenPilot.Extensions.FolderRegex.IsMatch(dir.Name))
                 .OrderBy(dir =>
                 {
                     var matches = OpenPilot.Extensions.FolderRegex.Match(dir.Name);

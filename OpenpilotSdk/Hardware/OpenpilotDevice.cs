@@ -31,6 +31,8 @@ namespace OpenpilotSdk.Hardware
         protected SftpClient SftpClient;
         protected SshClient SshClient;
 
+        public virtual string StorageDirectory { get; protected set; } = @"/storage/emulated/0/realdata/";
+
         public string WorkingDirectory
         {
             get

@@ -10,6 +10,8 @@ namespace OpenpilotSdk.Hardware
 {
     public class Comma3 : OpenpilotDevice
     {
+        public override string StorageDirectory { get; protected set; } = @"/data/media/0/realdata/";
+
         public Comma3(IPAddress hostAddress, bool isAuthenticated = true)
         {
             IsAuthenticated = isAuthenticated;
