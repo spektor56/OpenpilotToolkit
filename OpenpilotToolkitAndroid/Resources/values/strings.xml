@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">Openpilot Toolkit</string>
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="action_settings">Scan Network For Devices</string>
+	<string name="planet_prompt">Choose a planet</string>
+	<string name="label">Openpilot Device</string>
+	<string name="fork_username">Fork Username</string>
+	<string name="fork_branch">Branch Name</string>
+
+</resources>

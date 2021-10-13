@@ -1,10 +1,11 @@
 ﻿using System;
 using System.IO;
+using OpenpilotToolkitAndroid.Hardware;
 using System.Net;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using OpenpilotSdk.Git;
-using OpenpilotSdk.OpenPilot.Fork;
+using OpenpilotToolkitAndroid.Git;
+using OpenpilotToolkitAndroid.Openpilot.Fork;
 
 namespace OpenpilotSdk.Hardware
 {
@@ -108,5 +109,6 @@ namespace OpenpilotSdk.Hardware
                     success);
             }
         }
+
     }
 }

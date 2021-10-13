@@ -1,65 +1,65 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
-    <LangVersion>9.0</LangVersion>
-	<DebugType>embedded</DebugType>
-	<LangVersion>preview</LangVersion>
-	<Platforms>x64</Platforms>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net6.0</TargetFramework>
+		<LangVersion>9.0</LangVersion>
+		<DebugType>embedded</DebugType>
+		<LangVersion>preview</LangVersion>
+		<Platforms>x64</Platforms>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <CapnpCsharpObsoleteCodeBehindFiles Remove="OpenPilot\Cereal\car.capnp.cs" />
-    <CapnpCsharpObsoleteCodeBehindFiles Remove="OpenPilot\Cereal\Include\c++.capnp.cs" />
-    <CapnpCsharpObsoleteCodeBehindFiles Remove="OpenPilot\Cereal\Include\java.capnp.cs" />
-    <CapnpCsharpObsoleteCodeBehindFiles Remove="OpenPilot\Cereal\legacy.capnp.cs" />
-    <CapnpCsharpObsoleteCodeBehindFiles Remove="OpenPilot\Cereal\log.capnp.cs" />
-  </ItemGroup>
+	<ItemGroup>
+		<CapnpCsharpObsoleteCodeBehindFiles Remove="OpenPilot\Cereal\car.capnp.cs" />
+		<CapnpCsharpObsoleteCodeBehindFiles Remove="OpenPilot\Cereal\Include\c++.capnp.cs" />
+		<CapnpCsharpObsoleteCodeBehindFiles Remove="OpenPilot\Cereal\Include\java.capnp.cs" />
+		<CapnpCsharpObsoleteCodeBehindFiles Remove="OpenPilot\Cereal\legacy.capnp.cs" />
+		<CapnpCsharpObsoleteCodeBehindFiles Remove="OpenPilot\Cereal\log.capnp.cs" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <None Remove="ffmpeg.exe" />
-    <None Remove="ffprobe.exe" />
-  </ItemGroup>
+	<ItemGroup>
+		<None Remove="ffmpeg.exe" />
+		<None Remove="ffprobe.exe" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <Content Include="ffmpeg.exe">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="ffprobe.exe">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
+	<ItemGroup>
+		<Content Include="ffmpeg.exe">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Include="ffprobe.exe">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+	</ItemGroup>
 
-  <ItemGroup>
-    <None Include="..\.editorconfig" Link=".editorconfig" />
-  </ItemGroup>
+	<ItemGroup>
+		<None Include="..\.editorconfig" Link=".editorconfig" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Capnp.Net.Runtime" Version="1.3.118" />
-    <PackageReference Include="CapnpC.CSharp.MsBuild.Generation" Version="1.3.118" />
-    <PackageReference Include="FFMpegCore" Version="4.4.0" />
-    <PackageReference Include="GeoCoordinate.NetStandard1" Version="1.0.1" />
-    <PackageReference Include="NetTopologySuite" Version="2.3.0" />
-    <PackageReference Include="NetTopologySuite.IO.GPX" Version="1.1.1" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-    <PackageReference Include="Serilog" Version="2.10.0" />
-    <PackageReference Include="Serilog.Sinks.Console" Version="4.0.0" />
-    <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
-    <PackageReference Include="SharpZipLib" Version="1.3.2" />
-    <PackageReference Include="SshNet.Security.Cryptography" Version="1.3.0" />
-    <PackageReference Include="System.Drawing.Common" Version="5.0.2" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Capnp.Net.Runtime" Version="1.3.118" />
+		<PackageReference Include="CapnpC.CSharp.MsBuild.Generation" Version="1.3.118" />
+		<PackageReference Include="FFMpegCore" Version="4.4.0" />
+		<PackageReference Include="GeoCoordinate.NetStandard1" Version="1.0.1" />
+		<PackageReference Include="NetTopologySuite" Version="2.3.0" />
+		<PackageReference Include="NetTopologySuite.IO.GPX" Version="1.1.1" />
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+		<PackageReference Include="Serilog" Version="2.10.0" />
+		<PackageReference Include="Serilog.Sinks.Console" Version="4.0.0" />
+		<PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
+		<PackageReference Include="SharpZipLib" Version="1.3.2" />
+		<PackageReference Include="SshNet.Security.Cryptography" Version="1.3.0" />
+		<PackageReference Include="System.Drawing.Common" Version="5.0.2" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <Reference Include="Renci.SshNet">
-      <HintPath>Libs\Renci.SshNet.dll</HintPath>
-    </Reference>
-  </ItemGroup>
+	<ItemGroup>
+		<Reference Include="Renci.SshNet">
+			<HintPath>Libs\Renci.SshNet.dll</HintPath>
+		</Reference>
+	</ItemGroup>
 
-  <ItemGroup>
-    <None Update="opensshkey">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
+	<ItemGroup>
+		<None Update="opensshkey">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
 
 </Project>
