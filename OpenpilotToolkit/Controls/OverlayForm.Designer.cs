@@ -46,6 +46,7 @@ namespace OpenpilotToolkit.Controls
             this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "4";
+            this.Shown += new System.EventHandler(this.OverlayForm_Shown);
             this.ResumeLayout(false);
 
         }

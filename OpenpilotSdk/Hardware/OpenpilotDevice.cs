@@ -17,7 +17,6 @@ using FFMpegCore.Exceptions;
 using FFMpegCore.Pipes;
 using GeoCoordinatePortable;
 using NetTopologySuite.IO;
-using OpenpilotSdk.Exceptions;
 using OpenpilotSdk.Git;
 using OpenpilotSdk.OpenPilot;
 using OpenpilotSdk.OpenPilot.Fork;
@@ -47,6 +46,8 @@ namespace OpenpilotSdk.Hardware
         public virtual string RebootCommand { get; protected set; } = @"am start -a android.intent.action.REBOOT";
         public virtual string ShutdownCommand { get; protected set; } = @"am start -n android/com.android.internal.app.ShutdownActivity";
         public virtual string FlashCommand { get; protected set; } = @"cd /data/openpilot/panda/board && ./recover.sh";
+        public virtual string InstallEmuCommand { get; protected set; } = @"cd /data/openpilot && echo 'y' | bash <(curl -fsSL install.emu.sh) && source /data/community/.bashrc";
+        public virtual string GitPullCommand { get; protected set; } = @"cd /data/openpilot && git pull";
 
         public string WorkingDirectory
         {
@@ -59,7 +60,7 @@ namespace OpenpilotSdk.Hardware
         public SftpFileStream OpenRead(string path)
         {
             Connect();
-
+            
             return SftpClient.OpenRead(path);
         }
 
@@ -286,7 +287,7 @@ namespace OpenpilotSdk.Hardware
                                     .ForceFormat("rawvideo"))
                             .ProcessAsynchronously();
                     }
-                    catch (FFMpegException e)
+                    catch (FFMpegException)
                     {
                         System.Diagnostics.Debug.Print("FFMpeg pipe exception");
                     }
@@ -309,12 +310,12 @@ namespace OpenpilotSdk.Hardware
             var segmentFiles = SftpClient.GetFiles(segmentFolder);
 
 
-            SftpFile frontCamera = null;
-            SftpFile driverCamera = null;
-            SftpFile wideCamera = null;
-            SftpFile quickLog = null;
-            SftpFile rawLog = null;
-            SftpFile frontCameraQuick = null;
+            ISftpFile frontCamera = null;
+            ISftpFile driverCamera = null;
+            ISftpFile wideCamera = null;
+            ISftpFile quickLog = null;
+            ISftpFile rawLog = null;
+            ISftpFile frontCameraQuick = null;
 
             foreach (var segmentFile in segmentFiles)
             {
@@ -452,7 +453,7 @@ namespace OpenpilotSdk.Hardware
         {
             Connect();
 
-            IOrderedEnumerable<SftpFile> directoryListing;
+            IOrderedEnumerable<ISftpFile> directoryListing;
             try
             {
                 directoryListing = SftpClient.ListDirectory(StorageDirectory)
@@ -564,7 +565,7 @@ namespace OpenpilotSdk.Hardware
             SftpClient.ChangeDirectory(path);
         }
 
-        public IEnumerable<SftpFile> EnumerateFileSystemEntries(string path = "/")
+        public IEnumerable<ISftpFile> EnumerateFileSystemEntries(string path = "/")
         {
             Connect();
 
@@ -572,7 +573,7 @@ namespace OpenpilotSdk.Hardware
             return fileSystemEntries;
         }
 
-        public IEnumerable<SftpFile> EnumerateFiles(string path = ".")
+        public IEnumerable<ISftpFile> EnumerateFiles(string path = ".")
         {
             Connect();
 
@@ -773,11 +774,35 @@ namespace OpenpilotSdk.Hardware
             return null;
         }
 
+        public virtual async Task<bool> UpdateOpenpilotAsync()
+        {
+            Connect();
+
+            using (var command = SshClient.CreateCommand(GitPullCommand))
+            {
+                var result = await Task.Factory.FromAsync(command.BeginExecute(), command.EndExecute).ConfigureAwait(false);
+                var success = command.ExitStatus == 0;
+                return success;
+            }
+        }
+
         public virtual async Task<bool> FlashPandaAsync()
         {
             Connect();
 
             using (var command = SshClient.CreateCommand(FlashCommand))
+            {
+                var result = await Task.Factory.FromAsync(command.BeginExecute(), command.EndExecute).ConfigureAwait(false);
+                var success = command.ExitStatus == 0;
+                return success;
+            }
+        }
+
+        public virtual async Task<bool> InstallEmuAsync()
+        {
+            Connect();
+
+            using (var command = SshClient.CreateCommand(InstallEmuCommand))
             {
                 var result = await Task.Factory.FromAsync(command.BeginExecute(), command.EndExecute).ConfigureAwait(false);
                 var success = command.ExitStatus == 0;
@@ -899,8 +924,8 @@ namespace OpenpilotSdk.Hardware
         public ShellStream GetShellStream()
         {
             Connect();
-
-            return SshClient.CreateShellStream(this.ToString(), 0, 0, 0, 0, 1024);
+            var client = SshClient.CreateShellStream(this.ToString(), 0, 0, 0, 0, 1024);
+            return client;
         }
 
         private readonly SemaphoreSlim _connectionLock = new SemaphoreSlim(1, 1);

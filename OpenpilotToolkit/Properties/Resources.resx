@@ -124,17 +124,23 @@
   <data name="dark_mode_white" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\outline_dark_mode_white_24dp.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
+  <data name="outline_console_black_24dp" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\outline_console_black_24dp.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
   <data name="light_mode_black" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\outline_light_mode_black_24dp.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="outline_file_download_white_24dp" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\outline_file_download_white_24dp.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
+  <data name="outline_favorite_black_24dp" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\outline_favorite_black_24dp.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
   <data name="outline_wifi_white_24dp" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\outline_wifi_white_24dp.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="outline_description_white_24dp" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\outline_description_white_24dp.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  <data name="outline_wifi_black_24dp" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\outline_wifi_black_24dp.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="outline_folder_open_white_24dp" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\outline_folder_open_white_24dp.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
@@ -142,8 +148,8 @@
   <data name="outline_file_download_black_24dp" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\outline_file_download_black_24dp.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="outline_wifi_black_24dp" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\outline_wifi_black_24dp.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  <data name="git_fork_black" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\git_fork_black.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="outline_description_black_24dp" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\outline_description_black_24dp.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
@@ -157,8 +163,14 @@
   <data name="dark_mode_black" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\outline_dark_mode_black_24dp.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
+  <data name="ic_launcher_web" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\ic_launcher-web.ico;System.Drawing.Icon, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
   <data name="outline_settings_black_24dp" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\outline_settings_black_24dp.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ic_launcher_web1" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\ic_launcher-web.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="ssh" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\ssh.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
@@ -166,25 +178,16 @@
   <data name="outline_flash_on_white_24dp" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\outline_flash_on_white_24dp.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="outline_settings_white_24dp" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\outline_settings_white_24dp.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="ic_launcher_web" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\ic_launcher-web.ico;System.Drawing.Icon, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="ic_launcher_web1" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\ic_launcher-web.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="outline_favorite_black_24dp" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\outline_favorite_black_24dp.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  <data name="outline_description_white_24dp" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\outline_description_white_24dp.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="outline_favorite_white_24dp" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\outline_favorite_white_24dp.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="git_fork_black" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\git_fork_black.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  <data name="outline_settings_white_24dp" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\outline_settings_white_24dp.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="outline_console_black_24dp" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\outline_console_black_24dp.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  <data name="splash1" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\splash.jpg;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
 </root>

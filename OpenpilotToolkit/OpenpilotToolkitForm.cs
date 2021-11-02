@@ -17,6 +17,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using CefSharp;
+using CefSharp.WinForms;
 using LibVLCSharp.Shared;
 using MaterialSkin;
 using MaterialSkin.Controls;
@@ -28,6 +29,7 @@ using OpenpilotSdk.OpenPilot.Fork;
 using OpenpilotToolkit.Android;
 using OpenpilotToolkit.Controls;
 using OpenpilotToolkit.Json;
+using OpenpilotToolkit.Stream;
 using Renci.SshNet;
 using Renci.SshNet.Common;
 using SixLabors.ImageSharp;
@@ -76,10 +78,21 @@ namespace OpenpilotToolkit
             lbDrives.ForeColor = MaterialSkinManager.Instance.TextHighEmphasisColor;
         }
 
-        
+        private ChromiumWebBrowser sshTerminal;
 
         private async void Form1_Load(object sender, EventArgs e)
         {
+            sshTerminal =
+                new ChromiumWebBrowser(
+                    "file:///C:/Users/l-bre/source/repos/OpenpilotToolkit/OpenpilotToolkit/Controls/Terminal/index.html");
+            
+            sshTerminal.Dock = DockStyle.Fill;
+            sshTerminal.CreateControl();
+
+            sshTerminal.JavascriptMessageReceived += SshTerminal_JavascriptMessageReceived;
+
+            this.tableLayoutPanel1.Controls.Add(sshTerminal, 0, 0);
+
             _libVlc = new LibVLC();
             vlcVideoPlayer.Initialize(_libVlc);
             vlcVideoPlayer.vlcVideoView.MediaPlayer.TimeChanged += MediaPlayerOnTimeChanged; 
@@ -135,7 +148,6 @@ namespace OpenpilotToolkit
             var query = new WqlEventQuery("SELECT * FROM Win32_DeviceChangeEvent WHERE EventType = 2 OR EventType = 3 GROUP WITHIN 1");
             watcher.EventArrived += (o, args) =>
             {
-                Debug.Print("IN HERE");
                 var devices = Fastboot.GetDevices();
 
                 if(devices.Length > _connectedFastbootDevices)
@@ -166,6 +178,15 @@ namespace OpenpilotToolkit
             //flowLayoutPanel1.HorizontalScroll.Visible = false;
 
             await ScanDevices();
+        }
+
+        private void SshTerminal_JavascriptMessageReceived(object sender, JavascriptMessageReceivedEventArgs e)
+        {
+            if (_shellStream != null)
+            {
+                var param = e.Message.ToString().Split(',');
+                _shellStream.SendWindowSizeChange(Convert.ToUInt32(param[1]), Convert.ToUInt32(param[0]), 0, 0);
+            }
         }
 
         private void MediaPlayerOnTimeChanged(object sender, MediaPlayerTimeChangedEventArgs e)
@@ -364,6 +385,7 @@ namespace OpenpilotToolkit
                 {
                     if (lbDrives.SelectedItems.Count < 2 && lbDrives.SelectedItem is Drive drive)
                     {
+                       
                         vlcVideoPlayer.vlcVideoView.MediaPlayer.Stop();
                         pbPreview.Image = null;
                         pbPreview.BringToFront();
@@ -379,8 +401,17 @@ namespace OpenpilotToolkit
                                     var videoFile = firstSegment.FrontCameraQuick ?? firstSegment.FrontCamera;
                                     if (videoFile != null)
                                     {
-                                        var fs = openpilotDevice.OpenRead(drive.Segments.First().FrontCameraQuick.FullName);
-                                        vlcVideoPlayer.Play(fs);
+                                        Renci.SshNet.Sftp.SftpFileStream videoStream = null;
+                                        if (firstSegment.FrontCameraQuick != null && videoFile == firstSegment.FrontCameraQuick)
+                                        {
+                                            videoStream = openpilotDevice.OpenRead(videoFile.FullName);
+                                        }
+                                        else
+                                        {
+                                            videoStream = openpilotDevice.OpenRead(videoFile.FullName);
+                                        }
+
+                                        vlcVideoPlayer.Play(videoStream);
                                     }
 
                                 }
@@ -721,7 +752,7 @@ namespace OpenpilotToolkit
                     //TODO: _fileList = comma2.EnumerateFileSystemEntries
 
                     txtWorkingDirectory.Text = openpilotDevice.WorkingDirectory;
-                    IEnumerable<Renci.SshNet.Sftp.SftpFile> files = null;
+                    IEnumerable<Renci.SshNet.Sftp.ISftpFile> files = null;
 
                     var directories = openpilotDevice.WorkingDirectory.Split("/");
                     foreach (var directory in directories)
@@ -768,18 +799,26 @@ namespace OpenpilotToolkit
             }
             else if (e.TabPage != null && e.TabPage == tpShell)
             {
-
+                
                 if (cmbDevices.SelectedItem is OpenpilotDevice openpilotDevice)
                 {
-                    txtTerminalText.Clear();
+                    
                     try
                     {
+                        if (_shellStream != null)
+                        {
+                            _shellStream.DataReceived -= ShellStreamOnDataReceived;
+                            await _shellStream.DisposeAsync();
+                        }
+
+                        await sshTerminal.EvaluateScriptAsync("ClearTerminal()");
+
                         await Task.Run(() =>
                         {
                             _shellStream = openpilotDevice.GetShellStream();
                             _streamReader = new StreamReader(_shellStream);
                         });
-
+                        await sshTerminal.EvaluateScriptAsync("resizeTerminal()");
                         _shellStream.DataReceived += ShellStreamOnDataReceived;
                     }
                     catch (Exception ex)
@@ -791,7 +830,6 @@ namespace OpenpilotToolkit
             }
         }
 
-        private Regex _ansiColor = new Regex(@"\[[^m]+m", RegexOptions.Compiled);
         private StreamReader _streamReader = null;
         private SemaphoreSlim terminalLock = new SemaphoreSlim(1, 1);
 
@@ -802,16 +840,11 @@ namespace OpenpilotToolkit
             {
                 if (_shellStream.DataAvailable)
                 {
-
-
                     var terminalText = await _streamReader.ReadToEndAsync();
-                    terminalText = _ansiColor.Replace(terminalText, "");
-                    Invoke(new MethodInvoker(() =>
+                    Invoke(new MethodInvoker(async () =>
                     {
-                        txtTerminalText.AppendText(terminalText);
-                        
+                        await sshTerminal.EvaluateScriptAsync("WriteText", new object[] { terminalText });
                     }));
-
                 }
             }
             finally
@@ -922,7 +955,7 @@ namespace OpenpilotToolkit
                 var newPath = string.Join("/", _workingDirectory.Reverse());
                 newPath = newPath.Length < 1 ? "/" : newPath;
 
-                IEnumerable<Renci.SshNet.Sftp.SftpFile> files = null;
+                IEnumerable<Renci.SshNet.Sftp.ISftpFile> files = null;
                 await Task.Run(() =>
                 {
                     var currentWorkingDirectory = string.Join("/", newPath);
@@ -1084,6 +1117,10 @@ namespace OpenpilotToolkit
         {
             if (_shellStream != null)
             {
+                
+                //var command2 = txtSshCommand.Text;
+                //await _shellStream.WriteAsync(new ReadOnlyMemory<byte>(Encoding.UTF8.GetBytes(command2 + "\r")));
+
                 if (e.KeyCode == Keys.Enter)
                 {
                     _historyIndex = 0;
@@ -1096,6 +1133,7 @@ namespace OpenpilotToolkit
                     await _shellStream.FlushAsync();
 
                 }
+                
                 else if (e.KeyCode == Keys.Up)
                 {
                     _historyIndex++;
@@ -1142,7 +1180,7 @@ namespace OpenpilotToolkit
 
         private void txtTerminalText_TextChanged(object sender, EventArgs e)
         {
-            ScrollToBottom(txtTerminalText);
+            //ScrollToBottom(txtTerminalText);
         }
 
         private void tpRemote_Click(object sender, EventArgs e)
@@ -1196,6 +1234,38 @@ namespace OpenpilotToolkit
                     return;
                 }
 
+            }
+        }
+
+        private async void materialButton1_Click_1(object sender, EventArgs e)
+        {
+            if (cmbDevices.SelectedItem is OpenpilotDevice openpilotDevice)
+            {
+                bool result = false;
+                await Task.Run(async () =>
+                {
+                    result = await openpilotDevice.InstallEmuAsync();
+                });
+
+                if(result)
+                {
+                    ToolkitMessageDialog.ShowDialog("Emu Installed.");
+                }
+                else
+                {
+                    ToolkitMessageDialog.ShowDialog("Emu Installation Failed.");
+                }
+            }
+        }
+
+        private void btnUpdate_Click(object sender, EventArgs e)
+        {
+            if (cmbDevices.SelectedItem is OpenpilotDevice openpilotDevice)
+            {
+                Task.Run(async () =>
+                {
+                    var result = await openpilotDevice.UpdateOpenpilotAsync();
+                });
             }
         }
     }

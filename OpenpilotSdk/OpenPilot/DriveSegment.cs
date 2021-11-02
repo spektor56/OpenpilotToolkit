@@ -4,16 +4,16 @@ namespace OpenpilotSdk.OpenPilot
 {
     public class DriveSegment
     {
-        public SftpFile DriverCamera { get; }
-        public SftpFile WideCamera { get; }
-        public SftpFile FrontCamera { get; }
-        public SftpFile QuickLog { get; }
-        public SftpFile RawLog { get; }
-        public SftpFile FrontCameraQuick { get; }
+        public ISftpFile DriverCamera { get; }
+        public ISftpFile WideCamera { get; }
+        public ISftpFile FrontCamera { get; }
+        public ISftpFile QuickLog { get; }
+        public ISftpFile RawLog { get; }
+        public ISftpFile FrontCameraQuick { get; }
 
         public int Index { get; }
 
-        public DriveSegment(int index, SftpFile frontCamera, SftpFile quickLog, SftpFile rawLog = null, SftpFile driverCamera = null, SftpFile frontCameraQuick = null, SftpFile wideCamera = null)
+        public DriveSegment(int index, ISftpFile frontCamera, ISftpFile quickLog, ISftpFile rawLog = null, ISftpFile driverCamera = null, ISftpFile frontCameraQuick = null, ISftpFile wideCamera = null)
         {
             Index = index;
             FrontCamera = frontCamera;

@@ -19,6 +19,7 @@ namespace OpenpilotToolkit.Controls
         private OverlayForm _overlayForm;
         public ToolkitMessageDialog(string text, MessageBoxButtons buttons, ContainerControl parent)
         {
+            Opacity = 0;
             if (parent != null)
             {
                 _overlayForm = new OverlayForm(parent);
@@ -73,6 +74,11 @@ namespace OpenpilotToolkit.Controls
         private void ToolkitMessageDialog_Load(object sender, EventArgs e)
         {
             CenterToParent();
+        }
+
+        private void ToolkitMessageDialog_Shown(object sender, EventArgs e)
+        {
+            Opacity = 100;
         }
     }
 }

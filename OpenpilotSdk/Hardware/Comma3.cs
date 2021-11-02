@@ -4,7 +4,7 @@ namespace OpenpilotSdk.Hardware
 {
     public class Comma3 : OpenpilotDevice
     {
-        protected virtual string NotConnectedMessage { get; set; } = "No connection has been made to the Comma3";
+        protected override string NotConnectedMessage { get; set; } = "No connection has been made to the Comma3";
 
         public override string StorageDirectory { get; protected set; } = @"/data/media/0/realdata/";
         public override string RebootCommand { get; protected set; } = @"sudo reboot";
