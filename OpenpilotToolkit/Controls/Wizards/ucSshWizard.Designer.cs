@@ -43,8 +43,9 @@ namespace OpenpilotToolkit.Controls.Wizards
             this.pictureBox1 = new System.Windows.Forms.PictureBox();
             this.label1 = new System.Windows.Forms.Label();
             this.panel1 = new System.Windows.Forms.Panel();
-            this.btnPrevious = new MaterialSkin.Controls.MaterialButton();
+            this.flowLayoutPanel1 = new System.Windows.Forms.FlowLayoutPanel();
             this.btnNext = new MaterialSkin.Controls.MaterialButton();
+            this.btnPrevious = new MaterialSkin.Controls.MaterialButton();
             this.tableLayoutPanel1.SuspendLayout();
             this.mtcSSHWizard.SuspendLayout();
             this.tpGithubLogin.SuspendLayout();
@@ -53,6 +54,7 @@ namespace OpenpilotToolkit.Controls.Wizards
             this.tableLayoutPanel2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.panel1.SuspendLayout();
+            this.flowLayoutPanel1.SuspendLayout();
             this.SuspendLayout();
             // 
             // tableLayoutPanel1
@@ -89,6 +91,7 @@ namespace OpenpilotToolkit.Controls.Wizards
             // 
             // tpGithubLogin
             // 
+            this.tpGithubLogin.BackColor = System.Drawing.Color.White;
             this.tpGithubLogin.Controls.Add(this.txtUsername);
             this.tpGithubLogin.Controls.Add(this.btnLogin);
             this.tpGithubLogin.Location = new System.Drawing.Point(4, 24);
@@ -97,11 +100,11 @@ namespace OpenpilotToolkit.Controls.Wizards
             this.tpGithubLogin.Size = new System.Drawing.Size(542, 277);
             this.tpGithubLogin.TabIndex = 0;
             this.tpGithubLogin.Text = "Github Login";
-            this.tpGithubLogin.UseVisualStyleBackColor = true;
             // 
             // txtUsername
             // 
             this.txtUsername.Anchor = System.Windows.Forms.AnchorStyles.None;
+            this.txtUsername.AnimateReadOnly = false;
             this.txtUsername.BorderStyle = System.Windows.Forms.BorderStyle.None;
             this.txtUsername.Depth = 0;
             this.txtUsername.Font = new System.Drawing.Font("Roboto", 16F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel);
@@ -144,6 +147,7 @@ namespace OpenpilotToolkit.Controls.Wizards
             // 
             // tpGenerateKey
             // 
+            this.tpGenerateKey.BackColor = System.Drawing.Color.White;
             this.tpGenerateKey.Controls.Add(this.btnGenerateSSHKey);
             this.tpGenerateKey.Location = new System.Drawing.Point(4, 24);
             this.tpGenerateKey.Name = "tpGenerateKey";
@@ -151,7 +155,6 @@ namespace OpenpilotToolkit.Controls.Wizards
             this.tpGenerateKey.Size = new System.Drawing.Size(542, 277);
             this.tpGenerateKey.TabIndex = 1;
             this.tpGenerateKey.Text = "Generate Key";
-            this.tpGenerateKey.UseVisualStyleBackColor = true;
             // 
             // btnGenerateSSHKey
             // 
@@ -178,13 +181,13 @@ namespace OpenpilotToolkit.Controls.Wizards
             // 
             // tpSettings
             // 
+            this.tpSettings.BackColor = System.Drawing.Color.White;
             this.tpSettings.Controls.Add(this.tableLayoutPanel2);
             this.tpSettings.Location = new System.Drawing.Point(4, 24);
             this.tpSettings.Name = "tpSettings";
             this.tpSettings.Size = new System.Drawing.Size(542, 277);
             this.tpSettings.TabIndex = 2;
             this.tpSettings.Text = "Settings";
-            this.tpSettings.UseVisualStyleBackColor = true;
             // 
             // tableLayoutPanel2
             // 
@@ -205,9 +208,9 @@ namespace OpenpilotToolkit.Controls.Wizards
             // 
             this.pictureBox1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.pictureBox1.Image = global::OpenpilotToolkit.Properties.Resources.ssh;
-            this.pictureBox1.Location = new System.Drawing.Point(3, 87);
+            this.pictureBox1.Location = new System.Drawing.Point(3, 108);
             this.pictureBox1.Name = "pictureBox1";
-            this.pictureBox1.Size = new System.Drawing.Size(536, 187);
+            this.pictureBox1.Size = new System.Drawing.Size(536, 166);
             this.pictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
             this.pictureBox1.TabIndex = 2;
             this.pictureBox1.TabStop = false;
@@ -219,42 +222,30 @@ namespace OpenpilotToolkit.Controls.Wizards
             this.label1.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.label1.Location = new System.Drawing.Point(3, 0);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(536, 84);
+            this.label1.Size = new System.Drawing.Size(536, 105);
             this.label1.TabIndex = 0;
             this.label1.Text = resources.GetString("label1.Text");
             this.label1.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // panel1
             // 
-            this.panel1.Controls.Add(this.btnPrevious);
-            this.panel1.Controls.Add(this.btnNext);
+            this.panel1.Controls.Add(this.flowLayoutPanel1);
             this.panel1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panel1.Location = new System.Drawing.Point(3, 314);
             this.panel1.Name = "panel1";
             this.panel1.Size = new System.Drawing.Size(550, 50);
             this.panel1.TabIndex = 1;
             // 
-            // btnPrevious
+            // flowLayoutPanel1
             // 
-            this.btnPrevious.AccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(64)))), ((int)(((byte)(129)))));
-            this.btnPrevious.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnPrevious.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.btnPrevious.Density = MaterialSkin.Controls.MaterialButton.MaterialButtonDensity.Default;
-            this.btnPrevious.Depth = 0;
-            this.btnPrevious.HighEmphasis = true;
-            this.btnPrevious.Icon = null;
-            this.btnPrevious.Location = new System.Drawing.Point(383, 8);
-            this.btnPrevious.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
-            this.btnPrevious.MouseState = MaterialSkin.MouseState.HOVER;
-            this.btnPrevious.Name = "btnPrevious";
-            this.btnPrevious.NoAccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(81)))), ((int)(((byte)(181)))));
-            this.btnPrevious.Size = new System.Drawing.Size(91, 36);
-            this.btnPrevious.TabIndex = 1;
-            this.btnPrevious.Text = "Previous";
-            this.btnPrevious.Type = MaterialSkin.Controls.MaterialButton.MaterialButtonType.Contained;
-            this.btnPrevious.UseAccentColor = true;
-            this.btnPrevious.UseVisualStyleBackColor = true;
-            this.btnPrevious.Click += new System.EventHandler(this.btnPrevious_Click);
+            this.flowLayoutPanel1.Controls.Add(this.btnNext);
+            this.flowLayoutPanel1.Controls.Add(this.btnPrevious);
+            this.flowLayoutPanel1.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.flowLayoutPanel1.FlowDirection = System.Windows.Forms.FlowDirection.RightToLeft;
+            this.flowLayoutPanel1.Location = new System.Drawing.Point(0, 0);
+            this.flowLayoutPanel1.Name = "flowLayoutPanel1";
+            this.flowLayoutPanel1.Size = new System.Drawing.Size(550, 50);
+            this.flowLayoutPanel1.TabIndex = 2;
             // 
             // btnNext
             // 
@@ -265,18 +256,42 @@ namespace OpenpilotToolkit.Controls.Wizards
             this.btnNext.Depth = 0;
             this.btnNext.HighEmphasis = true;
             this.btnNext.Icon = null;
-            this.btnNext.Location = new System.Drawing.Point(482, 8);
+            this.btnNext.Location = new System.Drawing.Point(478, 6);
             this.btnNext.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
             this.btnNext.MouseState = MaterialSkin.MouseState.HOVER;
             this.btnNext.Name = "btnNext";
             this.btnNext.NoAccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(81)))), ((int)(((byte)(181)))));
-            this.btnNext.Size = new System.Drawing.Size(64, 36);
+            this.btnNext.Size = new System.Drawing.Size(68, 36);
             this.btnNext.TabIndex = 0;
-            this.btnNext.Text = "Next";
+            this.btnNext.Text = "&Next";
             this.btnNext.Type = MaterialSkin.Controls.MaterialButton.MaterialButtonType.Contained;
             this.btnNext.UseAccentColor = true;
             this.btnNext.UseVisualStyleBackColor = true;
+            this.btnNext.Visible = false;
             this.btnNext.Click += new System.EventHandler(this.btnNext_Click);
+            // 
+            // btnPrevious
+            // 
+            this.btnPrevious.AccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(64)))), ((int)(((byte)(129)))));
+            this.btnPrevious.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnPrevious.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.btnPrevious.Density = MaterialSkin.Controls.MaterialButton.MaterialButtonDensity.Default;
+            this.btnPrevious.Depth = 0;
+            this.btnPrevious.HighEmphasis = true;
+            this.btnPrevious.Icon = null;
+            this.btnPrevious.Location = new System.Drawing.Point(370, 6);
+            this.btnPrevious.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+            this.btnPrevious.MouseState = MaterialSkin.MouseState.HOVER;
+            this.btnPrevious.Name = "btnPrevious";
+            this.btnPrevious.NoAccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(81)))), ((int)(((byte)(181)))));
+            this.btnPrevious.Size = new System.Drawing.Size(100, 36);
+            this.btnPrevious.TabIndex = 1;
+            this.btnPrevious.Text = "&Previous";
+            this.btnPrevious.Type = MaterialSkin.Controls.MaterialButton.MaterialButtonType.Contained;
+            this.btnPrevious.UseAccentColor = true;
+            this.btnPrevious.UseVisualStyleBackColor = true;
+            this.btnPrevious.Visible = false;
+            this.btnPrevious.Click += new System.EventHandler(this.btnPrevious_Click);
             // 
             // ucSshWizard
             // 
@@ -295,7 +310,8 @@ namespace OpenpilotToolkit.Controls.Wizards
             this.tableLayoutPanel2.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             this.panel1.ResumeLayout(false);
-            this.panel1.PerformLayout();
+            this.flowLayoutPanel1.ResumeLayout(false);
+            this.flowLayoutPanel1.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -316,5 +332,6 @@ namespace OpenpilotToolkit.Controls.Wizards
         private System.Windows.Forms.TableLayoutPanel tableLayoutPanel2;
         private System.Windows.Forms.PictureBox pictureBox1;
         private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.FlowLayoutPanel flowLayoutPanel1;
     }
 }

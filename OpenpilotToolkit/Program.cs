@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Threading;
 using System.Windows.Forms;
 using CefSharp.WinForms;
 using FFMpegCore;
@@ -18,6 +19,14 @@ namespace OpenpilotToolkit
         [STAThread]
         public static int Main(string[] args)
         {
+            Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
+            Application.SetHighDpiMode(HighDpiMode.DpiUnaware);
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+
+            var splashForm = new SplashScreen();
+            splashForm.Show();
+
             var exitCode = CefSharp.BrowserSubprocess.SelfHost.Main(args);
 
             if (exitCode >= 0)
@@ -27,6 +36,7 @@ namespace OpenpilotToolkit
 
             var settings = new CefSettings()
             {
+                CefCommandLineArgs = { ["disable-gpu-shader-disk-cache"] = "1" }
                 //By default CefSharp will use an in-memory cache, you need to specify a Cache Folder to persist data
                 //CachePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CefSharp\\Cache"),
                 //BrowserSubprocessPath = System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName
@@ -41,8 +51,6 @@ namespace OpenpilotToolkit
                 .WriteTo.File("logs/log.txt", rollingInterval: RollingInterval.Day, shared: true)
                 .CreateLogger();
 
-            Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
-            
             Application.ApplicationExit += (_, _) =>
             {
                 Settings.Default.Save();
@@ -51,13 +59,12 @@ namespace OpenpilotToolkit
 
             Log.Information("Application Starting.");
 
-            Application.SetHighDpiMode(HighDpiMode.DpiUnaware);
-            Application.EnableVisualStyles();
-            Application.SetCompatibleTextRenderingDefault(false);
-
-            
             var openpilotToolkitForm = new OpenpilotToolkitForm();
-
+            openpilotToolkitForm.Shown += (s, e) =>
+            {
+                splashForm.Close();
+                splashForm.Dispose();
+            };
             Application.ThreadException += (sender, args) =>
             {
                 Log.Error(args.Exception, "Unhandled Exception");

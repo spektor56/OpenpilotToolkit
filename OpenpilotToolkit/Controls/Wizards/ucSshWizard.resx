@@ -58,6 +58,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="label1.Text" xml:space="preserve">
-    <value>Make sure the WiFi is connected and "Enable SSH" is toggled on.  If you already have a username for "SSH Keys" you must remove it and add it again for the Comma device to recognize the newly added key.  To complete the process and attempt to connect to the Comma device click Next.</value>
+    <value>Make sure the WiFi is connected and "Enable SSH" is toggled on.  If you already have a username for "SSH Keys" you must remove it and add it again for the Comma device to recognize the newly added key.  To complete the process and attempt to connect to the Comma device click Finish
+.</value>
   </data>
 </root>

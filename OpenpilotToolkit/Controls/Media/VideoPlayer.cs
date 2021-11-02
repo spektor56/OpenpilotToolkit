@@ -83,7 +83,7 @@ namespace OpenpilotToolkit.Controls.Media
 
         private void vlcVideoView_Click(object sender, EventArgs e)
         {
-            
+
             vlcVideoView.MediaPlayer.Pause();
         }
 

@@ -31,11 +31,11 @@ namespace OpenpilotToolkit.Controls
         {
             this.tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
             this.panel1 = new System.Windows.Forms.Panel();
-            this.btnYes = new MaterialSkin.Controls.MaterialButton();
-            this.btnNo = new MaterialSkin.Controls.MaterialButton();
-            this.label1 = new System.Windows.Forms.Label();
-            this.btnOk = new MaterialSkin.Controls.MaterialButton();
             this.flowLayoutPanel1 = new System.Windows.Forms.FlowLayoutPanel();
+            this.btnOk = new MaterialSkin.Controls.MaterialButton();
+            this.btnNo = new MaterialSkin.Controls.MaterialButton();
+            this.btnYes = new MaterialSkin.Controls.MaterialButton();
+            this.label1 = new System.Windows.Forms.Label();
             this.tableLayoutPanel1.SuspendLayout();
             this.panel1.SuspendLayout();
             this.flowLayoutPanel1.SuspendLayout();
@@ -69,60 +69,17 @@ namespace OpenpilotToolkit.Controls
             this.panel1.Size = new System.Drawing.Size(371, 50);
             this.panel1.TabIndex = 0;
             // 
-            // btnYes
+            // flowLayoutPanel1
             // 
-            this.btnYes.AccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(64)))), ((int)(((byte)(129)))));
-            this.btnYes.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnYes.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.btnYes.Density = MaterialSkin.Controls.MaterialButton.MaterialButtonDensity.Default;
-            this.btnYes.Depth = 0;
-            this.btnYes.DialogResult = System.Windows.Forms.DialogResult.Yes;
-            this.btnYes.HighEmphasis = true;
-            this.btnYes.Icon = null;
-            this.btnYes.Location = new System.Drawing.Point(159, 6);
-            this.btnYes.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
-            this.btnYes.MouseState = MaterialSkin.MouseState.HOVER;
-            this.btnYes.Name = "btnYes";
-            this.btnYes.NoAccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(81)))), ((int)(((byte)(181)))));
-            this.btnYes.Size = new System.Drawing.Size(64, 36);
-            this.btnYes.TabIndex = 3;
-            this.btnYes.Text = "&Yes";
-            this.btnYes.Type = MaterialSkin.Controls.MaterialButton.MaterialButtonType.Contained;
-            this.btnYes.UseAccentColor = true;
-            this.btnYes.UseVisualStyleBackColor = true;
-            // 
-            // btnNo
-            // 
-            this.btnNo.AccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(64)))), ((int)(((byte)(129)))));
-            this.btnNo.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnNo.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.btnNo.Density = MaterialSkin.Controls.MaterialButton.MaterialButtonDensity.Default;
-            this.btnNo.Depth = 0;
-            this.btnNo.DialogResult = System.Windows.Forms.DialogResult.No;
-            this.btnNo.HighEmphasis = true;
-            this.btnNo.Icon = null;
-            this.btnNo.Location = new System.Drawing.Point(231, 6);
-            this.btnNo.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
-            this.btnNo.MouseState = MaterialSkin.MouseState.HOVER;
-            this.btnNo.Name = "btnNo";
-            this.btnNo.NoAccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(81)))), ((int)(((byte)(181)))));
-            this.btnNo.Size = new System.Drawing.Size(64, 36);
-            this.btnNo.TabIndex = 2;
-            this.btnNo.Text = "&No";
-            this.btnNo.Type = MaterialSkin.Controls.MaterialButton.MaterialButtonType.Contained;
-            this.btnNo.UseAccentColor = true;
-            this.btnNo.UseVisualStyleBackColor = true;
-            // 
-            // label1
-            // 
-            this.label1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.label1.Font = new System.Drawing.Font("Microsoft Sans Serif", 14F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel);
-            this.label1.Location = new System.Drawing.Point(3, 0);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(371, 121);
-            this.label1.TabIndex = 1;
-            this.label1.Text = "label1";
-            this.label1.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.flowLayoutPanel1.Controls.Add(this.btnOk);
+            this.flowLayoutPanel1.Controls.Add(this.btnNo);
+            this.flowLayoutPanel1.Controls.Add(this.btnYes);
+            this.flowLayoutPanel1.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.flowLayoutPanel1.FlowDirection = System.Windows.Forms.FlowDirection.RightToLeft;
+            this.flowLayoutPanel1.Location = new System.Drawing.Point(0, 0);
+            this.flowLayoutPanel1.Name = "flowLayoutPanel1";
+            this.flowLayoutPanel1.Size = new System.Drawing.Size(371, 50);
+            this.flowLayoutPanel1.TabIndex = 5;
             // 
             // btnOk
             // 
@@ -146,17 +103,60 @@ namespace OpenpilotToolkit.Controls
             this.btnOk.UseAccentColor = true;
             this.btnOk.UseVisualStyleBackColor = true;
             // 
-            // flowLayoutPanel1
+            // btnNo
             // 
-            this.flowLayoutPanel1.Controls.Add(this.btnOk);
-            this.flowLayoutPanel1.Controls.Add(this.btnNo);
-            this.flowLayoutPanel1.Controls.Add(this.btnYes);
-            this.flowLayoutPanel1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.flowLayoutPanel1.FlowDirection = System.Windows.Forms.FlowDirection.RightToLeft;
-            this.flowLayoutPanel1.Location = new System.Drawing.Point(0, 0);
-            this.flowLayoutPanel1.Name = "flowLayoutPanel1";
-            this.flowLayoutPanel1.Size = new System.Drawing.Size(371, 50);
-            this.flowLayoutPanel1.TabIndex = 5;
+            this.btnNo.AccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(64)))), ((int)(((byte)(129)))));
+            this.btnNo.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnNo.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.btnNo.Density = MaterialSkin.Controls.MaterialButton.MaterialButtonDensity.Default;
+            this.btnNo.Depth = 0;
+            this.btnNo.DialogResult = System.Windows.Forms.DialogResult.No;
+            this.btnNo.HighEmphasis = true;
+            this.btnNo.Icon = null;
+            this.btnNo.Location = new System.Drawing.Point(231, 6);
+            this.btnNo.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+            this.btnNo.MouseState = MaterialSkin.MouseState.HOVER;
+            this.btnNo.Name = "btnNo";
+            this.btnNo.NoAccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(81)))), ((int)(((byte)(181)))));
+            this.btnNo.Size = new System.Drawing.Size(64, 36);
+            this.btnNo.TabIndex = 2;
+            this.btnNo.Text = "&No";
+            this.btnNo.Type = MaterialSkin.Controls.MaterialButton.MaterialButtonType.Contained;
+            this.btnNo.UseAccentColor = true;
+            this.btnNo.UseVisualStyleBackColor = true;
+            // 
+            // btnYes
+            // 
+            this.btnYes.AccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(64)))), ((int)(((byte)(129)))));
+            this.btnYes.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnYes.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.btnYes.Density = MaterialSkin.Controls.MaterialButton.MaterialButtonDensity.Default;
+            this.btnYes.Depth = 0;
+            this.btnYes.DialogResult = System.Windows.Forms.DialogResult.Yes;
+            this.btnYes.HighEmphasis = true;
+            this.btnYes.Icon = null;
+            this.btnYes.Location = new System.Drawing.Point(159, 6);
+            this.btnYes.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+            this.btnYes.MouseState = MaterialSkin.MouseState.HOVER;
+            this.btnYes.Name = "btnYes";
+            this.btnYes.NoAccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(81)))), ((int)(((byte)(181)))));
+            this.btnYes.Size = new System.Drawing.Size(64, 36);
+            this.btnYes.TabIndex = 3;
+            this.btnYes.Text = "&Yes";
+            this.btnYes.Type = MaterialSkin.Controls.MaterialButton.MaterialButtonType.Contained;
+            this.btnYes.UseAccentColor = true;
+            this.btnYes.UseVisualStyleBackColor = true;
+            // 
+            // label1
+            // 
+            this.label1.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.label1.Font = new System.Drawing.Font("Microsoft Sans Serif", 14F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel);
+            this.label1.Location = new System.Drawing.Point(3, 0);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(371, 121);
+            this.label1.TabIndex = 1;
+            this.label1.Text = "label1";
+            this.label1.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // ToolkitMessageDialog
             // 
@@ -173,6 +173,7 @@ namespace OpenpilotToolkit.Controls
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.ToolkitMessageDialog_FormClosing);
             this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.ToolkitMessageDialog_FormClosed);
             this.Load += new System.EventHandler(this.ToolkitMessageDialog_Load);
+            this.Shown += new System.EventHandler(this.ToolkitMessageDialog_Shown);
             this.tableLayoutPanel1.ResumeLayout(false);
             this.panel1.ResumeLayout(false);
             this.flowLayoutPanel1.ResumeLayout(false);

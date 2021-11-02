@@ -9,7 +9,7 @@ namespace OpenpilotSdk.Sftp
     public static class Extensions
     {
         
-        public static IEnumerable<SftpFile> GetFiles(this SftpClient client, string directory)
+        public static IEnumerable<ISftpFile> GetFiles(this SftpClient client, string directory)
         {
             var directoryListing = client.ListDirectory(directory).OrderBy(dir => dir.FullName);
             foreach (var directoryItem in directoryListing)
@@ -36,7 +36,7 @@ namespace OpenpilotSdk.Sftp
             }
         }
 
-        public static IEnumerable<SftpFile> EnumerateFileSystemEntries(this SftpClient client, string directory)
+        public static IEnumerable<ISftpFile> EnumerateFileSystemEntries(this SftpClient client, string directory)
         {
             var directoryListing = client.ListDirectory(directory).OrderBy(dir => dir.FullName);
             foreach (var directoryItem in directoryListing)

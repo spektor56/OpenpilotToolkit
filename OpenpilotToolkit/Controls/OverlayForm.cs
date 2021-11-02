@@ -26,7 +26,6 @@ namespace OpenpilotToolkit.Controls
             DoubleBuffered = true;
             //TransparencyKey = Color.FromArgb(27, 27, 27);
             BackColor = Color.FromArgb(27, 27, 27);
-            this.Opacity = 0.7;
             FormBorderStyle = FormBorderStyle.None;
             ControlBox = false;
             ShowInTaskbar = false;
@@ -47,7 +46,7 @@ namespace OpenpilotToolkit.Controls
             Location = parent.PointToScreen(Point.Empty);
             ClientSize = parent.ClientSize;
         }
-
+        /*
         private const int WS_EX_TRANSPARENT = 0x20;
         protected override CreateParams CreateParams
         {
@@ -58,7 +57,7 @@ namespace OpenpilotToolkit.Controls
                 return cp;
             }
         }
-        
+        */
 
         public sealed override Color BackColor
         {
@@ -93,5 +92,10 @@ namespace OpenpilotToolkit.Controls
         }
         [DllImport("dwmapi.dll")]
         private static extern int DwmSetWindowAttribute(IntPtr hWnd, int attr, ref int value, int attrLen);
+
+        private void OverlayForm_Shown(object sender, EventArgs e)
+        {
+            this.Opacity = 0.7;
+        }
     }
 }

@@ -5,7 +5,7 @@ namespace OpenpilotSdk.Hardware
 {
     public class Comma2 : OpenpilotDevice
     {
-        protected virtual string NotConnectedMessage { get; set; } = "No connection has been made to the Comma2";
+        protected override string NotConnectedMessage { get; set; } = "No connection has been made to the Comma2";
 
         public virtual string OpenSettingsCommand { get; protected set; } = @"am start -a android.settings.SETTINGS";
         public virtual string CloseSettingsCommand { get; protected set; } = @"kill $(pgrep com.android.settings)";
@@ -19,7 +19,7 @@ namespace OpenpilotSdk.Hardware
 
         public async Task<bool> OpenSettingsAsync()
         {
-            Connect();
+            await ConnectAsync();
 
             using (var command = SshClient.CreateCommand(OpenSettingsCommand))
             {
@@ -31,7 +31,7 @@ namespace OpenpilotSdk.Hardware
 
         public async Task<bool> CloseSettingsAsync()
         {
-            Connect();
+            await ConnectAsync();
 
             using (var command = SshClient.CreateCommand(CloseSettingsCommand))
             {

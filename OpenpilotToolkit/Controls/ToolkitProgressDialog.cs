@@ -35,8 +35,9 @@ namespace OpenpilotToolkit.Controls
             set { progressBar1.Maximum = value; }
         }
 
-        public ToolkitProgressDialog(string text, ContainerControl parent, Progress<InstallProgress> progress)
+        public ToolkitProgressDialog(string text, ContainerControl parent, Progress<InstallProgress> progress = null)
         {
+            Opacity = 0;
             if (parent != null)
             {
                 _overlayForm = new OverlayForm(parent);
@@ -53,7 +54,16 @@ namespace OpenpilotToolkit.Controls
             lblText.Text = text;
             this.Show(parent);
 
-            progress.ProgressChanged += ProgressOnProgressChanged;
+            if (progress != null)
+            {
+                progress.ProgressChanged += ProgressOnProgressChanged;
+            }
+        }
+
+        private void ToolkitProgressDialog_LostFocus(object sender, EventArgs e)
+        {
+            
+            this.Focus();
         }
 
         private void ProgressOnProgressChanged(object? sender, InstallProgress e)
@@ -84,13 +94,27 @@ namespace OpenpilotToolkit.Controls
 
         private void ToolkitProgressDialog_FormClosing(object sender, FormClosingEventArgs e)
         {
-            
+            if (_overlayForm != null)
+            {
+                _overlayForm.Close();
+            }
 
         }
 
         private void ToolkitProgressDialog_Load(object sender, EventArgs e)
         {
             CenterToParent();
+        }
+
+        private void ToolkitProgressDialog_Shown(object sender, EventArgs e)
+        {
+            Opacity = 100;
+        }
+
+        private void ToolkitProgressDialog_Deactivate(object sender, EventArgs e)
+        {
+            
+            this.Focus();
         }
     }
 }
