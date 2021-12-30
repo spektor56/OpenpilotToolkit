@@ -114,7 +114,6 @@ namespace OpenpilotToolkit
             this.wifiConnected = new MaterialSkin.Controls.MaterialButton();
             this.cmbDevices = new MaterialSkin.Controls.MaterialComboBox();
             this.lblActiveDevice = new System.Windows.Forms.Label();
-            this.sqliteCommand1 = new Microsoft.Data.Sqlite.SqliteCommand();
             ((System.ComponentModel.ISupportInitialize)(this.pbPreview)).BeginInit();
             this.tcSettings.SuspendLayout();
             this.tpExport.SuspendLayout();
@@ -1400,13 +1399,6 @@ namespace OpenpilotToolkit
             this.lblActiveDevice.Text = "ACTIVE DEVICE:";
             this.lblActiveDevice.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
-            // sqliteCommand1
-            // 
-            this.sqliteCommand1.CommandTimeout = 30;
-            this.sqliteCommand1.Connection = null;
-            this.sqliteCommand1.Transaction = null;
-            this.sqliteCommand1.UpdatedRowSource = System.Data.UpdateRowSource.None;
-            // 
             // OpenpilotToolkitForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
@@ -1487,7 +1479,6 @@ namespace OpenpilotToolkit
         private MaterialButton wifiConnected;
         private System.Windows.Forms.TabPage tpFlash;
         private System.Windows.Forms.TableLayoutPanel tlpTasks;
-        private Microsoft.Data.Sqlite.SqliteCommand sqliteCommand1;
         private ucSshWizard ucSshWizard;
         private MaterialTextBox txtWorkingDirectory;
         private MaterialTextBox txtSearch;
