@@ -63,7 +63,10 @@ namespace OpenpilotToolkit
         {
             
             InitializeComponent();
-            
+
+            this.tcSettings.Controls.Remove(this.tpFlash);
+            this.tcSettings.Controls.Remove(this.tabPage1);
+
             var materialSkinManager = MaterialSkinManager.Instance;
             materialSkinManager.EnforceBackcolorOnAllComponents = false;
             materialSkinManager.AddFormToManage(this);
@@ -202,6 +205,7 @@ namespace OpenpilotToolkit
             _devices.Clear();
             lbDrives.Items.Clear();
             vlcVideoPlayer.vlcVideoView.MediaPlayer.Stop();
+            dgvDriveInfo.DataSource = null;
             pbPreview.Image = null;
             pbPreview.BringToFront();
             wifiConnected.SetEnabled(false);
@@ -379,43 +383,70 @@ namespace OpenpilotToolkit
         private async void lbDrives_SelectedIndexChanged(object sender, EventArgs e)
         {
             cmbDevices.Enabled = false;
+            
+            dgvDriveInfo.DataSource = null;
+            vlcVideoPlayer.vlcVideoView.MediaPlayer.Stop();
+            pbPreview.Image = null;
+            pbPreview.BringToFront();
+
             try
             {
                 if (cmbDevices.SelectedItem is OpenpilotDevice openpilotDevice)
                 {
                     if (lbDrives.SelectedItems.Count < 2 && lbDrives.SelectedItem is Drive drive)
                     {
-                       
-                        vlcVideoPlayer.vlcVideoView.MediaPlayer.Stop();
-                        pbPreview.Image = null;
-                        pbPreview.BringToFront();
+                        var driveInfo = new Dictionary<string, string>();
+                        driveInfo.Add("Segments", drive.Segments.Count.ToString());
+                        driveInfo.Add("Start Date", drive.Date.ToShortDateString());
+                        driveInfo.Add("Start Time", drive.Date.ToLocalTime().ToLongTimeString());
+
+                        dgvDriveInfo.DataSource = driveInfo.ToArray();
                         try
                         {
-                            await Task.Run(async () =>
+                            var firstSegment = drive.Segments.FirstOrDefault();
+
+                            if (firstSegment != null)
                             {
-                                var thumbnail = await openpilotDevice.GetThumbnailAsync(drive);
-                                BeginInvoke(new MethodInvoker(() => { pbPreview.Image = thumbnail; }));
-                                var firstSegment = drive.Segments.FirstOrDefault();
-                                if (firstSegment != null)
+                                var videoFile = firstSegment.FrontCameraQuick ?? firstSegment.FrontCamera;
+
+                                if (videoFile != null)
                                 {
-                                    var videoFile = firstSegment.FrontCameraQuick ?? firstSegment.FrontCamera;
-                                    if (videoFile != null)
+                                    await Task.Run(async () =>
                                     {
-                                        Renci.SshNet.Sftp.SftpFileStream videoStream = null;
+                                        
+                                        var thumbnailTask = openpilotDevice.GetThumbnailAsync(drive);
+
+                                        Task<Renci.SshNet.Sftp.SftpFileStream> videoStreamTask = null;
+
                                         if (firstSegment.FrontCameraQuick != null && videoFile == firstSegment.FrontCameraQuick)
                                         {
-                                            videoStream = openpilotDevice.OpenRead(videoFile.FullName);
+                                            videoStreamTask = openpilotDevice.OpenReadAsync(videoFile.FullName);
                                         }
                                         else
                                         {
-                                            videoStream = openpilotDevice.OpenRead(videoFile.FullName);
+                                            videoStreamTask = openpilotDevice.OpenReadAsync(videoFile.FullName);
                                         }
 
-                                        vlcVideoPlayer.Play(videoStream);
-                                    }
+                                        var tasks = new List<Task> { thumbnailTask, videoStreamTask };
 
+                                        while (tasks.Any())
+                                        {
+                                            var completedTask = await Task.WhenAny(tasks);
+                                            tasks.Remove(completedTask);
+                                            if (completedTask is Task<Renci.SshNet.Sftp.SftpFileStream> videoStreamResult)
+                                            {
+                                                vlcVideoPlayer.Play(await videoStreamResult);
+                                                
+                                            }
+                                            else if(completedTask is Task<System.Drawing.Bitmap> thumbnailTaskResult)
+                                            {
+                                                System.Drawing.Bitmap thumbnail = await thumbnailTaskResult;
+                                                BeginInvoke(new MethodInvoker(() => { pbPreview.Image = thumbnail; }));
+                                            }
+                                        }
+                                    });
                                 }
-                            });
+                            }
                         }
                         catch (Exception exception)
                         {
@@ -720,6 +751,7 @@ namespace OpenpilotToolkit
             lbDrives.ForeColor = MaterialSkinManager.Instance.TextHighEmphasisColor;
             groupBox1.ForeColor = MaterialSkinManager.Instance.TextHighEmphasisColor;
             groupBox2.ForeColor = MaterialSkinManager.Instance.TextHighEmphasisColor;
+            groupBox3.ForeColor = MaterialSkinManager.Instance.TextHighEmphasisColor;
         }
 
         private void themeButton_Click(object sender, EventArgs e)
@@ -760,10 +792,10 @@ namespace OpenpilotToolkit
                         _workingDirectory.Push(directory);
                     }
 
-                    await Task.Run(() =>
+                    await Task.Run(async () =>
                     {
                         var currentWorkingDirectory = string.Join("/", _workingDirectory.Reverse());
-                        files = openpilotDevice.EnumerateFiles(currentWorkingDirectory);
+                        files = await openpilotDevice.EnumerateFilesAsync(currentWorkingDirectory);
                     });
                     dgvExplorer.DataSource = files.OrderBy(file => file.Name).ToArray();
                 }
@@ -813,9 +845,9 @@ namespace OpenpilotToolkit
 
                         await sshTerminal.EvaluateScriptAsync("ClearTerminal()");
 
-                        await Task.Run(() =>
+                        await Task.Run(async () =>
                         {
-                            _shellStream = openpilotDevice.GetShellStream();
+                            _shellStream = await openpilotDevice.GetShellStreamAsync();
                             _streamReader = new StreamReader(_shellStream);
                         });
                         await sshTerminal.EvaluateScriptAsync("resizeTerminal()");
@@ -956,10 +988,10 @@ namespace OpenpilotToolkit
                 newPath = newPath.Length < 1 ? "/" : newPath;
 
                 IEnumerable<Renci.SshNet.Sftp.ISftpFile> files = null;
-                await Task.Run(() =>
+                await Task.Run(async () =>
                 {
                     var currentWorkingDirectory = string.Join("/", newPath);
-                    files = openpilotDevice.EnumerateFiles(currentWorkingDirectory);
+                    files = await openpilotDevice.EnumerateFilesAsync(currentWorkingDirectory);
                 });
                 dgvExplorer.DataSource = files.OrderBy(file => file.Name).ToArray();
 
@@ -1025,7 +1057,7 @@ namespace OpenpilotToolkit
                         await Task.Run(async () =>
                         {
                             result = await
-                                openpilotDevice.InstallFork(forkUser, forkBranch, progress).ConfigureAwait(false);
+                                openpilotDevice.InstallForkAsync(forkUser, forkBranch, progress).ConfigureAwait(false);
                         });
                     }
 
@@ -1059,10 +1091,33 @@ namespace OpenpilotToolkit
         {
             if (cmbDevices.SelectedItem is OpenpilotDevice openpilotDevice)
             {
-                Task.Run(async () =>
+                EnableRemoteControls(false);
+
+                try
                 {
-                    var result = await openpilotDevice.RebootAsync();
-                });
+                    bool result = false;
+                    using (new ToolkitProgressDialog("Rebooting Device...", this))
+                    {
+                        await Task.Run(async () =>
+                        {
+                            result = await openpilotDevice.RebootAsync();
+                        });
+                    }
+
+                    if (result)
+                    {
+                        ToolkitMessageDialog.ShowDialog("Rebooted Device.");
+                    }
+                    else
+                    {
+                        ToolkitMessageDialog.ShowDialog("Failed to Reboot Device.");
+                    }
+                }
+                finally
+                {
+                    EnableRemoteControls(true);
+                }
+                
                 
             }
         }
@@ -1071,43 +1126,111 @@ namespace OpenpilotToolkit
         {
             if (cmbDevices.SelectedItem is OpenpilotDevice openpilotDevice)
             {
-                Task.Run(async () =>
+                EnableRemoteControls(false);
+
+                try
                 {
-                    var result = await openpilotDevice.ShutdownAsync();
-                });
+                    bool result = false;
+                    using (new ToolkitProgressDialog("Shutting Down Device...", this))
+                    {
+                        await Task.Run(async () =>
+                        {
+                            result = await openpilotDevice.ShutdownAsync();
+                        });
+                    }
+
+                    if (result)
+                    {
+                        ToolkitMessageDialog.ShowDialog("Shutdown the Device.");
+                    }
+                    else
+                    {
+                        ToolkitMessageDialog.ShowDialog("Failed to Shutdown Device.");
+                    }
+                }
+                finally
+                {
+                    EnableRemoteControls(true);
+                }
+                
             }
         }
 
-        private void btnOpenSettings_Click(object sender, EventArgs e)
+        private async void btnOpenSettings_Click(object sender, EventArgs e)
         {
             if (cmbDevices.SelectedItem is Comma2 openpilotDevice)
             {
-                Task.Run(async () =>
+                EnableRemoteControls(false);
+
+                try
                 {
-                    var result = await openpilotDevice.OpenSettingsAsync();
-                });
+                    await Task.Run(async () =>
+                    {
+                        var result = await openpilotDevice.OpenSettingsAsync();
+                    });
+
+                    
+                }
+                finally
+                {
+                    EnableRemoteControls(true);
+                }
             }
         }
 
-        private void btnCloseSettings_Click(object sender, EventArgs e)
+        private async void btnCloseSettings_Click(object sender, EventArgs e)
         {
             if (cmbDevices.SelectedItem is Comma2 openpilotDevice)
             {
-                Task.Run(async () =>
+                EnableRemoteControls(false);
+
+                try
                 {
-                    var result = await openpilotDevice.CloseSettingsAsync();
-                });
+                    await Task.Run(async () =>
+                    {
+                        var result = await openpilotDevice.CloseSettingsAsync();
+                    });
+                }
+                finally
+                {
+                    EnableRemoteControls(true);
+                }
+                
             }
         }
 
-        private void btnFlashPanda_Click(object sender, EventArgs e)
+        private async void btnFlashPanda_Click(object sender, EventArgs e)
         {
             if (cmbDevices.SelectedItem is OpenpilotDevice openpilotDevice)
             {
-                Task.Run(async () =>
+                EnableRemoteControls(false);
+
+                try
                 {
-                    var result = await openpilotDevice.FlashPandaAsync();
-                });
+                    bool result = false;
+                    using (new ToolkitProgressDialog("Flashing Panda", this))
+                    {
+                        await Task.Run(async () =>
+                        {
+                            var result = await openpilotDevice.FlashPandaAsync();
+                        });
+                    }
+                    
+
+                    if (result)
+                    {
+                        ToolkitMessageDialog.ShowDialog("Flashed Panda.");
+                    }
+                    else
+                    {
+                        ToolkitMessageDialog.ShowDialog("Failed to flash Panda");
+                    }
+                }
+                finally
+                {
+                    EnableRemoteControls(true);
+                }
+                
             }
         }
 
@@ -1241,31 +1364,79 @@ namespace OpenpilotToolkit
         {
             if (cmbDevices.SelectedItem is OpenpilotDevice openpilotDevice)
             {
-                bool result = false;
-                await Task.Run(async () =>
-                {
-                    result = await openpilotDevice.InstallEmuAsync();
-                });
+                EnableRemoteControls(false);
 
-                if(result)
+                try
                 {
-                    ToolkitMessageDialog.ShowDialog("Emu Installed.");
+                    bool result = false;
+                    using (new ToolkitProgressDialog("Installing Emu...", this))
+                    {
+                        await Task.Run(async () =>
+                        {
+                            result = await openpilotDevice.InstallEmuAsync();
+                        });
+                    }
+
+                    if (result)
+                    {
+                        ToolkitMessageDialog.ShowDialog("Emu Installed.");
+                    }
+                    else
+                    {
+                        ToolkitMessageDialog.ShowDialog("Emu Installation Failed.");
+                    }
                 }
-                else
+                finally
                 {
-                    ToolkitMessageDialog.ShowDialog("Emu Installation Failed.");
+                    EnableRemoteControls(true);
+                }               
+            }
+        }
+        private void EnableRemoteControls(bool enable)
+        {
+            foreach (var control in tpRemote.Controls)
+            {
+                if (control is MaterialButton)
+                {
+                    ((MaterialButton)control).Enabled = enable;
                 }
             }
         }
-
-        private void btnUpdate_Click(object sender, EventArgs e)
+        private async void btnUpdate_Click(object sender, EventArgs e)
         {
             if (cmbDevices.SelectedItem is OpenpilotDevice openpilotDevice)
             {
-                Task.Run(async () =>
+                EnableRemoteControls(false);
+
+                try
                 {
-                    var result = await openpilotDevice.UpdateOpenpilotAsync();
-                });
+                    ForkResult result = null;
+                    var progress = new Progress<InstallProgress>();
+
+                    using (new ToolkitProgressDialog("Reinstalling fork, please wait", this, progress))
+                    {
+                        await Task.Run(async () =>
+                        {
+                            result = await openpilotDevice.ReinstallOpenpilotAsync(progress);
+                        });
+                    }
+
+                    ToolkitMessageDialog.ShowDialog(
+                        result.Success
+                            ? "Reinstall Successful"
+                            : $"There was an error during installation: {result.Message}", this);
+                }
+                catch (Exception exception)
+                {
+                    Serilog.Log.Error(exception, "error in fork installer");
+                    ToolkitMessageDialog.ShowDialog(exception.Message);
+                    return;
+                }
+                finally
+                {
+                    EnableRemoteControls(true);
+                }
+                
             }
         }
     }

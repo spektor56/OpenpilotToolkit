@@ -52,8 +52,11 @@ namespace OpenpilotToolkit.Controls
             this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "ToolkitProgressDialog";
+            this.Deactivate += new System.EventHandler(this.ToolkitProgressDialog_Deactivate);
+            this.LostFocus += new System.EventHandler(this.ToolkitProgressDialog_LostFocus);
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.ToolkitProgressDialog_FormClosing);
             this.Load += new System.EventHandler(this.ToolkitProgressDialog_Load);
+            this.Shown += new System.EventHandler(this.ToolkitProgressDialog_Shown);
             this.ResumeLayout(false);
 
         }

@@ -19,7 +19,7 @@ namespace OpenpilotSdk.Hardware
 
         public async Task<bool> OpenSettingsAsync()
         {
-            Connect();
+            await ConnectAsync();
 
             using (var command = SshClient.CreateCommand(OpenSettingsCommand))
             {
@@ -31,7 +31,7 @@ namespace OpenpilotSdk.Hardware
 
         public async Task<bool> CloseSettingsAsync()
         {
-            Connect();
+            await ConnectAsync();
 
             using (var command = SshClient.CreateCommand(CloseSettingsCommand))
             {

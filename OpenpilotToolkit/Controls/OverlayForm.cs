@@ -46,7 +46,7 @@ namespace OpenpilotToolkit.Controls
             Location = parent.PointToScreen(Point.Empty);
             ClientSize = parent.ClientSize;
         }
-
+        /*
         private const int WS_EX_TRANSPARENT = 0x20;
         protected override CreateParams CreateParams
         {
@@ -57,7 +57,7 @@ namespace OpenpilotToolkit.Controls
                 return cp;
             }
         }
-        
+        */
 
         public sealed override Color BackColor
         {

@@ -47,7 +47,7 @@ namespace OpenpilotSdk.Hardware
         public virtual string ShutdownCommand { get; protected set; } = @"am start -n android/com.android.internal.app.ShutdownActivity";
         public virtual string FlashCommand { get; protected set; } = @"cd /data/openpilot/panda/board && ./recover.sh";
         public virtual string InstallEmuCommand { get; protected set; } = @"cd /data/openpilot && echo 'y' | bash <(curl -fsSL install.emu.sh) && source /data/community/.bashrc";
-        public virtual string GitPullCommand { get; protected set; } = @"cd /data/openpilot && git pull";
+        public virtual string GitCloneCommand { get; protected set; } = @"cd /data && rm -rf openpilot; git clone -b {1} --depth 1 --single-branch --progress --recurse-submodules --shallow-submodules {0} openpilot";
 
         public string WorkingDirectory
         {
@@ -57,16 +57,23 @@ namespace OpenpilotSdk.Hardware
             }
         }
 
+        public async Task<SftpFileStream> OpenReadAsync(string path)
+        {
+            await ConnectAsync();
+
+            return await SftpClient.OpenAsync(path, FileMode.Open, FileAccess.Read, CancellationToken.None);
+        }
+
         public SftpFileStream OpenRead(string path)
         {
             Connect();
             
             return SftpClient.OpenRead(path);
         }
-
+        
         public async Task<Bitmap> GetThumbnailAsync(Drive drive)
         {
-            Connect();
+            await ConnectAsync();
 
             var firstSegment = drive.Segments.FirstOrDefault();
             if (firstSegment != null)
@@ -79,7 +86,7 @@ namespace OpenpilotSdk.Hardware
 
         public async Task ExportDriveAsync(string exportPath, Drive drive, Camera camera, bool combineSegments = false, IProgress<int> progress = null)
         {
-            Connect();
+            await ConnectAsync();
 
             if (!Directory.Exists(exportPath))
             {
@@ -182,7 +189,7 @@ namespace OpenpilotSdk.Hardware
         public async Task<string> ExportSegmentAsync(string path, DriveSegment driveSegment, Camera camera,
             IProgress<int> progress = null)
         {
-            Connect();
+            await ConnectAsync();
 
             var videoPath = "";
             switch (camera)
@@ -250,7 +257,7 @@ namespace OpenpilotSdk.Hardware
 
         public async Task<Bitmap> GetThumbnailAsync(DriveSegment driveSegment)
         {
-            Connect();
+            await ConnectAsync();
 
             Bitmap thumbnail = null;
             var drive = new DirectoryInfo(Path.GetDirectoryName(driveSegment.FrontCamera.FullName)).Name;
@@ -355,7 +362,7 @@ namespace OpenpilotSdk.Hardware
 
         public async Task<List<GpxWaypoint>> MapillaryExportAsync(Drive drive)
         {
-            Connect();
+            await ConnectAsync();
 
             var waypoints = new List<GpxWaypoint>();
 
@@ -401,7 +408,7 @@ namespace OpenpilotSdk.Hardware
 
         public async Task<IEnumerable<Firmware>> GetFirmwareVersions(IProgress<int> progress = null)
         {
-            Connect();
+            await ConnectAsync();
 
             var firmwares = new List<Firmware>();
 
@@ -426,7 +433,7 @@ namespace OpenpilotSdk.Hardware
 
         public async Task<GpxFile> GenerateGpxFileAsync(Drive drive, IProgress<int> progress = null)
         {
-            Connect();
+            await ConnectAsync();
 
             var waypoints = new List<GpxWaypoint>();
 
@@ -558,11 +565,26 @@ namespace OpenpilotSdk.Hardware
             return !Equals(left, right);
         }
 
+        public async Task ChangeDirectoryAsync(string path)
+        {
+            await ConnectAsync();
+
+            SftpClient.ChangeDirectory(path);
+        }
+
         public void ChangeDirectory(string path)
         {
             Connect();
 
             SftpClient.ChangeDirectory(path);
+        }
+
+        public async Task<IEnumerable<ISftpFile>> EnumerateFileSystemEntriesAsync(string path = "/")
+        {
+            await ConnectAsync();
+
+            var fileSystemEntries = SftpClient.EnumerateFileSystemEntries(path);
+            return fileSystemEntries;
         }
 
         public IEnumerable<ISftpFile> EnumerateFileSystemEntries(string path = "/")
@@ -573,10 +595,18 @@ namespace OpenpilotSdk.Hardware
             return fileSystemEntries;
         }
 
+        public async Task<IEnumerable<ISftpFile>> EnumerateFilesAsync(string path = ".")
+        {
+            await ConnectAsync();
+
+            var directoryListing = await SftpClient.ListDirectoryAsync(path, CancellationToken.None);
+            return directoryListing;
+        }
+
         public IEnumerable<ISftpFile> EnumerateFiles(string path = ".")
         {
             Connect();
-
+            
             var directoryListing = SftpClient.ListDirectory(path);
             return directoryListing;
         }
@@ -724,7 +754,7 @@ namespace OpenpilotSdk.Hardware
                     {
                         try
                         {
-                            client.Connect();
+                            await client.ConnectAsync(CancellationToken.None);
                         }
                         catch (SshAuthenticationException)
                         {
@@ -745,7 +775,7 @@ namespace OpenpilotSdk.Hardware
                             using (var client = new SshClient(address, port, "root",
                             privateKeys))
                             {
-                                client.Connect();
+                                await client.ConnectAsync(CancellationToken.None);
                                 if (client.IsConnected)
                                 {
                                     Serilog.Log.Information("Connected to Comma2 device at {Address} on port {port}", address, port);
@@ -774,21 +804,36 @@ namespace OpenpilotSdk.Hardware
             return null;
         }
 
-        public virtual async Task<bool> UpdateOpenpilotAsync()
+        public virtual async Task<ForkResult> ReinstallOpenpilotAsync(IProgress<InstallProgress> progress = null)
         {
-            Connect();
+            await ConnectAsync();
 
-            using (var command = SshClient.CreateCommand(GitPullCommand))
+            using (var command = SshClient.CreateCommand("cd /data/openpilot && git remote get-url origin && git rev-parse --abbrev-ref HEAD"))
             {
                 var result = await Task.Factory.FromAsync(command.BeginExecute(), command.EndExecute).ConfigureAwait(false);
                 var success = command.ExitStatus == 0;
-                return success;
+                if (success)
+                {
+                    var results = result.Split("\n");
+                    var username = results[0].Split("/")[3];
+                    var branch = results[1];
+                    if (progress == null)
+                    {
+                        return await InstallForkAsync(username, branch).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        return await InstallForkAsync(username, branch, progress).ConfigureAwait(false);
+                    }
+                }
+                return new ForkResult(string.IsNullOrWhiteSpace(result) ? command.Error : result, false);
             }
+            
         }
 
         public virtual async Task<bool> FlashPandaAsync()
         {
-            Connect();
+            await ConnectAsync();
 
             using (var command = SshClient.CreateCommand(FlashCommand))
             {
@@ -800,7 +845,7 @@ namespace OpenpilotSdk.Hardware
 
         public virtual async Task<bool> InstallEmuAsync()
         {
-            Connect();
+            await ConnectAsync();
 
             using (var command = SshClient.CreateCommand(InstallEmuCommand))
             {
@@ -812,7 +857,7 @@ namespace OpenpilotSdk.Hardware
 
         public virtual async Task<bool> ShutdownAsync()
         {
-            Connect();
+            await ConnectAsync();
 
             using (var command = SshClient.CreateCommand(ShutdownCommand))
             {
@@ -824,7 +869,7 @@ namespace OpenpilotSdk.Hardware
 
         public virtual async Task<bool> RebootAsync()
         {
-            Connect();
+            await ConnectAsync();
 
             using (var command = SshClient.CreateCommand(RebootCommand))
             {
@@ -834,14 +879,14 @@ namespace OpenpilotSdk.Hardware
             }
         }
 
-        public virtual async Task<ForkResult> InstallFork(string username, string branch, IProgress<InstallProgress> progress)
+        public virtual async Task<ForkResult> InstallForkAsync(string username, string branch, IProgress<InstallProgress> progress)
         {
             if (progress == null)
             {
-                return await InstallFork(username, branch).ConfigureAwait(false);
+                return await InstallForkAsync(username, branch).ConfigureAwait(false);
             }
 
-            Connect();
+            await ConnectAsync();
 
             var installCommand =
                 string.Format(@"cd /data && rm -rf openpilot ; git clone -b {1} --depth 1 --single-branch --progress --recurse-submodules --shallow-submodules https://github.com/{0}/openpilot.git openpilot", username, branch);
@@ -896,9 +941,9 @@ namespace OpenpilotSdk.Hardware
             }
         }
 
-        public virtual async Task<ForkResult> InstallFork(string username, string branch)
+        public virtual async Task<ForkResult> InstallForkAsync(string username, string branch)
         {
-            Connect();
+            await ConnectAsync();
 
             var installCommand =
                 string.Format(@"cd /data && rm -rf openpilot; git clone -b {1} --depth 1 --single-branch --recurse-submodules --shallow-submodules https://github.com/{0}/openpilot.git openpilot", username, branch);
@@ -919,6 +964,13 @@ namespace OpenpilotSdk.Hardware
                 return new ForkResult(string.IsNullOrWhiteSpace(result) ? command.Error : result,
                     success);
             }
+        }
+
+        public async Task<ShellStream> GetShellStreamAsync()
+        {
+            await ConnectAsync();
+            var client = SshClient.CreateShellStream(this.ToString(), 0, 0, 0, 0, 1024);
+            return client;
         }
 
         public ShellStream GetShellStream()
@@ -953,6 +1005,39 @@ namespace OpenpilotSdk.Hardware
                 _connectionLock.Release();
             }
             
+        }
+
+        public async Task ConnectAsync(CancellationToken cancellationToken = default)
+        {
+            if(SftpClient != null && SftpClient.IsConnected)
+            {
+                return;
+            }
+
+            await _connectionLock.WaitAsync(cancellationToken);
+
+            try
+            {
+                if (SftpClient == null || !SftpClient.IsConnected)
+                {
+                    var connectionInfo = new ConnectionInfo(IpAddress.ToString(), Port,
+                        "comma",
+                        new PrivateKeyAuthenticationMethod("comma",
+                            new PrivateKeyFile(Path.Combine(AppContext.BaseDirectory,
+                                "opensshkey"))));
+                    SftpClient = new SftpClient(connectionInfo);
+                    SshClient = new SshClient(connectionInfo);
+
+                    var connection1 = SftpClient.ConnectAsync(cancellationToken);
+                    var connection2 = SshClient.ConnectAsync(cancellationToken);
+
+                    await Task.WhenAll(connection1, connection2);
+                }
+            }
+            finally
+            {
+                _connectionLock.Release();
+            }
         }
     }
 }

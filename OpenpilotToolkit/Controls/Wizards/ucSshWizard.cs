@@ -259,14 +259,23 @@ namespace OpenpilotToolkit.Controls.Wizards
 
         private void mtcSSHWizard_Selected(object sender, TabControlEventArgs e)
         {
+            btnNext.Text = "&Next";
+
             btnPrevious.Visible = true;
             btnNext.Visible = true;
-            if (e.TabPage != null && e.TabPage == tpGithubLogin)
+            if (e.TabPage != null )
             {
-                btnPrevious.Visible = false;
-                if (string.IsNullOrWhiteSpace(Properties.Settings.Default.GithubToken))
+                if (e.TabPage == tpGithubLogin)
                 {
-                    btnNext.Visible = false;
+                    btnPrevious.Visible = false;
+                    if (string.IsNullOrWhiteSpace(Properties.Settings.Default.GithubToken))
+                    {
+                        btnNext.Visible = false;
+                    }
+                }
+                else if(e.TabPage == tpSettings)
+                {
+                    btnNext.Text = "&Finish";
                 }
             }
         }
