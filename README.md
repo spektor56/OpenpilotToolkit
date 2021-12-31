@@ -27,7 +27,7 @@ Android app:
 Screenshots
 ------
 
-![Exporter](https://i.imgur.com/79P4Pas.png)
+![Exporter](https://i.imgur.com/GAG527Q.png)
 ![Remote](https://i.imgur.com/eog5Bhp.png)
 ![Explorer](https://i.imgur.com/DkBxWfU.png)
 ![Fingerprint](https://i.imgur.com/Nq1dW2k.png)
