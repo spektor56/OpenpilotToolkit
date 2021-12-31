@@ -27,15 +27,13 @@ Android app:
 Screenshots
 ------
 
-![alt text](https://i.imgur.com/79P4Pas.png)
-![alt text](https://i.imgur.com/7LRPVHN.png)
-![alt text](https://i.imgur.com/bXIRSCn.png)
-![alt text](https://i.imgur.com/HdL1k8R.png)
-![alt text](https://i.imgur.com/DkBxWfU.png)
-![alt text](https://i.imgur.com/Nq1dW2k.png)
-![alt text](https://i.imgur.com/9nQLkxy.png)
-![alt text](https://i.imgur.com/Qp5pQlK.png)
-![alt text](https://i.imgur.com/3MVi4b9.png)
+![Exporter](https://i.imgur.com/79P4Pas.png)
+![Remote](https://i.imgur.com/eog5Bhp.png)
+![Explorer](https://i.imgur.com/DkBxWfU.png)
+![Fingerprint](https://i.imgur.com/Nq1dW2k.png)
+![SSH Wizard](https://i.imgur.com/9nQLkxy.png)
+![Fork Installer](https://i.imgur.com/Qp5pQlK.png)
+![Terminal](https://i.imgur.com/3MVi4b9.png)
 
 Support / Donate
 ------
