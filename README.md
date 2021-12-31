@@ -18,7 +18,7 @@ Windows app:
 - Fork installer
 - Fingerprint V2 viewer
 - SSH file explorer (cant view / edit / download files yet)
-- Simple SSH terminal (no terminal emulation yet)
+- SSH terminal with terminal emulation (hotkey commands not supported yet)
 
 Android app:
 - SSH wizard to generate and install SSH keys
