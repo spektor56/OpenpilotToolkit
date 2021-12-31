@@ -35,7 +35,7 @@ Screenshots
 ![alt text](https://i.imgur.com/Nq1dW2k.png)
 ![alt text](https://i.imgur.com/9nQLkxy.png)
 ![alt text](https://i.imgur.com/Qp5pQlK.png)
-![alt text](https://i.imgur.com/suE4YrS.png)
+![alt text](https://i.imgur.com/3MVi4b9.png)
 
 Support / Donate
 ------
