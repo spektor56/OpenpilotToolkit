@@ -85,9 +85,9 @@ namespace OpenpilotToolkit
 
         private async void Form1_Load(object sender, EventArgs e)
         {
+            var terminalPath = Path.Combine(AppContext.BaseDirectory, @"Controls\Terminal\index.html");
             sshTerminal =
-                new ChromiumWebBrowser(
-                    "file:///C:/Users/l-bre/source/repos/OpenpilotToolkit/OpenpilotToolkit/Controls/Terminal/index.html");
+                new ChromiumWebBrowser(terminalPath);
             
             sshTerminal.Dock = DockStyle.Fill;
             sshTerminal.CreateControl();
