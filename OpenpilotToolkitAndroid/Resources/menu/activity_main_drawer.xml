@@ -12,6 +12,10 @@
             android:id="@+id/ssh_wizard"
             android:icon="@drawable/round_vpn_key_24"
             android:title="SSH Wizard" />
+		<item
+            android:id="@+id/log_file"
+            android:icon="@drawable/round_vpn_key_24"
+            android:title="Log File" />
 
     </group>
 

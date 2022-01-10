@@ -35,7 +35,7 @@ namespace OpenpilotSdk.Hardware
         protected virtual string NotConnectedMessage { get; set; } = "No connection has been made to the openpilot device";
 
         public bool IsAuthenticated { get; protected set; } = false;
-        protected readonly string TempDirectory = Path.Combine(AppContext.BaseDirectory, "tmp");
+        protected readonly string TempDirectory = Path.Combine(AppContext.BaseDirectory ?? Environment.GetFolderPath(Environment.SpecialFolder.Personal), "tmp");
         public int Port { get; set; } = 8022;
         public IPAddress IpAddress { get; set; }
         protected SftpClient SftpClient;
@@ -755,7 +755,7 @@ namespace OpenpilotSdk.Hardware
                     var privateKeys = new PrivateKeyFile[]
                     {
                         new PrivateKeyFile(Path.Combine(
-                            AppContext.BaseDirectory,
+                            AppContext.BaseDirectory ?? Environment.GetFolderPath(Environment.SpecialFolder.Personal),
                             "opensshkey"))
                     };
 
@@ -1001,7 +1001,7 @@ namespace OpenpilotSdk.Hardware
                     var connectionInfo = new ConnectionInfo(IpAddress.ToString(), Port,
                         "comma",
                         new PrivateKeyAuthenticationMethod("comma",
-                            new PrivateKeyFile(Path.Combine(AppContext.BaseDirectory,
+                            new PrivateKeyFile(Path.Combine(AppContext.BaseDirectory ?? Environment.GetFolderPath(Environment.SpecialFolder.Personal),
                                 "opensshkey"))));
                     SftpClient = new SftpClient(connectionInfo);
                     SshClient = new SshClient(connectionInfo);
@@ -1033,7 +1033,7 @@ namespace OpenpilotSdk.Hardware
                     var connectionInfo = new ConnectionInfo(IpAddress.ToString(), Port,
                         "comma",
                         new PrivateKeyAuthenticationMethod("comma",
-                            new PrivateKeyFile(Path.Combine(AppContext.BaseDirectory,
+                            new PrivateKeyFile(Path.Combine(AppContext.BaseDirectory ?? Environment.GetFolderPath(Environment.SpecialFolder.Personal),
                                 "opensshkey"))));
                     SftpClient = new SftpClient(connectionInfo);
                     SshClient = new SshClient(connectionInfo);

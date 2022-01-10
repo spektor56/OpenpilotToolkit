@@ -18,7 +18,7 @@ using Google.Android.Material.Navigation;
 using Java.Interop;
 using Octokit;
 using OpenpilotSdk.Hardware;
-using OpenpilotToolkitAndroid.Git;
+using OpenpilotSdk.Git;
 using Serilog;
 using Serilog.Core;
 using Xamarin.Essentials;
@@ -233,6 +233,13 @@ namespace OpenpilotToolkitAndroid
                 OverridePendingTransition(Android.Resource.Animation.SlideInLeft, Android.Resource.Animation.FadeOut);
                 Finish();
 
+            }
+            else if (id == Resource.Id.log_file)
+            {
+                var logActivity = new Intent(this, typeof(LogActivity));
+                StartActivity(logActivity);
+                OverridePendingTransition(Android.Resource.Animation.SlideInLeft, Android.Resource.Animation.FadeOut);
+                Finish();
             }
 
 

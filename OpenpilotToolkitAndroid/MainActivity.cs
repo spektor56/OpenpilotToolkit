@@ -20,9 +20,9 @@ using Google.Android.Material.ProgressIndicator;
 using Google.Android.Material.Snackbar;
 using Java.Interop;
 using OpenpilotSdk.Hardware;
-using OpenpilotToolkitAndroid.Git;
-using OpenpilotToolkitAndroid.Hardware;
-using OpenpilotToolkitAndroid.Openpilot.Fork;
+using OpenpilotSdk.Git;
+using OpenpilotSdk.Hardware;
+using OpenpilotSdk.OpenPilot.Fork;
 using Serilog;
 using Serilog.Core;
 using Xamarin.Essentials;
@@ -49,11 +49,17 @@ namespace OpenpilotToolkitAndroid
                 StartActivity(sshActivity);
                 OverridePendingTransition(Android.Resource.Animation.SlideInLeft, Android.Resource.Animation.FadeOut);
             }
+            else if (id == Resource.Id.log_file)
+            {
+                var logActivity = new Intent(this, typeof(LogActivity));
+                StartActivity(logActivity);
+                OverridePendingTransition(Android.Resource.Animation.SlideInLeft, Android.Resource.Animation.FadeOut);
+            }
             else if (id == Resource.Id.fork_installer)
             {
             }
 
-   
+
 
             var drawer = FindViewById<DrawerLayout>(Resource.Id.drawer_layout);
             drawer.CloseDrawer(GravityCompat.Start);
@@ -76,10 +82,12 @@ namespace OpenpilotToolkitAndroid
         {
             base.OnCreate(savedInstanceState);
 
+            var logPath = Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.Personal), "log.txt");
 
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
                 .WriteTo.AndroidLog()
+                .WriteTo.File(logPath)
                 .Enrich.WithProperty(Constants.SourceContextPropertyName, "OpenpilotToolkit")
                 .CreateLogger();
             AppCompatDelegate.DefaultNightMode = AppCompatDelegate.ModeNightYes;
@@ -138,13 +146,6 @@ namespace OpenpilotToolkitAndroid
             });
         }
 
-        private void spinner_ItemSelected(object sender, AdapterView.ItemSelectedEventArgs e)
-        {
-            var spinner = (Spinner)sender;
-            var toast = string.Format("The planet is {0}", spinner.GetItemAtPosition(e.Position));
-            Toast.MakeText(this, toast, ToastLength.Long).Show();
-        }
-
         private async Task GetDevices()
         {
             _devices.Clear();
@@ -164,7 +165,7 @@ namespace OpenpilotToolkitAndroid
                     
                     if (device.IsAuthenticated)
                     {
-                        var deviceDescription = device + (device is Comma2 ? " - Comma2" : " - Comma3");
+                        var deviceDescription = device.ToString();
                         if(!_devices.ContainsKey(deviceDescription))
                         {
                             _devices.Add(deviceDescription, device);
@@ -203,7 +204,7 @@ namespace OpenpilotToolkitAndroid
                     //await ShowToastOnMainThreadAsync(
                     //$"{foundDevices} device(s) found but authentication failed, do you want to start the SSH wizard?");
                 }
-
+                /*
                 if (_devices.Count > 0)
                 {
                     await MainThread.InvokeOnMainThreadAsync(() =>
@@ -214,6 +215,7 @@ namespace OpenpilotToolkitAndroid
                         
                     });
                 }
+                */
             }
             catch (Exception e)
             {
@@ -300,7 +302,7 @@ namespace OpenpilotToolkitAndroid
                     
                     await Task.Run(async () =>
                     {
-                        result = await device.InstallFork(forkUser, forkBranch, progress).ConfigureAwait(false);
+                        result = await device.InstallForkAsync(forkUser, forkBranch, progress).ConfigureAwait(false);
                     });
                 
                     Toast.MakeText(this, result.Success
