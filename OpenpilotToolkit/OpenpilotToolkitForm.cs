@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Data;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -16,6 +17,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Windows.Forms.VisualStyles;
 using CefSharp;
 using CefSharp.WinForms;
 using LibVLCSharp.Shared;
@@ -782,7 +784,6 @@ namespace OpenpilotToolkit
                 if (cmbDevices.SelectedItem is OpenpilotDevice openpilotDevice)
                 {
                     //TODO: _fileList = comma2.EnumerateFileSystemEntries
-
                     txtWorkingDirectory.Text = openpilotDevice.WorkingDirectory;
                     IEnumerable<Renci.SshNet.Sftp.ISftpFile> files = null;
 
@@ -994,7 +995,6 @@ namespace OpenpilotToolkit
                     files = await openpilotDevice.EnumerateFilesAsync(currentWorkingDirectory);
                 });
                 dgvExplorer.DataSource = files.OrderBy(file => file.Name).ToArray();
-
                 txtWorkingDirectory.Text = newPath;
 
             }
@@ -1321,9 +1321,9 @@ namespace OpenpilotToolkit
                 {
 
 
-                    await Task.Run(() =>
+                    await Task.Run(async () =>
                     {
-                        openpilotDevice.Connect();
+                        await openpilotDevice.ConnectAsync();
 
                         BeginInvoke(new MethodInvoker(() =>
                         {
@@ -1437,6 +1437,111 @@ namespace OpenpilotToolkit
                     EnableRemoteControls(true);
                 }
                 
+            }
+        }
+
+        private void dgvExplorer_DragEnter(object sender, DragEventArgs e)
+        {
+            if (e.Data != null)
+            {
+                if (e.Data.GetDataPresent(DataFormats.FileDrop))
+                {
+                    e.Effect = DragDropEffects.Copy;
+                }
+            }
+        }
+
+        private string GetCurrentPath()
+        {
+            var path = string.Join("/", _workingDirectory.Reverse());
+            path = path.Length < 1 ? "/" : path;
+            return path;
+        }
+
+        private async void dgvExplorer_DragDrop(object sender, DragEventArgs e)
+        {
+            var destinationPath = GetCurrentPath();
+
+
+            if (cmbDevices.SelectedItem is OpenpilotDevice openpilotDevice)
+            {
+                if (e.Data != null)
+                {
+                    var data = e.Data.GetData(DataFormats.FileDrop);
+                    if(data is String[] files)
+                    {
+                        
+                        await Task.Run(async () =>
+                        {
+                            await Parallel.ForEachAsync(files, async (file, token) =>
+                            {
+                                await openpilotDevice.UploadFileAsync(file, destinationPath + "/" + Path.GetFileName(file));
+                                
+                            });
+                        });
+
+                        if (GetCurrentPath() == destinationPath)
+                        {
+                            IEnumerable<Renci.SshNet.Sftp.ISftpFile> directoryContents = null;
+
+                            await Task.Run(async () =>
+                            {
+                                directoryContents = await openpilotDevice.EnumerateFilesAsync(destinationPath);
+                            });
+                            dgvExplorer.DataSource = directoryContents.OrderBy(file => file.Name).ToArray();
+                        }
+                    }
+                    
+                }
+                
+            }
+
+            
+        }
+
+        private async void dgvExplorer_PreviewKeyDown(object sender, PreviewKeyDownEventArgs e)
+        {
+            if (e.KeyCode == Keys.Delete)
+            {
+                var destinationPath = GetCurrentPath();
+                var selectedRows = dgvExplorer.SelectedRows.Cast<DataGridViewRow>().Where(row => ((Renci.SshNet.Sftp.SftpFile)row.DataBoundItem).Name != ".." && ((Renci.SshNet.Sftp.SftpFile)row.DataBoundItem).Name != ".").ToArray();
+                if (selectedRows.Length < 1)
+                {
+                    return;
+                }
+
+                if (cmbDevices.SelectedItem is OpenpilotDevice openpilotDevice)
+                {
+
+                    if (ToolkitMessageDialog.ShowDialog(
+                            $"Are you sure you want to delete {selectedRows.Length} item(s): {Environment.NewLine + string.Join(Environment.NewLine, selectedRows.Select(row => ((Renci.SshNet.Sftp.SftpFile)row.DataBoundItem).Name))}", this, MessageBoxButtons.YesNo) != DialogResult.Yes)
+                    {
+                        return;
+                    }
+
+                    await Task.Run(() =>
+                    {
+                        Parallel.ForEach(selectedRows, row =>
+                        {
+                            var selectedItem = ((Renci.SshNet.Sftp.SftpFile)row.DataBoundItem);
+                            if (!(selectedItem.Name == ".." || selectedItem.Name == "."))
+                            {
+                                selectedItem.Delete();
+                            }
+                        });
+                    });
+
+                    if (GetCurrentPath() == destinationPath)
+                    {
+                        IEnumerable<Renci.SshNet.Sftp.ISftpFile> directoryContents = null;
+
+                        await Task.Run(async () =>
+                        {
+                            directoryContents = await openpilotDevice.EnumerateFilesAsync(destinationPath);
+                        });
+                        dgvExplorer.DataSource = directoryContents.OrderBy(file => file.Name).ToArray();
+                    }
+                }
             }
         }
     }

@@ -57,6 +57,16 @@ namespace OpenpilotSdk.Hardware
             }
         }
 
+        public async Task UploadFileAsync(string source, string destination)
+        {
+            using (var fs = File.OpenRead(source))
+            {
+                await Task.Factory.FromAsync(
+                    SftpClient.BeginUploadFile(fs, destination),
+                    SftpClient.EndUploadFile);
+            }
+        }
+
         public async Task<SftpFileStream> OpenReadAsync(string path)
         {
             await ConnectAsync();
@@ -1028,10 +1038,10 @@ namespace OpenpilotSdk.Hardware
                     SftpClient = new SftpClient(connectionInfo);
                     SshClient = new SshClient(connectionInfo);
 
-                    var connection1 = SftpClient.ConnectAsync(cancellationToken);
-                    var connection2 = SshClient.ConnectAsync(cancellationToken);
+                    await SftpClient.ConnectAsync(cancellationToken);
+                    SftpClient.ChangeDirectory("/data/openpilot/");
 
-                    await Task.WhenAll(connection1, connection2);
+                    await SshClient.ConnectAsync(cancellationToken);
                 }
             }
             finally

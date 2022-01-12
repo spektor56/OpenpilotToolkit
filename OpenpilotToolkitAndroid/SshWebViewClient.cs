@@ -19,18 +19,7 @@ namespace OpenpilotToolkitAndroid
             handler?.Invoke(this, e);
         }
 
-        public override void OnFormResubmission(WebView? view, Message? dontResend, Message? resend)
-        {
-            base.OnFormResubmission(view, dontResend, resend);
-        }
-
-        public override void OnLoadResource(WebView? view, string? url)
-        {
-            base.OnLoadResource(view, url);
-
-        }
-
-        public override void OnPageStarted(WebView? view, string? url, Bitmap? favicon)
+        public override void OnPageStarted(WebView view, string url, Bitmap favicon)
         {
             base.OnPageStarted(view, url, favicon);
 
@@ -48,21 +37,6 @@ namespace OpenpilotToolkitAndroid
                 }
             }
 
-        }
-
-        public override void OnReceivedHttpAuthRequest(WebView? view, HttpAuthHandler? handler, string? host, string? realm)
-        {
-            base.OnReceivedHttpAuthRequest(view, handler, host, realm);
-        }
-
-        public override void OnReceivedLoginRequest(WebView? view, string? realm, string? account, string? args)
-        {
-            base.OnReceivedLoginRequest(view, realm, account, args);
-        }
-
-        public override void OnPageFinished(WebView? view, string? url)
-        {
-            base.OnPageFinished(view, url);
         }
     }
 }

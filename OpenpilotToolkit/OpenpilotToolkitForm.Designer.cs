@@ -893,6 +893,7 @@ namespace OpenpilotToolkit
             // 
             // dgvExplorer
             // 
+            this.dgvExplorer.AllowDrop = true;
             this.dgvExplorer.AllowUserToAddRows = false;
             this.dgvExplorer.AllowUserToDeleteRows = false;
             this.dgvExplorer.AllowUserToOrderColumns = true;
@@ -943,6 +944,9 @@ namespace OpenpilotToolkit
             this.dgvExplorer.TabIndex = 32;
             this.dgvExplorer.CellDoubleClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dgvExplorer_CellDoubleClick);
             this.dgvExplorer.CellFormatting += new System.Windows.Forms.DataGridViewCellFormattingEventHandler(this.dgvExplorer_CellFormatting);
+            this.dgvExplorer.DragDrop += new System.Windows.Forms.DragEventHandler(this.dgvExplorer_DragDrop);
+            this.dgvExplorer.DragEnter += new System.Windows.Forms.DragEventHandler(this.dgvExplorer_DragEnter);
+            this.dgvExplorer.PreviewKeyDown += new System.Windows.Forms.PreviewKeyDownEventHandler(this.dgvExplorer_PreviewKeyDown);
             // 
             // colName
             // 
