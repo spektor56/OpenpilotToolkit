@@ -321,13 +321,11 @@ namespace OpenpilotToolkit
 
                         var task = Task.Run(async () =>
                         {
-                            var cameraTask = new List<Task>();
-                            foreach (var camera in cameras)
+                            await Parallel.ForEachAsync(cameras, async (camera, token) =>
                             {
-                                cameraTask.Add(openpilotDevice.ExportDriveAsync(exportFolder, drive, camera, cbCombineSegments.Checked, progress));
-                            }
-
-                            await Task.WhenAll(cameraTask);
+                                await openpilotDevice.ExportDriveAsync(exportFolder, drive, camera, cbCombineSegments.Checked,
+                                    progress);
+                            });
 
                         });
                         exportTasks.Add(new Tuple<string, Task>(drive.Date.ToString(), task));

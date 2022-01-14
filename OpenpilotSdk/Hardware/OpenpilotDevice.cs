@@ -59,10 +59,10 @@ namespace OpenpilotSdk.Hardware
 
         public async Task UploadFileAsync(string source, string destination)
         {
-            using (var fs = File.OpenRead(source))
+            await using (var fileStream = File.OpenRead(source))
             {
                 await Task.Factory.FromAsync(
-                    SftpClient.BeginUploadFile(fs, destination),
+                    SftpClient.BeginUploadFile(fileStream, destination),
                     SftpClient.EndUploadFile);
             }
         }
@@ -107,7 +107,7 @@ namespace OpenpilotSdk.Hardware
             {
                 bool fileWritten = false;
                 var filePath = Path.Combine(exportPath, drive.ToString() +  (char)camera) + ".hevc";
-                using (var fs = File.Create(filePath))
+                await using (var fileStream = File.Create(filePath))
                 {
                     foreach (var segment in drive.Segments)
                     {
@@ -127,9 +127,9 @@ namespace OpenpilotSdk.Hardware
 
                         if (!string.IsNullOrWhiteSpace(videoPath))
                         {
-                            using (var segmentFile = SftpClient.OpenRead(videoPath))
+                            using (var segmentFile = await SftpClient.OpenAsync(videoPath, FileMode.Open, FileAccess.Read, CancellationToken.None))
                             {
-                                await segmentFile.CopyToAsync(fs);
+                                await segmentFile.CopyToAsync(fileStream);
                             }
                         }
 
@@ -139,7 +139,7 @@ namespace OpenpilotSdk.Hardware
                         }
                     }
 
-                    fileWritten = fs.Length > 0;
+                    fileWritten = fileStream.Length > 0;
                 }
 
                 if (!fileWritten)
@@ -153,26 +153,25 @@ namespace OpenpilotSdk.Hardware
                 var m3uFileName = drive.ToString() + (char)camera + ".m3u";
                 var m3uList = new List<string>();
 
-                foreach (var segment in drive.Segments)
-                {
-                    var fileName = await ExportSegmentAsync(exportPath, segment, camera, progress);
-                    if (!string.IsNullOrWhiteSpace(fileName))
-                    {
-                        m3uList.Add(fileName);
-                    }
-                }
+                var exportTasks =
+                    drive.Segments.Select((segment) => ExportSegmentAsync(exportPath, segment, camera, progress));
+                await Task.WhenAll(exportTasks);
 
-                if (m3uList.Count > 0)
+                foreach (var exportTask in exportTasks)
                 {
-                    using (var file = File.CreateText(Path.Combine(exportPath, m3uFileName)))
+                    m3uList.Add(exportTask.Result);
+                }
+                
+                if (m3uList.Count > 1)
+                {
+                    await using (var file = File.CreateText(Path.Combine(exportPath, m3uFileName)))
                     {
                         await file.WriteAsync(string.Join(Environment.NewLine, m3uList));
                     }
                 }
             }
-
         }
-
+        
         public void ExportDrive(string path, Drive drive, IProgress<int> progress = null)
         {
             Connect();
@@ -199,8 +198,6 @@ namespace OpenpilotSdk.Hardware
         public async Task<string> ExportSegmentAsync(string path, DriveSegment driveSegment, Camera camera,
             IProgress<int> progress = null)
         {
-            await ConnectAsync();
-
             var videoPath = "";
             switch (camera)
             {
@@ -215,23 +212,56 @@ namespace OpenpilotSdk.Hardware
                     break;
             }
 
-            string newFileName = "";
+            string fileName = "";
             if (!string.IsNullOrWhiteSpace(videoPath))
             {
-                newFileName = new DirectoryInfo(Path.GetDirectoryName(videoPath)).Name + (char)camera +
-                                  Path.GetExtension(videoPath);
-
-                if (!File.Exists(Path.Combine(path, newFileName)))
+                var fileNameWithoutExtension = new DirectoryInfo(Path.GetDirectoryName(videoPath)).Name + (char)camera;
+                fileName = fileNameWithoutExtension + ".mp4";
+                var outputFilePath = Path.Combine(path, fileNameWithoutExtension + Path.GetExtension(videoPath));
+                var convertedFilePath = Path.Combine(path, fileName);
+                if (!File.Exists(convertedFilePath))
                 {
-                    using (var outputFile = File.Create(Path.Combine(path, newFileName)))
+                    if (!File.Exists(outputFilePath))
                     {
-                        if (Directory.Exists(Path.GetDirectoryName(path)))
+                        await using (var outputFile = File.Create(outputFilePath))
                         {
-                            await Task.Factory.FromAsync(
-                                SftpClient.BeginDownloadFile(videoPath, outputFile),
-                                SftpClient.EndDownloadFile);
+                            if (Directory.Exists(Path.GetDirectoryName(path)))
+                            {
+                                var connectionInfo = new ConnectionInfo(IpAddress.ToString(), Port,
+                                    "comma",
+                                    new PrivateKeyAuthenticationMethod("comma",
+                                        new PrivateKeyFile(Path.Combine(
+                                            AppContext.BaseDirectory ??
+                                            Environment.GetFolderPath(Environment.SpecialFolder.Personal),
+                                            "opensshkey"))));
+
+                                using (var sftpClient = new SftpClient(connectionInfo))
+                                {
+                                    await _maxConcurrentConnectionLock.WaitAsync();
+                                    try
+                                    {
+                                        await sftpClient.ConnectAsync(CancellationToken.None);
+                                    }
+                                    finally
+                                    {
+                                        _maxConcurrentConnectionLock.Release();
+                                    }
+
+                                    await using (var stream = await sftpClient.OpenAsync(videoPath, FileMode.Open,
+                                                     FileAccess.Read, CancellationToken.None))
+                                    {
+                                        await stream.CopyToAsync(outputFile);
+                                    }
+                                }
+                            }
                         }
                     }
+
+                    await FFMpegArguments.FromFileInput(outputFilePath, true,
+                            options => options.WithFramerate(20))
+                        .OutputToFile(Path.Combine(path, fileName), true, options => options.CopyChannel())
+                        .ProcessAsynchronously();
+                    File.Delete(outputFilePath);
                 }
             }
 
@@ -240,7 +270,7 @@ namespace OpenpilotSdk.Hardware
                 progress.Report(driveSegment.Index);
             }
 
-            return newFileName;
+            return fileName;
         }
 
         public string ExportSegment(string path, DriveSegment driveSegment)
@@ -282,7 +312,7 @@ namespace OpenpilotSdk.Hardware
                 var videoFile = driveSegment.FrontCameraQuick ?? driveSegment.FrontCamera;
                 var imageBuffer = quickVideo ? new byte[10000] : new byte[200000];
 
-                using (var sftpFileStream = SftpClient.OpenRead(videoFile.FullName))
+                await using (var sftpFileStream = SftpClient.OpenRead(videoFile.FullName))
                 {
                     while (offset < imageBuffer.Length)
                     {
@@ -291,8 +321,8 @@ namespace OpenpilotSdk.Hardware
                 }
 
                 //using (var sftpFileStream = SftpClient.OpenRead(driveSegment.FrontCamera.FullName))
-                using (var msInput = new MemoryStream(imageBuffer))
-                using (var msOutput = new MemoryStream())
+                await using (var msInput = new MemoryStream(imageBuffer))
+                await using (var msOutput = new MemoryStream())
                 {
                     try
                     {
@@ -990,6 +1020,8 @@ namespace OpenpilotSdk.Hardware
             return client;
         }
 
+        //More than 10 concurrent requests to SftpClient.ConnectAsync will throw an exception
+        private readonly SemaphoreSlim _maxConcurrentConnectionLock = new SemaphoreSlim(10, 10);
         private readonly SemaphoreSlim _connectionLock = new SemaphoreSlim(1, 1);
         public void Connect()
         {
@@ -1038,10 +1070,18 @@ namespace OpenpilotSdk.Hardware
                     SftpClient = new SftpClient(connectionInfo);
                     SshClient = new SshClient(connectionInfo);
 
-                    await SftpClient.ConnectAsync(cancellationToken);
-                    SftpClient.ChangeDirectory("/data/openpilot/");
+                    await _maxConcurrentConnectionLock.WaitAsync(cancellationToken);
+                    try
+                    {
+                        await SftpClient.ConnectAsync(cancellationToken);
+                        SftpClient.ChangeDirectory("/data/openpilot/");
 
-                    await SshClient.ConnectAsync(cancellationToken);
+                        await SshClient.ConnectAsync(cancellationToken);
+                    }
+                    finally
+                    {
+                        _maxConcurrentConnectionLock.Release();
+                    }
                 }
             }
             finally
