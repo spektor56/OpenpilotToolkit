@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net6.0-windows7.0</TargetFramework>
+    <TargetFramework>net6.0-windows</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
 	<DebugType>embedded</DebugType>
 	<ApplicationIcon>Resources\ic_launcher-web.ico</ApplicationIcon>
@@ -623,6 +623,9 @@
 
   <ItemGroup>
 	<PackageReference Include="CefSharp.WinForms.NetCore" Version="97.1.60" />
+	<PackageReference Include="chromiumembeddedframework.runtime.win-arm64" Version="97.1.6" />
+	<PackageReference Include="chromiumembeddedframework.runtime.win-x64" />
+	<PackageReference Include="chromiumembeddedframework.runtime.win-x86" Version="97.1.6" />
 	<PackageReference Include="LibUsbDotNet" Version="2.2.29" />
     <PackageReference Include="LibVLCSharp" Version="3.6.5" />
     <PackageReference Include="LibVLCSharp.WinForms" Version="3.6.5" />
