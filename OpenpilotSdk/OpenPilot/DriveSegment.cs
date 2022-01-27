@@ -11,10 +11,13 @@ namespace OpenpilotSdk.OpenPilot
         public ISftpFile RawLog { get; }
         public ISftpFile FrontCameraQuick { get; }
 
+        public string Path { get; }
+
         public int Index { get; }
 
-        public DriveSegment(int index, ISftpFile frontCamera, ISftpFile quickLog, ISftpFile rawLog = null, ISftpFile driverCamera = null, ISftpFile frontCameraQuick = null, ISftpFile wideCamera = null)
+        public DriveSegment(int index, string path, ISftpFile frontCamera, ISftpFile quickLog, ISftpFile rawLog = null, ISftpFile driverCamera = null, ISftpFile frontCameraQuick = null, ISftpFile wideCamera = null)
         {
+            Path = path;
             Index = index;
             FrontCamera = frontCamera;
             QuickLog = quickLog;

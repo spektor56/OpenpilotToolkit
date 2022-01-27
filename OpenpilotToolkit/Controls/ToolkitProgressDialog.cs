@@ -66,7 +66,7 @@ namespace OpenpilotToolkit.Controls
             this.Focus();
         }
 
-        private void ProgressOnProgressChanged(object? sender, InstallProgress e)
+        private void ProgressOnProgressChanged(object sender, InstallProgress e)
         {
             progressBar1.Style = ProgressBarStyle.Continuous;
             lblText.Text = e.ProgressText;

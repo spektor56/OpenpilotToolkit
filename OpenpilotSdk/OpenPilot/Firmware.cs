@@ -38,18 +38,7 @@ namespace OpenpilotSdk.OpenPilot
         public Firmware(CarParams.Ecu ecu, byte[] version, uint address, byte subAddress)
         {
             var unparsedVersion = Encoding.UTF8.GetString(version);
-            var parsedVersion = unparsedVersion.Replace("\'", "\\x27")
-                .Replace("\"", "\\x22")
-                .Replace("\\", "\\x5C")
-                .Replace("\0", "\\x00")
-                .Replace("\a", "\\x07")
-                .Replace("\b", "\\x08")
-                .Replace("\f", "\\x0C")
-                .Replace("\n", "\\x0A")
-                .Replace("\r", "\\x0D")
-                .Replace("\t", "\\x09")
-                .Replace("\v", "\\x0B");
-            parsedVersion = EncodeNonAsciiCharacters(parsedVersion);
+            var parsedVersion = EncodeNonAsciiCharacters(unparsedVersion);
             
             RawVersion = BitConverter.ToString(version);
             Ecu = ecu.ToString();

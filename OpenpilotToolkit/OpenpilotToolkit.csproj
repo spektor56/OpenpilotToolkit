@@ -9,7 +9,7 @@
 	<Platforms>AnyCPU;x64</Platforms>
 	<LangVersion>preview</LangVersion>
 	<StartupObject>OpenpilotToolkit.Program</StartupObject>
-	<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+	<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
 	<ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
 
@@ -21,6 +21,22 @@
 	<PropertyGroup Condition="'$(PlatformTarget)' == 'x64'">
 		<RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-x64</RuntimeIdentifier>
 		<SelfContained Condition="'$(SelfContained)' == ''">false</SelfContained>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+	  <NoWarn>1701;1702</NoWarn>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+	  <NoWarn>1701;1702</NoWarn>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+	  <NoWarn>1701;1702</NoWarn>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+	  <NoWarn>1701;1702</NoWarn>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -606,10 +622,10 @@
 	</ItemGroup>
 
   <ItemGroup>
-	<PackageReference Include="CefSharp.WinForms.NetCore" Version="96.0.180" />
+	<PackageReference Include="CefSharp.WinForms.NetCore" Version="97.1.60" />
 	<PackageReference Include="LibUsbDotNet" Version="2.2.29" />
-    <PackageReference Include="LibVLCSharp" Version="3.6.4" />
-    <PackageReference Include="LibVLCSharp.WinForms" Version="3.6.4" />
+    <PackageReference Include="LibVLCSharp" Version="3.6.5" />
+    <PackageReference Include="LibVLCSharp.WinForms" Version="3.6.5" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="6.0.1">
       <PrivateAssets>all</PrivateAssets>
@@ -706,15 +722,7 @@
 	</Target>
 
 	<ItemGroup>
-	  <PackageReference Update="chromiumembeddedframework.runtime.win-x64" Version="96.0.18" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <PackageReference Update="chromiumembeddedframework.runtime.win-x86" Version="96.0.18" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <PackageReference Update="chromiumembeddedframework.runtime.win-arm64" Version="96.0.18" />
+	  <PackageReference Update="chromiumembeddedframework.runtime.win-x64" Version="97.1.6" />
 	</ItemGroup>
 
 </Project>

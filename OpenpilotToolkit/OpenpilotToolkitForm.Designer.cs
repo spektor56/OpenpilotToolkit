@@ -67,6 +67,7 @@ namespace OpenpilotToolkit
             this.cbDriverCamera = new MaterialSkin.Controls.MaterialCheckbox();
             this.cbWideCamera = new MaterialSkin.Controls.MaterialCheckbox();
             this.panel2 = new System.Windows.Forms.Panel();
+            this.btnDeleteDrives = new MaterialSkin.Controls.MaterialButton();
             this.vlcVideoPlayer = new OpenpilotToolkit.Controls.Media.VideoPlayer();
             this.tpRemote = new System.Windows.Forms.TabPage();
             this.btnUpdate = new MaterialSkin.Controls.MaterialButton();
@@ -151,6 +152,7 @@ namespace OpenpilotToolkit
             this.lbDrives.Size = new System.Drawing.Size(143, 364);
             this.lbDrives.TabIndex = 0;
             this.lbDrives.SelectedIndexChanged += new System.EventHandler(this.lbDrives_SelectedIndexChanged);
+            this.lbDrives.PreviewKeyDown += new System.Windows.Forms.PreviewKeyDownEventHandler(this.lbDrives_PreviewKeyDown);
             // 
             // pbPreview
             // 
@@ -223,7 +225,7 @@ namespace OpenpilotToolkit
             this.btnExportMapillary.Enabled = false;
             this.btnExportMapillary.HighEmphasis = true;
             this.btnExportMapillary.Icon = null;
-            this.btnExportMapillary.Location = new System.Drawing.Point(4, 102);
+            this.btnExportMapillary.Location = new System.Drawing.Point(3, 198);
             this.btnExportMapillary.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
             this.btnExportMapillary.MouseState = MaterialSkin.MouseState.HOVER;
             this.btnExportMapillary.Name = "btnExportMapillary";
@@ -601,14 +603,39 @@ namespace OpenpilotToolkit
             // 
             // panel2
             // 
+            this.panel2.Controls.Add(this.btnDeleteDrives);
             this.panel2.Controls.Add(this.btnRefreshVideos);
             this.panel2.Controls.Add(this.btnExportMapillary);
             this.panel2.Controls.Add(this.btnExportGpx);
             this.panel2.Controls.Add(this.btnExport);
             this.panel2.Location = new System.Drawing.Point(6, 62);
             this.panel2.Name = "panel2";
-            this.panel2.Size = new System.Drawing.Size(204, 505);
+            this.panel2.Size = new System.Drawing.Size(204, 434);
             this.panel2.TabIndex = 30;
+            // 
+            // btnDeleteDrives
+            // 
+            this.btnDeleteDrives.AccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(64)))), ((int)(((byte)(129)))));
+            this.btnDeleteDrives.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnDeleteDrives.AutoSize = false;
+            this.btnDeleteDrives.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.btnDeleteDrives.Density = MaterialSkin.Controls.MaterialButton.MaterialButtonDensity.Default;
+            this.btnDeleteDrives.Depth = 0;
+            this.btnDeleteDrives.HighEmphasis = true;
+            this.btnDeleteDrives.Icon = null;
+            this.btnDeleteDrives.Location = new System.Drawing.Point(4, 102);
+            this.btnDeleteDrives.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+            this.btnDeleteDrives.MouseState = MaterialSkin.MouseState.HOVER;
+            this.btnDeleteDrives.Name = "btnDeleteDrives";
+            this.btnDeleteDrives.NoAccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(81)))), ((int)(((byte)(181)))));
+            this.btnDeleteDrives.Size = new System.Drawing.Size(194, 36);
+            this.btnDeleteDrives.TabIndex = 25;
+            this.btnDeleteDrives.Text = "Delete Selected Drive(s)";
+            this.btnDeleteDrives.Type = MaterialSkin.Controls.MaterialButton.MaterialButtonType.Contained;
+            this.btnDeleteDrives.UseAccentColor = true;
+            this.btnDeleteDrives.UseVisualStyleBackColor = true;
+            this.btnDeleteDrives.Click += new System.EventHandler(this.btnDeleteDrives_Click);
             // 
             // vlcVideoPlayer
             // 
@@ -1528,6 +1555,7 @@ namespace OpenpilotToolkit
         private Controls.MaterialSkinDataGridView dgvDriveInfo;
         private System.Windows.Forms.DataGridViewTextBoxColumn colProperty;
         private System.Windows.Forms.DataGridViewTextBoxColumn colValue;
+        private MaterialButton btnDeleteDrives;
     }
 }
 
