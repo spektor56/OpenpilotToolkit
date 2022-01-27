@@ -1496,7 +1496,8 @@ namespace OpenpilotToolkit
         {
             if (cmbDevices.SelectedItem is OpenpilotDevice openpilotDevice)
             {
-                if(lbDrives.SelectedItems.Count > 0)
+                var selectedItems = lbDrives.SelectedItems;
+                if (selectedItems.Count > 0)
                 {
                     if (ToolkitMessageDialog.ShowDialog($"Are you sure you want to delete {selectedItems.Count} drives(s): {Environment.NewLine + string.Join(Environment.NewLine, selectedItems.Cast<object>().Where(item => item is Drive).Select(row => row.ToString()))}", this, MessageBoxButtons.YesNo) != DialogResult.Yes)
                     {
@@ -1510,7 +1511,7 @@ namespace OpenpilotToolkit
 
                 await Task.Run(async () => {
                     var deleteTasks = new Dictionary<Drive, Task>();
-                    foreach (var selectedItem in lbDrives.SelectedItems)
+                    foreach (var selectedItem in selectedItems)
                     {
                         if (selectedItem is Drive drive)
                         {

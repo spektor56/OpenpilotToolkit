@@ -664,7 +664,6 @@ namespace OpenpilotToolkit
             this.tpRemote.Size = new System.Drawing.Size(1090, 502);
             this.tpRemote.TabIndex = 11;
             this.tpRemote.Text = "Remote";
-            this.tpRemote.Click += new System.EventHandler(this.tpRemote_Click);
             // 
             // btnUpdate
             // 
@@ -1367,7 +1366,6 @@ namespace OpenpilotToolkit
             this.themePanel.Name = "themePanel";
             this.themePanel.Size = new System.Drawing.Size(857, 40);
             this.themePanel.TabIndex = 34;
-            this.themePanel.Paint += new System.Windows.Forms.PaintEventHandler(this.themePanel_Paint);
             // 
             // wifiConnected
             // 
