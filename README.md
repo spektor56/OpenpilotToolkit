@@ -4,7 +4,7 @@
 
 Class library and toolkit for interacting with your openpilot / comma devices.
 
-<a href='https://github.com/spektor56/OpenpilotToolkit/releases/download/1.3.1/OpenpilotToolkit.7z' target='_blank'>Download for Windows</a>
+<a href='https://github.com/spektor56/OpenpilotToolkit/releases/download/1.4.0/OpenpilotToolkit.7z' target='_blank'>Download for Windows</a>
 
 <a href='https://github.com/spektor56/OpenpilotToolkit/releases/download/1.1.0/com.spektor56.openpilottoolkitandroid-Signed.apk' target='_blank'>Download For Android</a>
 
@@ -18,7 +18,7 @@ Windows app:
 - Fork installer
 - Fingerprint V2 viewer
 - SSH file explorer (cant view / edit / download files yet)
-- SSH terminal with terminal emulation (hotkey commands not supported yet)
+- SSH terminal with terminal emulation
 
 Android app:
 - SSH wizard to generate and install SSH keys
