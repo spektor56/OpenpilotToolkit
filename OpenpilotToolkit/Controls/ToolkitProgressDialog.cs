@@ -62,7 +62,6 @@ namespace OpenpilotToolkit.Controls
 
         private void ToolkitProgressDialog_LostFocus(object sender, EventArgs e)
         {
-            
             this.Focus();
         }
 

@@ -1,9 +1,14 @@
 ﻿namespace OpenpilotSdk.Hardware
 {
-    public enum Camera
+    public class Camera
     {
-        Front = 'F',
-        Wide = 'E',
-        Driver = 'D'
+        public CameraType Type { get; }
+        public int FrameRate { get; }
+
+        public Camera(CameraType cameraType, int frameRate = 20)
+        {
+            Type = cameraType;
+            FrameRate = frameRate;
+        }
     }
 }

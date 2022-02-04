@@ -91,7 +91,7 @@ namespace OpenpilotToolkit
             var terminalPath = Path.Combine(AppContext.BaseDirectory, @"Controls\Terminal\index.html");
             sshTerminal =
                 new ChromiumWebBrowser(terminalPath);
-            
+
             sshTerminal.Dock = DockStyle.Fill;
             sshTerminal.CreateControl();
 
@@ -272,15 +272,24 @@ namespace OpenpilotToolkit
                 var cameras = new List<Camera>(3);
                 if (cbFrontCamera.Checked)
                 {
-                    cameras.Add(Camera.Front);
+                    if(openpilotDevice.Cameras.ContainsKey(CameraType.Front))
+                    {
+                        cameras.Add(openpilotDevice.Cameras[CameraType.Front]);
+                    }
                 }
                 if (cbWideCamera.Checked)
                 {
-                    cameras.Add(Camera.Wide);
+                    if (openpilotDevice.Cameras.ContainsKey(CameraType.Wide))
+                    {
+                        cameras.Add(openpilotDevice.Cameras[CameraType.Wide]);
+                    }
                 }
                 if (cbDriverCamera.Checked)
                 {
-                    cameras.Add(Camera.Driver);
+                    if (openpilotDevice.Cameras.ContainsKey(CameraType.Driver))
+                    {
+                        cameras.Add(openpilotDevice.Cameras[CameraType.Driver]);
+                    }
                 }
 
                 if (cameras.Count < 1)
@@ -404,7 +413,7 @@ namespace OpenpilotToolkit
 
                             if (firstSegment != null)
                             {
-                                var videoFile = firstSegment.FrontCameraQuick ?? firstSegment.FrontCamera;
+                                var videoFile = firstSegment.FrontVideoQuick ?? firstSegment.FrontVideo;
 
                                 if (videoFile != null)
                                 {
@@ -415,13 +424,13 @@ namespace OpenpilotToolkit
 
                                         Task<Renci.SshNet.Sftp.SftpFileStream> videoStreamTask = null;
 
-                                        if (firstSegment.FrontCameraQuick != null && videoFile == firstSegment.FrontCameraQuick)
+                                        if (firstSegment.FrontVideoQuick != null && videoFile == firstSegment.FrontVideoQuick)
                                         {
-                                            videoStreamTask = openpilotDevice.OpenReadAsync(videoFile.FullName);
+                                            videoStreamTask = openpilotDevice.OpenReadAsync(videoFile.File.FullName);
                                         }
                                         else
                                         {
-                                            videoStreamTask = openpilotDevice.OpenReadAsync(videoFile.FullName);
+                                            videoStreamTask = openpilotDevice.OpenReadAsync(videoFile.File.FullName);
                                         }
 
                                         var tasks = new List<Task> { thumbnailTask, videoStreamTask };
@@ -1200,45 +1209,15 @@ namespace OpenpilotToolkit
         {
             if (_shellStream != null)
             {
-                //var command2 = txtSshCommand.Text;
-                //await _shellStream.WriteAsync(new ReadOnlyMemory<byte>(Encoding.UTF8.GetBytes(command2 + "\r")));
-
-                if (e.KeyCode == Keys.Enter)
+                if (e.KeyCode == Keys.Up)
                 {
-                    _historyIndex = 0;
-                    var command = txtSshCommand.Text;
-                    _commandHistory.Add(command);
-                    txtSshCommand.Text = "";
-
-                    
-                    await _shellStream.WriteAsync(new ReadOnlyMemory<byte>(Encoding.UTF8.GetBytes(command + "\r")));
+                    await _shellStream.WriteAsync(new ReadOnlyMemory<byte>(new[] { (byte)27, (byte)91, (byte)65 }));
                     await _shellStream.FlushAsync();
-
-                }
-                
-                else if (e.KeyCode == Keys.Up)
-                {
-                    _historyIndex++;
-                    if (_historyIndex <= _commandHistory.Count)
-                    {
-                        txtSshCommand.Text = _commandHistory[_commandHistory.Count - _historyIndex];
-                    }
-                    else
-                    {
-                        _historyIndex = _commandHistory.Count;
-                    }
                 }
                 else if (e.KeyCode == Keys.Down)
                 {
-                    _historyIndex--;
-                    if (_historyIndex > 0)
-                    {
-                        txtSshCommand.Text = _commandHistory[_commandHistory.Count - _historyIndex];
-                    }
-                    else
-                    {
-                        _historyIndex = 0;
-                    }
+                    await _shellStream.WriteAsync(new ReadOnlyMemory<byte>(new[] { (byte)27, (byte)91, (byte)66 }));
+                    await _shellStream.FlushAsync();
                 }
             }
         }
@@ -1580,6 +1559,24 @@ namespace OpenpilotToolkit
                         }
                     });
                 }
+            }
+        }
+
+        private async void txtSshCommand_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            if (_shellStream != null)
+            {
+                var character = e.KeyChar.ToString();
+                await _shellStream.WriteAsync(new ReadOnlyMemory<byte>(Encoding.UTF8.GetBytes(character)));
+                await _shellStream.FlushAsync();
+            }
+        }
+
+        private void txtSshCommand_PreviewKeyDown(object sender, PreviewKeyDownEventArgs e)
+        {
+            if (e.KeyCode == Keys.Tab)
+            {
+                e.IsInputKey = true;
             }
         }
     }

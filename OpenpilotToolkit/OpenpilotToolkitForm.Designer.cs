@@ -1221,11 +1221,14 @@ namespace OpenpilotToolkit
             this.txtSshCommand.MouseState = MaterialSkin.MouseState.OUT;
             this.txtSshCommand.Multiline = false;
             this.txtSshCommand.Name = "txtSshCommand";
+            this.txtSshCommand.ReadOnly = true;
             this.txtSshCommand.Size = new System.Drawing.Size(1078, 50);
             this.txtSshCommand.TabIndex = 29;
             this.txtSshCommand.Text = "";
             this.txtSshCommand.TrailingIcon = null;
             this.txtSshCommand.KeyDown += new System.Windows.Forms.KeyEventHandler(this.txtSshCommand_KeyDown);
+            this.txtSshCommand.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.txtSshCommand_KeyPress);
+            this.txtSshCommand.PreviewKeyDown += new System.Windows.Forms.PreviewKeyDownEventHandler(this.txtSshCommand_PreviewKeyDown);
             // 
             // tpDonate
             // 
@@ -1440,6 +1443,7 @@ namespace OpenpilotToolkit
             this.DrawerShowIconsWhenHidden = true;
             this.DrawerTabControl = this.tcSettings;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
+            this.KeyPreview = true;
             this.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.MinimumSize = new System.Drawing.Size(1104, 604);
             this.Name = "OpenpilotToolkitForm";

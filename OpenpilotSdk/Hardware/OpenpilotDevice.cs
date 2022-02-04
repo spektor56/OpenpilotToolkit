@@ -51,6 +51,8 @@ namespace OpenpilotSdk.Hardware
         public virtual string InstallEmuCommand { get; protected set; } = @"cd /data/openpilot && echo 'y' | bash <(curl -fsSL install.emu.sh) && source /data/community/.bashrc";
         public virtual string GitCloneCommand { get; protected set; } = @"cd /data && rm -rf openpilot; git clone -b {1} --depth 1 --single-branch --progress --recurse-submodules --shallow-submodules {0} openpilot";
 
+        public abstract IReadOnlyDictionary<CameraType,Camera> Cameras { get; }
+
         public string WorkingDirectory
         {
             get
@@ -126,7 +128,7 @@ namespace OpenpilotSdk.Hardware
 
                 if (exportTasks.Length > 0)
                 {
-                    var outputFilePath = Path.Combine(exportPath, drive.ToString() + (char)camera) + ".hevc";
+                    var outputFilePath = Path.Combine(exportPath, drive.ToString() + (char)camera.Type) + ".hevc";
                     bool fileWritten = false;
 
                     await using (var outputFile = File.Create(outputFilePath))
@@ -158,8 +160,8 @@ namespace OpenpilotSdk.Hardware
                     if (fileWritten)
                     {
                         await FFMpegArguments.FromFileInput(outputFilePath, true,
-                                                    options => options.WithFramerate(20))
-                                                .OutputToFile(Path.Combine(exportPath, drive.ToString() + (char)camera) + ".mp4", true, options => options.CopyChannel())
+                                                    options => options.WithFramerate(camera.FrameRate))
+                                                .OutputToFile(Path.Combine(exportPath, drive.ToString() + (char)camera.Type) + ".mp4", true, options => options.CopyChannel())
                                                 .ProcessAsynchronously();
                     }
                     File.Delete(outputFilePath);
@@ -167,11 +169,11 @@ namespace OpenpilotSdk.Hardware
             }
             else
             {
-                var m3uFileName = drive.ToString() + (char)camera + ".m3u";
+                var m3uFileName = drive.ToString() + (char)camera.Type + ".m3u";
 
                 var exportTasks =
                     drive.Segments.Select((segment) => ExportSegmentAsync(exportPath, segment, camera, true, progress));
-                var exportedSegments = await Task.WhenAll(exportTasks);
+                var exportedSegments = (await Task.WhenAll(exportTasks)).Where(file => !string.IsNullOrWhiteSpace(file)).ToArray();
 
                 if (exportedSegments.Length > 1)
                 {
@@ -209,24 +211,25 @@ namespace OpenpilotSdk.Hardware
         public async Task<string> ExportSegmentAsync(string path, DriveSegment driveSegment, Camera camera, bool containerize,
             IProgress<int> progress = null)
         {
-            var videoPath = "";
-            switch (camera)
+            Video video = null;
+            switch (camera.Type)
             {
-                case Camera.Wide:
-                    videoPath = driveSegment.WideCamera?.FullName;
+                case CameraType.Wide:
+                    video = driveSegment.WideVideo;
                     break;
-                case Camera.Driver:
-                    videoPath = driveSegment.DriverCamera?.FullName;
+                case CameraType.Driver:
+                    video = driveSegment.DriverVideo;
                     break;
                 default:
-                    videoPath = driveSegment.FrontCamera?.FullName;
+                    video = driveSegment.FrontVideo;
                     break;
             }
 
             string fileName = "";
+            var videoPath = video?.File?.FullName;
             if (!string.IsNullOrWhiteSpace(videoPath))
             {
-                var fileNameWithoutExtension = new DirectoryInfo(Path.GetDirectoryName(videoPath)).Name + (char)camera;
+                var fileNameWithoutExtension = new DirectoryInfo(Path.GetDirectoryName(videoPath)).Name + (char)camera.Type;
                 
                 fileName = fileNameWithoutExtension + (containerize ? ".mp4" : Path.GetExtension(videoPath));
                 var outputFilePath = Path.Combine(path, fileNameWithoutExtension + Path.GetExtension(videoPath));
@@ -272,7 +275,7 @@ namespace OpenpilotSdk.Hardware
                     if (containerize)
                     {
                         await FFMpegArguments.FromFileInput(outputFilePath, true,
-                                options => options.WithFramerate(20))
+                                options => options.WithFramerate(video.Properties.FrameRate))
                             .OutputToFile(Path.Combine(path, fileName), true, options => options.CopyChannel())
                             .ProcessAsynchronously();
                         File.Delete(outputFilePath);
@@ -292,8 +295,8 @@ namespace OpenpilotSdk.Hardware
         {
             Connect();
 
-            var newFileName = new DirectoryInfo(Path.GetDirectoryName(driveSegment.FrontCamera.FullName)).Name +
-                              Path.GetExtension(driveSegment.FrontCamera.FullName);
+            var newFileName = new DirectoryInfo(Path.GetDirectoryName(driveSegment.FrontVideo.File.FullName)).Name +
+                              Path.GetExtension(driveSegment.FrontVideo.File.FullName);
 
             var filePath = Path.Combine(path, newFileName);
             if (!File.Exists(filePath))
@@ -302,7 +305,7 @@ namespace OpenpilotSdk.Hardware
                 {
                     if (Directory.Exists(Path.GetDirectoryName(path)))
                     {
-                        SftpClient.DownloadFile(driveSegment.FrontCamera.FullName, outputFile, obj => { });
+                        SftpClient.DownloadFile(driveSegment.FrontVideo.File.FullName, outputFile, obj => { });
                     }
                 }
             }
@@ -315,19 +318,19 @@ namespace OpenpilotSdk.Hardware
             await ConnectAsync();
 
             Bitmap thumbnail = null;
-            var drive = new DirectoryInfo(Path.GetDirectoryName(driveSegment.FrontCamera.FullName)).Name;
+            var drive = new DirectoryInfo(Path.GetDirectoryName(driveSegment.FrontVideo.File.FullName)).Name;
             var cachedThumbnail = Path.Combine(TempDirectory, drive + ".jpg");
 
 
             if (!File.Exists(cachedThumbnail))
             {
-                bool quickVideo = driveSegment.FrontCameraQuick != null;
+                bool quickVideo = driveSegment.FrontVideoQuick != null;
                 var offset = 0;
 
-                var videoFile = driveSegment.FrontCameraQuick ?? driveSegment.FrontCamera;
+                var videoFile = driveSegment.FrontVideoQuick ?? driveSegment.FrontVideo;
                 var imageBuffer = quickVideo ? new byte[10000] : new byte[200000];
 
-                await using (var sftpFileStream = SftpClient.OpenRead(videoFile.FullName))
+                await using (var sftpFileStream = SftpClient.OpenRead(videoFile.File.FullName))
                 {
                     while (offset < imageBuffer.Length)
                     {
@@ -371,26 +374,26 @@ namespace OpenpilotSdk.Hardware
             var segmentFolder = Path.Combine(StorageDirectory, driveDate.ToUniversalTime().ToString("yyyy-MM-dd--HH-mm-ss--" + index, CultureInfo.InvariantCulture));
             var segmentFiles = SftpClient.GetFilesAsync(segmentFolder);
 
-            ISftpFile frontCamera = null;
-            ISftpFile driverCamera = null;
-            ISftpFile wideCamera = null;
+            ISftpFile frontVideo = null;
+            ISftpFile driverVideo = null;
+            ISftpFile wideVideo = null;
             ISftpFile quickLog = null;
             ISftpFile rawLog = null;
-            ISftpFile frontCameraQuick = null;
+            ISftpFile frontVideoQuick = null;
 
             await foreach (var segmentFile in segmentFiles)
             {
                 if (segmentFile.Name.Equals("fcamera.hevc", StringComparison.OrdinalIgnoreCase))
                 {
-                    frontCamera = segmentFile;
+                    frontVideo = segmentFile;
                 }
                 else if (segmentFile.Name.Equals("dcamera.hevc", StringComparison.OrdinalIgnoreCase))
                 {
-                    driverCamera = segmentFile;
+                    driverVideo = segmentFile;
                 }
                 else if (segmentFile.Name.Equals("ecamera.hevc", StringComparison.OrdinalIgnoreCase))
                 {
-                    wideCamera = segmentFile;
+                    wideVideo = segmentFile;
                 }
                 else if (segmentFile.Name.Equals("rlog.bz2", StringComparison.OrdinalIgnoreCase))
                 {
@@ -402,11 +405,17 @@ namespace OpenpilotSdk.Hardware
                 }
                 else if (segmentFile.Name.Equals("qcamera.ts", StringComparison.OrdinalIgnoreCase))
                 {
-                    frontCameraQuick = segmentFile;
+                    frontVideoQuick = segmentFile;
                 }
             }
 
-            return new DriveSegment(index, segmentFolder, frontCamera, quickLog, rawLog, driverCamera, frontCameraQuick, wideCamera);
+            return new DriveSegment(
+                index, segmentFolder, 
+                frontVideo == null ? null : new Video(frontVideo, Cameras[CameraType.Front].FrameRate), 
+                quickLog, rawLog, 
+                driverVideo == null ? null : new Video(driverVideo, Cameras[CameraType.Driver].FrameRate), 
+                frontVideoQuick == null ? null : new Video(frontVideoQuick, Cameras[CameraType.Front].FrameRate), 
+                wideVideo == null ? null : new Video(wideVideo, Cameras[CameraType.Wide].FrameRate));
         }
 
         public DriveSegment GetSegment(DateTime driveDate, int index)
@@ -417,26 +426,26 @@ namespace OpenpilotSdk.Hardware
             var segmentFiles = SftpClient.GetFiles(segmentFolder);
 
 
-            ISftpFile frontCamera = null;
-            ISftpFile driverCamera = null;
-            ISftpFile wideCamera = null;
+            ISftpFile frontVideo = null;
+            ISftpFile driverVideo = null;
+            ISftpFile wideVideo = null;
             ISftpFile quickLog = null;
             ISftpFile rawLog = null;
-            ISftpFile frontCameraQuick = null;
+            ISftpFile frontVideoQuick = null;
 
             foreach (var segmentFile in segmentFiles)
             {
                 if (segmentFile.Name.Equals("fcamera.hevc", StringComparison.OrdinalIgnoreCase))
                 {
-                    frontCamera = segmentFile;
+                    frontVideo = segmentFile;
                 }
                 else if (segmentFile.Name.Equals("dcamera.hevc", StringComparison.OrdinalIgnoreCase))
                 {
-                    driverCamera = segmentFile;
+                    driverVideo = segmentFile;
                 }
                 else if (segmentFile.Name.Equals("ecamera.hevc", StringComparison.OrdinalIgnoreCase))
                 {
-                    wideCamera = segmentFile;
+                    wideVideo = segmentFile;
                 }
                 else if (segmentFile.Name.Equals("rlog.bz2", StringComparison.OrdinalIgnoreCase))
                 {
@@ -448,7 +457,7 @@ namespace OpenpilotSdk.Hardware
                 }
                 else if (segmentFile.Name.Equals("qcamera.ts", StringComparison.OrdinalIgnoreCase))
                 {
-                    frontCameraQuick = segmentFile;
+                    frontVideoQuick = segmentFile;
                 }
             }
 
@@ -457,7 +466,13 @@ namespace OpenpilotSdk.Hardware
             //directoryItem.Name.Equals("rlog.bz2", StringComparison.OrdinalIgnoreCase))
 
 
-            return new DriveSegment(index, segmentFolder, frontCamera, quickLog, rawLog, driverCamera, frontCameraQuick,wideCamera);
+            return new DriveSegment(
+                index, segmentFolder,
+                frontVideo == null ? null : new Video(frontVideo, Cameras[CameraType.Front].FrameRate),
+                quickLog, rawLog,
+                driverVideo == null ? null : new Video(driverVideo, Cameras[CameraType.Driver].FrameRate),
+                frontVideoQuick == null ? null : new Video(frontVideoQuick, Cameras[CameraType.Front].FrameRate),
+                wideVideo == null ? null : new Video(wideVideo, Cameras[CameraType.Wide].FrameRate));
         }
 
         public async Task<List<GpxWaypoint>> MapillaryExportAsync(Drive drive)
