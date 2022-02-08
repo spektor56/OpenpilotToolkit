@@ -483,7 +483,7 @@ namespace OpenpilotSdk.Hardware
 
             foreach (var driveSegment in drive.Segments.OrderBy(segment => segment.Index))
             {
-                waypoints.AddRange(await OpenPilot.Logging.LogFile.GetWayPointsAsync(SftpClient.OpenRead(driveSegment.RawLog.FullName)));
+                waypoints.AddRange(await OpenPilot.Logging.LogFile.GetWaypointsAsync(SftpClient.OpenRead(driveSegment.RawLog.FullName)));
 
             }
 
@@ -546,19 +546,50 @@ namespace OpenpilotSdk.Hardware
             return firmwares;
         }
 
+        private async Task<IEnumerable<GpxWaypoint>> GetWaypoints(Drive drive)
+        {
+            var waypoints = new List<GpxWaypoint>();
+
+            var wayPointTasks = drive.Segments.OrderBy(segment => segment.Index)
+                .Select(GetWaypointsFromSegment);
+
+            int i = 0;
+            foreach (var wayPointTask in wayPointTasks)
+            {
+                i++;
+                waypoints.AddRange(await wayPointTask);
+            }
+
+            return waypoints;
+        }
+
+        private async Task<IEnumerable<GpxWaypoint>> GetWaypointsFromSegment(DriveSegment driveSegment)
+        {
+            await using (var fileStream = await SftpClient.OpenAsync(driveSegment.QuickLog.FullName, FileMode.Open,
+                             FileAccess.Read, CancellationToken.None))
+            {
+                return await OpenPilot.Logging.LogFile.GetWaypointsAsync(fileStream);
+            }
+        }
+
         public async Task<GpxFile> GenerateGpxFileAsync(Drive drive, IProgress<int> progress = null)
         {
             await ConnectAsync();
 
             var waypoints = new List<GpxWaypoint>();
 
-            foreach (var driveSegment in drive.Segments.OrderBy(segment => segment.Index))
+            var wayPointTasks = drive.Segments.OrderBy(segment => segment.Index)
+                .Select(GetWaypointsFromSegment).ToArray();
+            
+            int i = 0;
+            foreach (var wayPointTask in wayPointTasks)
             {
-                waypoints.AddRange(await OpenPilot.Logging.LogFile.GetWayPointsAsync(SftpClient.OpenRead(driveSegment.RawLog.FullName)));
+                i++;
+                waypoints.AddRange(await wayPointTask);
 
                 if (progress != null)
                 {
-                    progress.Report(driveSegment.Index);
+                    progress.Report(i);
                 }
             }
 

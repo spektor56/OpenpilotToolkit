@@ -13,11 +13,10 @@ namespace OpenpilotSdk.OpenPilot.Logging
 {
     public class LogFile
     {
-        public static async Task<IEnumerable<GpxWaypoint>> GetWayPointsAsync(Stream fileStream)
+        public static async Task<IEnumerable<GpxWaypoint>> GetWaypointsAsync(Stream fileStream)
         {
             List<GpxWaypoint> waypoints = new List<GpxWaypoint>();
 
-            //using (var fileStream = File.OpenRead(file))
             using (var bz2Stream = new BZip2InputStream(fileStream))
             {
                 var pump = new FramePump(bz2Stream);

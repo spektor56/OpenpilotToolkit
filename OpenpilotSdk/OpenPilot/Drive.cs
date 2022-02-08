@@ -6,6 +6,46 @@ namespace OpenpilotSdk.OpenPilot
 {
     public class Drive
     {
+        protected bool Equals(Drive other)
+        {
+            return Date.Equals(other.Date);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj))
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, obj))
+            {
+                return true;
+            }
+
+            if (obj.GetType() != this.GetType())
+            {
+                return false;
+            }
+
+            return Equals((Drive)obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return Date.GetHashCode();
+        }
+
+        public static bool operator ==(Drive left, Drive right)
+        {
+            return Equals(left, right);
+        }
+
+        public static bool operator !=(Drive left, Drive right)
+        {
+            return !Equals(left, right);
+        }
+
         public ReadOnlyCollection<DriveSegment> Segments { get; }
         public DateTime Date { get; }
 

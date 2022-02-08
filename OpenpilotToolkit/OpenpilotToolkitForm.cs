@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -13,11 +11,9 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Reflection;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Windows.Forms.VisualStyles;
 using CefSharp;
 using CefSharp.WinForms;
 using LibVLCSharp.Shared;
@@ -30,14 +26,9 @@ using OpenpilotSdk.OpenPilot;
 using OpenpilotSdk.OpenPilot.Fork;
 using OpenpilotToolkit.Android;
 using OpenpilotToolkit.Controls;
-using OpenpilotToolkit.Json;
-using OpenpilotToolkit.Stream;
 using Renci.SshNet;
 using Renci.SshNet.Common;
 using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Metadata.Profiles.Exif;
-using Color = System.Drawing.Color;
-using Image = SixLabors.ImageSharp.Image;
 using OpenpilotDevice = OpenpilotSdk.Hardware.OpenpilotDevice;
 
 namespace OpenpilotToolkit
@@ -108,6 +99,9 @@ namespace OpenpilotToolkit
             cbFrontCamera.Checked = Properties.Settings.Default.FrontCamera;
             cbWideCamera.Checked = Properties.Settings.Default.WideCamera;
             cbDriverCamera.Checked = Properties.Settings.Default.DriverCamera;
+
+            txtOsmUsername.Text = Properties.Settings.Default.OsmUsername;
+            txtOsmPassword.Text = Properties.Settings.Default.OsmPassword;
 
             foreach (PropertyInfo property in MaterialSkinManager.Instance.GetType().GetProperties())
             {
@@ -307,7 +301,7 @@ namespace OpenpilotToolkit
                             continue;
                         }
 
-                        var ucDrive = new ucTaskProgress(drive.Date.ToString(), drive.Segments.Count*cameras.Count)
+                        var ucDrive = new ucTaskProgress(drive.ToString(), drive.Segments.Count*cameras.Count)
                         {
                             Anchor = (AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top)
                         };
@@ -403,7 +397,7 @@ namespace OpenpilotToolkit
                     {
                         var driveInfo = new Dictionary<string, string>();
                         driveInfo.Add("Segments", drive.Segments.Count.ToString());
-                        driveInfo.Add("Start Date", drive.Date.ToShortDateString());
+                        driveInfo.Add("Start Date", drive.Date.ToLocalTime().ToShortDateString());
                         driveInfo.Add("Start Time", drive.Date.ToLocalTime().ToLongTimeString());
 
                         dgvDriveInfo.DataSource = driveInfo.ToArray();
@@ -491,78 +485,55 @@ namespace OpenpilotToolkit
             Properties.Settings.Default.WideCamera = cbWideCamera.Checked;
             Properties.Settings.Default.DriverCamera = cbDriverCamera.Checked;
 
+            Properties.Settings.Default.OsmUsername = txtOsmUsername.Text;
+            Properties.Settings.Default.OsmPassword = txtOsmPassword.Text;
+
             Properties.Settings.Default.Save();
         }
 
-        private HttpClient _client;
+        private HttpClient _osmHttpClient;
         private async void btnExportGpx_Click(object sender, EventArgs e)
         {
-            var httpHandler = new HttpClientHandler { CookieContainer = new CookieContainer() };
-            _client = new HttpClient(httpHandler, false)
-            {
-                BaseAddress = new Uri(@"https://api.openstreetmap.org")
-            };
-            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
-                Convert.ToBase64String(
-                    Encoding.ASCII.GetBytes(string.Format("{0}:{1}", @"username", @"password"))));
-            _client.DefaultRequestHeaders.Accept.Clear();
-            _client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
             if (cmbDevices.SelectedItem is OpenpilotDevice openpilotDevice)
             {
-                if (lbDrives.SelectedItem is Drive drive)
+                var exportTasks = new List<Task>();
+                foreach (var selectedItem in lbDrives.SelectedItems)
                 {
-                    if (_activeTaskList.ContainsKey(drive.Date.ToString()))
+                    if (selectedItem is Drive drive)
                     {
-                        return;
-                    }
-                    //MessageBox.Show("Exporting Drive: " + drive.Id);
-                    var exportFolder = txtExportFolder.Text;
+                        var exportFolder = txtExportFolder.Text;
 
-                    var ucDrive = new ucTaskProgress(drive.Date.ToString(), drive.Segments.Count)
-                    {
-                        Anchor = (AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top)
-                    };
-
-                    tlpTasks.Controls.Add(ucDrive);
-
-                    var segmentsProcessed = 0;
-
-                    var progress = new Progress<int>((segmentIndex) =>
-                    {
-                        if (!IsDisposed)
+                        var ucDrive = new ucTaskProgress(drive.ToString(),drive.Segments.Count)
                         {
-                            Interlocked.Increment(ref segmentsProcessed);
-                            ucDrive.Progress = segmentsProcessed; ;
-                        }
-                    });
+                            Anchor = (AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top)
+                        };
 
-                    var task = Task.Run(async () =>
-                    {
-                        var fileName = Path.Combine(exportFolder, drive.Date.ToShortDateString() + ".gpx");
-                        var gpxFile = await openpilotDevice.GenerateGpxFileAsync(drive, progress);
-                        var gpxString = gpxFile.BuildString(new GpxWriterSettings());
-                        var binaryFile = Encoding.ASCII.GetBytes(gpxString);
+                        tlpTasks.Controls.Add(ucDrive);
 
-                        using (var content = new MultipartFormDataContent())
+                        var segmentsProcessed = 0;
+
+                        var progress = new Progress<int>((segmentIndex) =>
                         {
-                            content.Add(new ByteArrayContent(binaryFile), "file", drive.Date.ToString());
-                            content.Add(new StringContent(drive.Date.ToString() + " openpilot drive"), @"description");
-                            content.Add(new StringContent("openpilot,commai,comma2"), @"tags");
-                            content.Add(new StringContent("1"), @"public");
-                            content.Add(new StringContent("identifiable"), @"visibility");
-
-                            using (var response = await _client.PostAsync("api/0.6/gpx/create", content))
+                            if (!IsDisposed)
                             {
-                                
+                                Interlocked.Increment(ref segmentsProcessed);
+                                ucDrive.Progress = segmentsProcessed;
                             }
-                        }
+                        });
 
-                        File.WriteAllText(fileName, gpxString);
-                    });
-                    _activeTaskList.TryAdd(drive.Date.ToString(), task);
-                    await task;
-                    _activeTaskList.TryRemove(drive.Date.ToString(), out _);
+                        exportTasks.Add(Task.Run(async () =>
+                        {
+                            var fileName = Path.Combine(exportFolder, drive + ".gpx");
+                            var gpxFile = await openpilotDevice.GenerateGpxFileAsync(drive, progress);
+                            var gpxString = gpxFile.BuildString(new GpxWriterSettings());
+                            await File.WriteAllTextAsync(fileName, gpxString);
+                        }));
+                    }
+                }
+
+                if (exportTasks.Count > 0)
+                {
+                    await Task.WhenAll(exportTasks);
                 }
             }
         }
@@ -625,7 +596,7 @@ namespace OpenpilotToolkit
                     //MessageBox.Show("Exporting Drive: " + drive.Id);
                     var exportFolder = txtExportFolder.Text;
 
-                    var ucDrive = new ucTaskProgress(drive.Date.ToString(), drive.Segments.Count)
+                    var ucDrive = new ucTaskProgress(drive.ToString(), drive.Segments.Count)
                     {
                         Anchor = (AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top)
                     };
@@ -754,6 +725,7 @@ namespace OpenpilotToolkit
             groupBox1.ForeColor = MaterialSkinManager.Instance.TextHighEmphasisColor;
             groupBox2.ForeColor = MaterialSkinManager.Instance.TextHighEmphasisColor;
             groupBox3.ForeColor = MaterialSkinManager.Instance.TextHighEmphasisColor;
+            groupBox4.ForeColor = MaterialSkinManager.Instance.TextHighEmphasisColor;
         }
 
         private void themeButton_Click(object sender, EventArgs e)
@@ -1577,6 +1549,173 @@ namespace OpenpilotToolkit
             if (e.KeyCode == Keys.Tab)
             {
                 e.IsInputKey = true;
+            }
+        }
+
+        private async void btnOsmUpload_Click(object sender, EventArgs e)
+        {
+            var osmUsername = txtOsmUsername.Text;
+            var osmPassword = txtOsmPassword.Text;
+            if (string.IsNullOrWhiteSpace(osmUsername) || string.IsNullOrWhiteSpace(osmPassword))
+            {
+                if (ToolkitMessageDialog.ShowDialog(
+                        "OSM username and password is required, do you want to enter them now?", this,
+                        MessageBoxButtons.YesNo) == DialogResult.Yes)
+                {
+                    tcSettings.SelectedTab = tpSettings;
+                }
+
+                return;
+            }
+
+
+            if (cmbDevices.SelectedItem is OpenpilotDevice openpilotDevice)
+            {
+                if (_osmHttpClient == null)
+                {
+                    var httpHandler = new HttpClientHandler { CookieContainer = new CookieContainer() };
+                    _osmHttpClient = new HttpClient(httpHandler, false)
+                    {
+                        BaseAddress = new Uri(@"https://api.openstreetmap.org")
+                    };
+                }
+
+                _osmHttpClient.DefaultRequestHeaders.Clear();
+                _osmHttpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
+                    Convert.ToBase64String(
+                        Encoding.ASCII.GetBytes(string.Format("{0}:{1}", osmUsername, osmPassword))));
+                _osmHttpClient.DefaultRequestHeaders.Accept.Clear();
+                _osmHttpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+                try
+                {
+                    using (var response = await _osmHttpClient.GetAsync("/api/0.6/user/details"))
+                    {
+                        if (!response.IsSuccessStatusCode)
+                        {
+                            if (response.StatusCode == HttpStatusCode.Unauthorized)
+                            {
+                                ToolkitMessageDialog.ShowDialog("Invalid Username/Password.");
+                                return;
+                            }
+
+                            ToolkitMessageDialog.ShowDialog("Connection Failed: " + response.ReasonPhrase);
+                            return;
+                        }
+                    }
+                }
+                catch (Exception exception)
+                {
+                    ToolkitMessageDialog.ShowDialog("Connection Failed: " + exception.Message);
+                    return;
+                }
+
+                var uploadTasks = new List<Task>();
+                foreach (var selectedItem in lbDrives.SelectedItems)
+                {
+                    if (selectedItem is Drive drive)
+                    {
+                        var ucDrive = new ucTaskProgress(drive.ToString(), drive.Segments.Count)
+                        {
+                            Anchor = (AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top)
+                        };
+
+                        tlpTasks.Controls.Add(ucDrive);
+
+                        var segmentsProcessed = 0;
+
+                        var progress = new Progress<int>((segmentIndex) =>
+                        {
+                            if (!IsDisposed)
+                            {
+                                Interlocked.Increment(ref segmentsProcessed);
+                                ucDrive.Progress = segmentsProcessed;
+                            }
+                        });
+
+                        uploadTasks.Add(Task.Run(async () =>
+                        {
+                            var gpxFile = await openpilotDevice.GenerateGpxFileAsync(drive, progress);
+                            var gpxString = gpxFile.BuildString(new GpxWriterSettings());
+                            var binaryFile = Encoding.ASCII.GetBytes(gpxString);
+
+                            using (var content = new MultipartFormDataContent())
+                            {
+                                content.Add(new ByteArrayContent(binaryFile), "file", drive.ToString());
+                                content.Add(new StringContent(drive.ToString() + " openpilot drive"), @"description");
+                                content.Add(new StringContent("openpilot,commai,comma2"), @"tags");
+                                content.Add(new StringContent("1"), @"public");
+                                content.Add(new StringContent("identifiable"), @"visibility");
+
+                                using (var response = await _osmHttpClient.PostAsync("api/0.6/gpx/create", content))
+                                {
+
+                                }
+                            }
+                        }));
+                    }
+                }
+
+                if (uploadTasks.Count > 0)
+                {
+                    await Task.WhenAll(uploadTasks);
+                }
+            }
+        }
+
+        private async void btnOsmTest_Click(object sender, EventArgs e)
+        {
+            btnOsmTest.Enabled = false;
+            try
+            {
+                var osmUsername = txtOsmUsername.Text;
+                var osmPassword = txtOsmPassword.Text;
+
+                if (_osmHttpClient == null)
+                {
+                    var httpHandler = new HttpClientHandler { CookieContainer = new CookieContainer() };
+                    _osmHttpClient = new HttpClient(httpHandler, false)
+                    {
+                        BaseAddress = new Uri(@"https://api.openstreetmap.org")
+                    };
+                }
+
+                _osmHttpClient.DefaultRequestHeaders.Clear();
+                _osmHttpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
+                    Convert.ToBase64String(
+                        Encoding.ASCII.GetBytes(string.Format("{0}:{1}", osmUsername, osmPassword))));
+                _osmHttpClient.DefaultRequestHeaders.Accept.Clear();
+                _osmHttpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                
+                try
+                {
+                    using (var response = await _osmHttpClient.GetAsync("/api/0.6/user/details"))
+                    {
+                        if (response.IsSuccessStatusCode)
+                        {
+                            ToolkitMessageDialog.ShowDialog("Connection Successful.");
+                        }
+                        else
+                        {
+                            if (response.StatusCode == HttpStatusCode.Unauthorized)
+                            {
+                                ToolkitMessageDialog.ShowDialog("Invalid Username/Password.");
+                            }
+                            else
+                            {
+                                ToolkitMessageDialog.ShowDialog("Connection Failed: " + response.ReasonPhrase);
+                            }
+                        }
+                    }
+                }
+                catch (Exception exception)
+                {
+                    ToolkitMessageDialog.ShowDialog("Connection Failed: " + exception.Message);
+                }
+            }
+            finally
+            {
+                btnOsmTest.Enabled = true;
             }
         }
     }
