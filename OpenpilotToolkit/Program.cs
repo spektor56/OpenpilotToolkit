@@ -91,7 +91,11 @@ namespace OpenpilotToolkit
 
             try
             {
-                Directory.Delete(tempPath, true);
+                if (Directory.Exists(tempPath))
+                {
+                    Directory.Delete(tempPath, true);
+                }
+
                 Directory.CreateDirectory(tempPath);
             }
             catch (Exception e)
