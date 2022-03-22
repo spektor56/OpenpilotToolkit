@@ -17,7 +17,7 @@ Windows app:
 - Remote control for common functions
 - Fork installer
 - Fingerprint V2 viewer
-- SSH file explorer (cant view / edit / download files yet)
+- SSH file explorer (view / edit / delete and upload files)
 - SSH terminal with terminal emulation
 
 Android app:
