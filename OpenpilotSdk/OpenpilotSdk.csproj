@@ -13,7 +13,6 @@
 	<ItemGroup>
 		<CapnpCsharpObsoleteCodeBehindFiles Remove="OpenPilot\Cereal\car.capnp.cs" />
 		<CapnpCsharpObsoleteCodeBehindFiles Remove="OpenPilot\Cereal\Include\c++.capnp.cs" />
-		<CapnpCsharpObsoleteCodeBehindFiles Remove="OpenPilot\Cereal\Include\java.capnp.cs" />
 		<CapnpCsharpObsoleteCodeBehindFiles Remove="OpenPilot\Cereal\legacy.capnp.cs" />
 		<CapnpCsharpObsoleteCodeBehindFiles Remove="OpenPilot\Cereal\log.capnp.cs" />
 	</ItemGroup>

@@ -7,19 +7,12 @@ namespace OpenpilotToolkit.Controls
     {
         public SplashScreen()
         {
-            KeyPreview = true;
-            this.SetStyle(ControlStyles.SupportsTransparentBackColor, true);
+            //this.SetStyle(ControlStyles.SupportsTransparentBackColor, true);
             InitializeComponent();
-            DoubleBuffered = true;
-            TransparencyKey = Color.FromArgb(27, 27, 27);
-            BackColor = Color.FromArgb(27, 27, 27);
-            FormBorderStyle = FormBorderStyle.None;
-            ControlBox = false;
-            ShowInTaskbar = false;
-            StartPosition = FormStartPosition.CenterScreen;
+            TopMost = true;
             AutoScaleMode = AutoScaleMode.None;
         }
-
+        /*
         private const int WS_EX_TRANSPARENT = 0x20;
         protected override CreateParams CreateParams
         {
@@ -29,6 +22,12 @@ namespace OpenpilotToolkit.Controls
                 cp.ExStyle = cp.ExStyle | WS_EX_TRANSPARENT;
                 return cp;
             }
+        }
+        */
+
+        private void SplashScreen_Shown(object sender, System.EventArgs e)
+        {
+            Opacity = 100;
         }
     }
 }

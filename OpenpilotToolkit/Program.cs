@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using CefSharp.WinForms;
 using FFMpegCore;
@@ -23,9 +24,13 @@ namespace OpenpilotToolkit
             Application.SetHighDpiMode(HighDpiMode.DpiUnaware);
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-
+            
             var splashForm = new SplashScreen();
-            splashForm.Show();
+            Task.Run(() =>
+            {
+                splashForm.ShowDialog();
+                
+            });
 
             var exitCode = CefSharp.BrowserSubprocess.SelfHost.Main(args);
 
@@ -62,8 +67,12 @@ namespace OpenpilotToolkit
             var openpilotToolkitForm = new OpenpilotToolkitForm();
             openpilotToolkitForm.Shown += (s, e) =>
             {
-                splashForm.Close();
-                splashForm.Dispose();
+                openpilotToolkitForm.Activate();
+                splashForm.BeginInvoke(() =>
+                {
+                    splashForm.Close();
+                    splashForm.Dispose();
+                });
             };
             Application.ThreadException += (sender, args) =>
             {
@@ -77,6 +86,19 @@ namespace OpenpilotToolkit
             };
 
             Core.Initialize();
+
+            var tempPath = Path.Combine(AppContext.BaseDirectory, "tmp");
+
+            try
+            {
+                Directory.Delete(tempPath, true);
+                Directory.CreateDirectory(tempPath);
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "Failed to delete temp folder");
+            }
+            
             Application.Run(openpilotToolkitForm);
             return 0;
         }

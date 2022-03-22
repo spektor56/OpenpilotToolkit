@@ -1,7 +1,6 @@
-﻿
-namespace OpenpilotToolkit.Controls
+﻿namespace OpenpilotToolkit.Controls
 {
-    partial class ucTaskProgress
+    partial class ucProgress
     {
         /// <summary> 
         /// Required designer variable.
@@ -59,14 +58,14 @@ namespace OpenpilotToolkit.Controls
             this.materialProgressBar1.Size = new System.Drawing.Size(85, 5);
             this.materialProgressBar1.TabIndex = 29;
             // 
-            // ucTaskProgress
+            // ucProgress
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.lblPercent);
             this.Controls.Add(this.materialProgressBar1);
             this.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.Name = "ucTaskProgress";
+            this.Name = "ucProgress";
             this.Size = new System.Drawing.Size(85, 30);
             this.ResumeLayout(false);
 

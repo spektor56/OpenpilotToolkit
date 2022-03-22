@@ -63,7 +63,9 @@ namespace OpenpilotSdk.Hardware
 
         public async Task UploadFileAsync(string source, string destination)
         {
-            await using (var fileStream = File.OpenRead(source))
+            await ConnectAsync();
+
+            await using (var fileStream = File.Open(source, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             {
                 await Task.Factory.FromAsync(
                     SftpClient.BeginUploadFile(fileStream, destination),
@@ -76,6 +78,13 @@ namespace OpenpilotSdk.Hardware
             await ConnectAsync();
 
             return await SftpClient.OpenAsync(path, FileMode.Open, FileAccess.Read, CancellationToken.None);
+        }
+
+        public async Task<SftpFileStream> OpenWriteAsync(string path)
+        {
+            await ConnectAsync();
+
+            return await SftpClient.OpenAsync(path, FileMode.Create, FileAccess.Write, CancellationToken.None);
         }
 
         public SftpFileStream OpenRead(string path)
@@ -96,6 +105,16 @@ namespace OpenpilotSdk.Hardware
             }
 
             return null;
+        }
+
+        public async Task DeleteFile(SftpFile file)
+        {
+            await ConnectAsync();
+                
+            using (var command = SshClient.CreateCommand("rm -rf '" + file.FullName + "'"))
+            {
+                await Task.Factory.FromAsync(command.BeginExecute(), command.EndExecute);
+            }
         }
 
         public async Task DeleteDriveAsync(Drive drive)
@@ -481,10 +500,12 @@ namespace OpenpilotSdk.Hardware
 
             var waypoints = new List<GpxWaypoint>();
 
-            foreach (var driveSegment in drive.Segments.OrderBy(segment => segment.Index))
+            var wayPointTasks = drive.Segments.OrderBy(segment => segment.Index)
+                .Select(GetWaypointsFromSegment).ToArray();
+            
+            foreach (var wayPointTask in wayPointTasks)
             {
-                waypoints.AddRange(await OpenPilot.Logging.LogFile.GetWaypointsAsync(SftpClient.OpenRead(driveSegment.RawLog.FullName)));
-
+                waypoints.AddRange(await wayPointTask);
             }
 
             List<GpxWaypoint> waypointsToExport = new List<GpxWaypoint>();
@@ -495,7 +516,7 @@ namespace OpenpilotSdk.Hardware
                 var geoCoordinate = new GeoCoordinate(firstWaypoint.Latitude, firstWaypoint.Longitude,
                     (double)firstWaypoint.ElevationInMeters);
 
-                for (int i = 1; i < waypoints.Count; i++)
+                for (int i = 1; i < waypoints.Count-1; i++)
                 {
                     var nextCoordinate = new GeoCoordinate(waypoints[i].Latitude, waypoints[i].Latitude,
                         (double)waypoints[i].ElevationInMeters);
@@ -511,7 +532,7 @@ namespace OpenpilotSdk.Hardware
                 waypointsToExport.Add(waypoints[waypoints.Count - 1]);
             }
 
-            var waypointTable = new ImmutableGpxWaypointTable(waypointsToExport.Take(100));
+            var waypointTable = new ImmutableGpxWaypointTable(waypointsToExport);
             var trackSegment = new GpxTrackSegment(waypointTable, null);
             var track = new GpxTrack(drive.ToString(), null, null, "openpilot", ImmutableArray<GpxWebLink>.Empty, null, null, null, ImmutableArray.Create(trackSegment));
             var gpxFile = new GpxFile();
@@ -634,7 +655,7 @@ namespace OpenpilotSdk.Hardware
                 var segmentTasks = segmentGroup.Select(segmentFolder => {
                     var segmentIndex = int.Parse(segmentFolder.Name.AsSpan().Slice(22));
                     return GetSegmentAsync(driveDate, segmentIndex);
-                });
+                }).ToArray();
 
                 var segments = await Task.WhenAll(segmentTasks);
 

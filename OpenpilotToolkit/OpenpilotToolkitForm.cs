@@ -1,20 +1,4 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Management;
-using System.Net;
-using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Reflection;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using CefSharp;
+﻿using CefSharp;
 using CefSharp.WinForms;
 using LibVLCSharp.Shared;
 using MaterialSkin;
@@ -29,12 +13,34 @@ using OpenpilotToolkit.Controls;
 using Renci.SshNet;
 using Renci.SshNet.Common;
 using SixLabors.ImageSharp;
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Management;
+using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Reactive;
+using System.Reactive.Linq;
+using System.Reflection;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using Exception = System.Exception;
+using Message = System.Windows.Forms.Message;
 using OpenpilotDevice = OpenpilotSdk.Hardware.OpenpilotDevice;
 
 namespace OpenpilotToolkit
 {
     public partial class OpenpilotToolkitForm : MaterialForm
     {
+        private ConcurrentDictionary<string, DateTime?> _watchedFiles = new ConcurrentDictionary<string, DateTime?>();
+        private readonly string _tempExplorerFiles = Path.Combine(AppContext.BaseDirectory, "tmp", "explorer");
         private readonly ConcurrentDictionary<string,Task> _activeTaskList = new ConcurrentDictionary<string, Task>();
         private string _adbConnectedMessage = "Device in fastboot mode connected";
         private string _adbDisconnectedMessage = "Device in fastboot mode disconnected";
@@ -75,17 +81,40 @@ namespace OpenpilotToolkit
             lbDrives.ForeColor = MaterialSkinManager.Instance.TextHighEmphasisColor;
         }
 
+        private FileSystemWatcher _explorerFileWatcher = null;
+
         private async void Form1_Load(object sender, EventArgs e)
         {
+            Directory.CreateDirectory(Path.Combine(AppContext.BaseDirectory, "tmp", "explorer"));
+
+            _explorerFileWatcher = new FileSystemWatcher(_tempExplorerFiles)
+            {
+                NotifyFilter = NotifyFilters.LastWrite,
+                IncludeSubdirectories = true,
+                EnableRaisingEvents = true
+            };
+
+            /*RXTest
+            IObservable<EventPattern<FileSystemEventArgs>> fswChanged = Observable.FromEventPattern<FileSystemEventArgs>(_explorerFileWatcher, "Changed");
+            var subscription = fswChanged.Select(pattern => Observable.FromAsync(async () => await FileWatcherOnChanged(pattern.Sender,pattern.EventArgs))).Concat().Subscribe();
+            */
+
+            _explorerFileWatcher.Changed += FileWatcherOnChanged;
+
             tlpTasks.Padding = new Padding(0, 0, SystemInformation.VerticalScrollBarWidth-1, 0);
+            tlpExplorerTasks.Padding = new Padding(0, 0, SystemInformation.VerticalScrollBarWidth - 1, 0);
 
             var terminalPath = Path.Combine(AppContext.BaseDirectory, @"Controls\Terminal\index.html");
             sshTerminal =
                 new ChromiumWebBrowser(terminalPath);
+            sshTerminal.KeyboardHandler = new TerminalKeyboardHandler();
 
             sshTerminal.Dock = DockStyle.Fill;
             sshTerminal.CreateControl();
 
+            sshTerminal.PreviewKeyDown += txtSshCommand_PreviewKeyDown;
+            sshTerminal.KeyPress += txtSshCommand_KeyPress;
+            sshTerminal.KeyDown += txtSshCommand_KeyDown;
             sshTerminal.JavascriptMessageReceived += SshTerminal_JavascriptMessageReceived;
 
             this.tableLayoutPanel1.Controls.Add(sshTerminal, 0, 0);
@@ -177,6 +206,79 @@ namespace OpenpilotToolkit
             //flowLayoutPanel1.HorizontalScroll.Visible = false;
 
             await ScanDevices();
+        }
+
+        private async void FileWatcherOnChanged(object sender, FileSystemEventArgs e)
+        {
+            if (e.ChangeType == WatcherChangeTypes.Changed && _watchedFiles.Count > 0)
+            {
+                object tmpOpenpilotDevice = null;
+                cmbDevices.Invoke(() => tmpOpenpilotDevice = cmbDevices.SelectedItem);
+
+                if (tmpOpenpilotDevice is OpenpilotDevice openpilotDevice)
+                {
+                    
+                        DateTime? modifiedDate = null;
+                    if (_watchedFiles.TryGetValue(e.FullPath, out modifiedDate))
+                    {
+                        if (modifiedDate != null)
+                        {
+                            var lastWriteTimeUtc = File.GetLastWriteTimeUtc(e.FullPath);
+                            if (!modifiedDate.Equals(lastWriteTimeUtc))
+                            {
+                                _watchedFiles[e.FullPath] = lastWriteTimeUtc;
+
+                                await Task.Delay(200);
+
+                                var currentWriteTimeUtc = File.GetLastWriteTimeUtc(e.FullPath);
+                                if (lastWriteTimeUtc.Equals(currentWriteTimeUtc))
+                                {
+
+                                    var ucUploadProgress = new ucProgress("↑ " + Path.GetFileName(e.FullPath))
+                                    {
+                                        Anchor = (AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top)
+                                    };
+
+                                    BeginInvoke(new MethodInvoker(() =>
+                                    {
+                                        tlpExplorerTasks.Controls.Add(ucUploadProgress);
+                                    }));
+
+                                    
+                                    Task.Run(async () =>
+                                    {
+                                        var destination = e.FullPath.Replace(Path.DirectorySeparatorChar, '/').Substring(_tempExplorerFiles.Length,
+                                    e.FullPath.Length - _tempExplorerFiles.Length);
+
+                                        await using (var sourceFile = File.OpenRead(e.FullPath))
+                                        {
+                                            await using (var destinationFile = await openpilotDevice.OpenWriteAsync(destination).ConfigureAwait(false))
+                                            {
+                                                var buffer = new byte[81920];
+                                                int bytesRead = 0;
+                                                var sourceLength = sourceFile.Length;
+                                                int totalBytesRead = 0;
+                                                int previousProgress = 0;
+                                                while ((bytesRead = await sourceFile.ReadAsync(buffer, 0, buffer.Length).ConfigureAwait(false)) > 0)
+                                                {
+                                                    await destinationFile.WriteAsync(buffer, 0, bytesRead).ConfigureAwait(false);
+                                                    totalBytesRead += bytesRead;
+                                                    var progress = (int)(((double)totalBytesRead / (double)sourceLength) * 100);
+                                                    if(progress != previousProgress)
+                                                    { 
+                                                        BeginInvoke(new MethodInvoker(() => { ucUploadProgress.Progress = (int)(((double)totalBytesRead / (double)sourceLength) * 100); }));
+                                                    }
+                                                    previousProgress = progress;
+                                                }
+                                            }
+                                        }
+                                    });
+                                }
+                            }
+                        }
+                    }   
+                }
+            }
         }
 
         private void SshTerminal_JavascriptMessageReceived(object sender, JavascriptMessageReceivedEventArgs e)
@@ -581,7 +683,7 @@ namespace OpenpilotToolkit
             
         }
 
-        private void btnExportMapillary_Click(object sender, EventArgs e)
+        private async void btnExportMapillary_Click(object sender, EventArgs e)
         {
             var sb = new StringBuilder();
 
@@ -613,7 +715,7 @@ namespace OpenpilotToolkit
                             ucDrive.Progress = segmentsProcessed; ;
                         }
                     });
-                    /*
+                    
                     var task = Task.Run(async () =>
                     {
                         //TODO:
@@ -635,7 +737,7 @@ namespace OpenpilotToolkit
                         waypoints.Select(wp =>
                             @"eq(n\," + (int) (((wp.TimestampUtc.Value - firstTime).TotalMilliseconds) / 50) + ")"));
                     ExportFrames(exportFolder, drive, frames, 0);
-                    */
+                    
                     /*
                     foreach (var gpxWaypoint in waypoints)
                     {
@@ -695,8 +797,8 @@ namespace OpenpilotToolkit
                             image.SaveAsync(imageFiles[i]);
                         }
                     }
+                    
                     */
-
                 }
             }
         }
@@ -916,6 +1018,71 @@ namespace OpenpilotToolkit
                 var selectedItem = ((Renci.SshNet.Sftp.SftpFile)selectedRow.DataBoundItem);
                 if(!(selectedItem.IsDirectory && !selectedItem.IsRegularFile))
                 {
+                    var normalizedPath = selectedItem.FullName.Replace('/', Path.DirectorySeparatorChar);
+                    normalizedPath = normalizedPath.StartsWith(Path.DirectorySeparatorChar)
+                        ? normalizedPath.Substring(1, normalizedPath.Length - 1) : normalizedPath;
+
+                    var outputFilePath = Path.Combine(_tempExplorerFiles, normalizedPath);
+
+                    if (!_watchedFiles.TryAdd(outputFilePath, null))
+                    {
+                        DateTime? modifiedDate = null;
+                        _watchedFiles.TryGetValue(outputFilePath, out modifiedDate);
+                        if(modifiedDate == null)
+                        {
+                            return;
+                        }
+
+                        _watchedFiles[outputFilePath] = null;
+                    }
+
+                    Directory.CreateDirectory(Path.GetDirectoryName(outputFilePath));
+                    
+                    await using (var outputFile = File.Create(outputFilePath))
+                    {
+                        await using (var stream = await openpilotDevice.OpenReadAsync(selectedItem.FullName))
+                        {
+                            var ucDownloadProgress = new ucProgress("↓ " + selectedItem.Name)
+                            {
+                                Anchor = (AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top)
+                            };
+
+                            tlpExplorerTasks.Controls.Add(ucDownloadProgress);                         
+
+                            var buffer = new byte[81920];
+                            int bytesRead = 0;
+                            var sourceLength = stream.Length;
+                            int totalBytesRead = 0;
+                            int previousProgress = 0;
+
+                            while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length).ConfigureAwait(false)) > 0)
+                            {
+                                
+                                await outputFile.WriteAsync(buffer, 0, bytesRead).ConfigureAwait(false);
+                                totalBytesRead += bytesRead;
+
+                                var progress = (int)(((double)totalBytesRead / (double)sourceLength) * 100);
+                                if (progress != previousProgress)
+                                {
+                                    BeginInvoke(new MethodInvoker(() => { ucDownloadProgress.Progress = (int)(((double)totalBytesRead / (double)sourceLength) * 100); }));
+                                }
+                                previousProgress = progress;
+                            }
+                        }
+                    }
+
+                    _watchedFiles[outputFilePath] = File.GetLastWriteTimeUtc(outputFilePath);
+
+                    using (var process = new Process())
+                    {
+                        process.StartInfo = new ProcessStartInfo(outputFilePath)
+                        {
+                            UseShellExecute = true,
+
+                        };
+                        process.Start();
+                    }
+                    
                     return;
                 }
                 var path = selectedItem.Name;
@@ -1175,24 +1342,6 @@ namespace OpenpilotToolkit
             }
         }
 
-        private List<string> _commandHistory = new List<string>();
-        private int _historyIndex = 0;
-        private async void txtSshCommand_KeyDown(object sender, KeyEventArgs e)
-        {
-            if (_shellStream != null)
-            {
-                if (e.KeyCode == Keys.Up)
-                {
-                    await _shellStream.WriteAsync(new ReadOnlyMemory<byte>(new[] { (byte)27, (byte)91, (byte)65 }));
-                    await _shellStream.FlushAsync();
-                }
-                else if (e.KeyCode == Keys.Down)
-                {
-                    await _shellStream.WriteAsync(new ReadOnlyMemory<byte>(new[] { (byte)27, (byte)91, (byte)66 }));
-                    await _shellStream.FlushAsync();
-                }
-            }
-        }
         /*
         [System.Runtime.InteropServices.DllImport("user32.dll", CharSet = System.Runtime.InteropServices.CharSet.Auto)]
         private static extern int SendMessage(System.IntPtr hWnd, int wMsg, System.IntPtr wParam, System.IntPtr lParam);
@@ -1361,6 +1510,41 @@ namespace OpenpilotToolkit
             return path;
         }
 
+        private async Task UploadFile(OpenpilotDevice openpilotDevice, string file, string destinationPath)
+        {
+            var ucUploadProgress = new ucProgress("↑ " + Path.GetFileName(file))
+            {
+                Anchor = (AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top)
+            };
+
+            tlpExplorerTasks.Controls.Add(ucUploadProgress);
+
+            var destination = destinationPath + "/" + Path.GetFileName(file);
+
+            await using (var sourceFile = File.OpenRead(file))
+            {
+                await using (var destinationFile = await openpilotDevice.OpenWriteAsync(destination))
+                {
+                    var buffer = new byte[81920];
+                    int bytesRead = 0;
+                    var sourceLength = sourceFile.Length;
+                    int totalBytesRead = 0;
+                    int previousProgress = 0;
+                    while ((bytesRead = await sourceFile.ReadAsync(buffer, 0, buffer.Length)) > 0)
+                    {
+                        await destinationFile.WriteAsync(buffer, 0, bytesRead);
+                        totalBytesRead += bytesRead;
+                        var progress = (int)(((double)totalBytesRead / (double)sourceLength) * 100);
+                        if (progress != previousProgress)
+                        {
+                            ucUploadProgress.Progress = (int)(((double)totalBytesRead / (double)sourceLength) * 100);
+                        }
+                        previousProgress = progress;
+                    }
+                }
+            }
+        }
+
         private async void dgvExplorer_DragDrop(object sender, DragEventArgs e)
         {
             var destinationPath = GetCurrentPath();
@@ -1373,15 +1557,8 @@ namespace OpenpilotToolkit
                     var data = e.Data.GetData(DataFormats.FileDrop);
                     if(data is String[] files)
                     {
-                        
-                        await Task.Run(async () =>
-                        {
-                            await Parallel.ForEachAsync(files, async (file, token) =>
-                            {
-                                await openpilotDevice.UploadFileAsync(file, destinationPath + "/" + Path.GetFileName(file));
-                                
-                            });
-                        });
+                        var uploadTasks = files.Select(file => UploadFile(openpilotDevice, file, destinationPath)).ToArray();
+                        await Task.WhenAll(uploadTasks);
 
                         if (GetCurrentPath() == destinationPath)
                         {
@@ -1417,18 +1594,9 @@ namespace OpenpilotToolkit
                         return;
                     }
 
-                    await Task.Run(() =>
-                    {
-                        Parallel.ForEach(selectedRows, row =>
-                        {
-                            var selectedItem = ((Renci.SshNet.Sftp.SftpFile)row.DataBoundItem);
-                            if (!(selectedItem.Name == ".." || selectedItem.Name == "."))
-                            {
-                                selectedItem.Delete();
-                            }
-                        });
-                    });
-
+                    var deleteTasks = selectedRows.Where(row => !(((Renci.SshNet.Sftp.SftpFile)row.DataBoundItem).Name == ".." || ((Renci.SshNet.Sftp.SftpFile)row.DataBoundItem).Name == ".")).Select(row => openpilotDevice.DeleteFile((Renci.SshNet.Sftp.SftpFile)row.DataBoundItem)).ToArray();
+                    await Task.WhenAll(deleteTasks);
+                    
                     if (GetCurrentPath() == destinationPath)
                     {
                         IEnumerable<Renci.SshNet.Sftp.ISftpFile> directoryContents = null;
@@ -1534,6 +1702,14 @@ namespace OpenpilotToolkit
             }
         }
 
+        private void txtSshCommand_PreviewKeyDown(object sender, PreviewKeyDownEventArgs e)
+        {
+            if (e.KeyCode == Keys.Tab)
+            {
+                e.IsInputKey = true;
+            }
+        }
+
         private async void txtSshCommand_KeyPress(object sender, KeyPressEventArgs e)
         {
             if (_shellStream != null)
@@ -1544,11 +1720,20 @@ namespace OpenpilotToolkit
             }
         }
 
-        private void txtSshCommand_PreviewKeyDown(object sender, PreviewKeyDownEventArgs e)
+        private async void txtSshCommand_KeyDown(object sender, KeyEventArgs e)
         {
-            if (e.KeyCode == Keys.Tab)
+            if (_shellStream != null)
             {
-                e.IsInputKey = true;
+                if (e.KeyCode == Keys.Up)
+                {
+                    await _shellStream.WriteAsync(new ReadOnlyMemory<byte>(new[] { (byte)27, (byte)91, (byte)65 }));
+                    await _shellStream.FlushAsync();
+                }
+                else if (e.KeyCode == Keys.Down)
+                {
+                    await _shellStream.WriteAsync(new ReadOnlyMemory<byte>(new[] { (byte)27, (byte)91, (byte)66 }));
+                    await _shellStream.FlushAsync();
+                }
             }
         }
 
@@ -1716,6 +1901,48 @@ namespace OpenpilotToolkit
             finally
             {
                 btnOsmTest.Enabled = true;
+            }
+        }
+
+        private async void btnTmux_Click(object sender, EventArgs e)
+        {
+            sshTerminal.Focus();
+            if (_shellStream != null)
+            {
+                await _shellStream.WriteAsync(new ReadOnlyMemory<byte>(Encoding.UTF8.GetBytes("tmux a\n")));
+                await _shellStream.FlushAsync();
+                
+            }
+        }
+
+        private async void btnExitTmux_Click(object sender, EventArgs e)
+        {
+            sshTerminal.Focus();
+            if (_shellStream != null)
+            {
+                await _shellStream.WriteAsync(new ReadOnlyMemory<byte>(Encoding.UTF8.GetBytes("`d")));
+                await _shellStream.FlushAsync();
+            }
+        }
+
+        private void txtExportFolder_DoubleClick(object sender, EventArgs e)
+        {
+            try
+            {
+                var path = txtExportFolder.Text.EndsWith(Path.DirectorySeparatorChar)
+                    ? txtExportFolder.Text
+                    : txtExportFolder.Text + Path.DirectorySeparatorChar;
+
+                Process.Start(new ProcessStartInfo()
+                {
+                    FileName = path,
+                    UseShellExecute = true,
+                    Verb = "open"
+                });
+            }
+            catch(Exception ex)
+            {
+                ToolkitMessageDialog.ShowDialog(ex.Message);
             }
         }
     }

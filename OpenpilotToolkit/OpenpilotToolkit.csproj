@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net6.0-windows</TargetFramework>
+    <TargetFramework>net7.0-windows</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
 	<DebugType>embedded</DebugType>
 	<ApplicationIcon>Resources\ic_launcher-web.ico</ApplicationIcon>
@@ -187,9 +187,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Content Include="Controls\Terminal\desktop.ini">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
 	  <Content Include="Controls\Terminal\index.html">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </Content>
@@ -622,19 +619,19 @@
 	</ItemGroup>
 
   <ItemGroup>
-	<PackageReference Include="CefSharp.WinForms.NetCore" Version="97.1.61" />
-	<PackageReference Include="chromiumembeddedframework.runtime.win-arm64" Version="97.1.6" />
+	<PackageReference Include="CefSharp.WinForms.NetCore" Version="99.2.90" />
+	<PackageReference Include="chromiumembeddedframework.runtime.win-arm64" Version="99.2.9" />
 	<PackageReference Include="chromiumembeddedframework.runtime.win-x64" />
-	<PackageReference Include="chromiumembeddedframework.runtime.win-x86" Version="97.1.6" />
+	<PackageReference Include="chromiumembeddedframework.runtime.win-x86" Version="99.2.9" />
 	<PackageReference Include="LibUsbDotNet" Version="2.2.29" />
     <PackageReference Include="LibVLCSharp" Version="3.6.5" />
     <PackageReference Include="LibVLCSharp.WinForms" Version="3.6.5" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.1" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="6.0.1">
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.3" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="6.0.3">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="6.0.1">
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="6.0.3">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
@@ -642,8 +639,9 @@
     <PackageReference Include="Octokit" Version="0.50.0" />
     <PackageReference Include="Serilog" Version="2.10.1-dev-01343" />
     <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
-    <PackageReference Include="SixLabors.ImageSharp" Version="2.0.0" />
-    <PackageReference Include="SshKeyGenerator" Version="1.1.45" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="2.1.0" />
+    <PackageReference Include="SshKeyGenerator" Version="1.1.49" />
+    <PackageReference Include="System.Reactive" Version="5.0.0" />
     <PackageReference Include="VideoLAN.LibVLC.Windows" Version="3.0.16" />
   </ItemGroup>
 
@@ -725,7 +723,7 @@
 	</Target>
 
 	<ItemGroup>
-	  <PackageReference Update="chromiumembeddedframework.runtime.win-x64" Version="97.1.6" />
+	  <PackageReference Update="chromiumembeddedframework.runtime.win-x64" Version="99.2.9" />
 	</ItemGroup>
 
 </Project>

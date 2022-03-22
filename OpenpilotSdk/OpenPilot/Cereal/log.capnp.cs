@@ -151,7 +151,7 @@ namespace Cereal
         {
             var reader = READER.create(arg_);
             KernelArgs = reader.KernelArgs;
-            Gctx = reader.Gctx;
+            GctxDEPRECATED = reader.GctxDEPRECATED;
             DongleId = reader.DongleId;
             TheDeviceType = reader.TheDeviceType;
             Version = reader.Version;
@@ -175,7 +175,7 @@ namespace Cereal
         public void serialize(WRITER writer)
         {
             writer.KernelArgs.Init(KernelArgs);
-            writer.Gctx = Gctx;
+            writer.GctxDEPRECATED = GctxDEPRECATED;
             writer.DongleId = DongleId;
             writer.TheDeviceType = TheDeviceType;
             writer.Version = Version;
@@ -210,7 +210,7 @@ namespace Cereal
             set;
         }
 
-        public string Gctx
+        public string GctxDEPRECATED
         {
             get;
             set;
@@ -330,7 +330,7 @@ namespace Cereal
             public static implicit operator DeserializerState(READER reader) => reader.ctx;
             public static implicit operator READER(DeserializerState ctx) => new READER(ctx);
             public IReadOnlyList<string> KernelArgs => ctx.ReadList(0).CastText2();
-            public string Gctx => ctx.ReadText(1, null);
+            public string GctxDEPRECATED => ctx.ReadText(1, null);
             public string DongleId => ctx.ReadText(2, null);
             public Cereal.InitData.DeviceType TheDeviceType => (Cereal.InitData.DeviceType)ctx.ReadDataUShort(0UL, (ushort)0);
             public string Version => ctx.ReadText(3, null);
@@ -363,7 +363,7 @@ namespace Cereal
                 set => Link(0, value);
             }
 
-            public string Gctx
+            public string GctxDEPRECATED
             {
                 get => this.ReadText(1, null);
                 set => this.WriteText(1, value, null);
@@ -3036,18 +3036,18 @@ namespace Cereal
             BatDEPRECATED = reader.BatDEPRECATED;
             FreeSpacePercent = reader.FreeSpacePercent;
             BatteryPercent = reader.BatteryPercent;
-            BatteryStatus = reader.BatteryStatus;
+            BatteryStatusDEPRECATED = reader.BatteryStatusDEPRECATED;
             FanSpeedPercentDesired = reader.FanSpeedPercentDesired;
             Started = reader.Started;
             UsbOnline = reader.UsbOnline;
             StartedMonoTime = reader.StartedMonoTime;
             TheThermalStatus = reader.TheThermalStatus;
             BatteryCurrent = reader.BatteryCurrent;
-            BatteryVoltage = reader.BatteryVoltage;
+            BatteryVoltageDEPRECATED = reader.BatteryVoltageDEPRECATED;
             ChargingError = reader.ChargingError;
             ChargingDisabled = reader.ChargingDisabled;
             MemoryUsagePercent = reader.MemoryUsagePercent;
-            CpuUsagePercent = reader.CpuUsagePercent;
+            CpuUsagePercentDEPRECATED = reader.CpuUsagePercentDEPRECATED;
             Pa0DEPRECATED = reader.Pa0DEPRECATED;
             TheNetworkType = reader.TheNetworkType;
             OffroadPowerUsageUwh = reader.OffroadPowerUsageUwh;
@@ -3056,11 +3056,18 @@ namespace Cereal
             CpuTempC = reader.CpuTempC;
             GpuTempC = reader.GpuTempC;
             MemoryTempC = reader.MemoryTempC;
-            BatteryTempC = reader.BatteryTempC;
+            BatteryTempCDEPRECATED = reader.BatteryTempCDEPRECATED;
             AmbientTempC = reader.AmbientTempC;
             TheNetworkInfo = CapnpSerializable.Create<Cereal.DeviceState.NetworkInfo>(reader.TheNetworkInfo);
             LastAthenaPingTime = reader.LastAthenaPingTime;
             GpuUsagePercent = reader.GpuUsagePercent;
+            CpuUsagePercent = reader.CpuUsagePercent;
+            NvmeTempC = reader.NvmeTempC;
+            ModemTempC = reader.ModemTempC;
+            ScreenBrightnessPercent = reader.ScreenBrightnessPercent;
+            ThermalZones = reader.ThermalZones?.ToReadOnlyList(_ => CapnpSerializable.Create<Cereal.DeviceState.ThermalZone>(_));
+            PmicTempC = reader.PmicTempC;
+            PowerDrawW = reader.PowerDrawW;
             applyDefaults();
         }
 
@@ -3075,18 +3082,18 @@ namespace Cereal
             writer.BatDEPRECATED = BatDEPRECATED;
             writer.FreeSpacePercent = FreeSpacePercent;
             writer.BatteryPercent = BatteryPercent;
-            writer.BatteryStatus = BatteryStatus;
+            writer.BatteryStatusDEPRECATED = BatteryStatusDEPRECATED;
             writer.FanSpeedPercentDesired = FanSpeedPercentDesired;
             writer.Started = Started;
             writer.UsbOnline = UsbOnline;
             writer.StartedMonoTime = StartedMonoTime;
             writer.TheThermalStatus = TheThermalStatus;
             writer.BatteryCurrent = BatteryCurrent;
-            writer.BatteryVoltage = BatteryVoltage;
+            writer.BatteryVoltageDEPRECATED = BatteryVoltageDEPRECATED;
             writer.ChargingError = ChargingError;
             writer.ChargingDisabled = ChargingDisabled;
             writer.MemoryUsagePercent = MemoryUsagePercent;
-            writer.CpuUsagePercent = CpuUsagePercent;
+            writer.CpuUsagePercentDEPRECATED = CpuUsagePercentDEPRECATED;
             writer.Pa0DEPRECATED = Pa0DEPRECATED;
             writer.TheNetworkType = TheNetworkType;
             writer.OffroadPowerUsageUwh = OffroadPowerUsageUwh;
@@ -3095,11 +3102,18 @@ namespace Cereal
             writer.CpuTempC.Init(CpuTempC);
             writer.GpuTempC.Init(GpuTempC);
             writer.MemoryTempC = MemoryTempC;
-            writer.BatteryTempC = BatteryTempC;
+            writer.BatteryTempCDEPRECATED = BatteryTempCDEPRECATED;
             writer.AmbientTempC = AmbientTempC;
             TheNetworkInfo?.serialize(writer.TheNetworkInfo);
             writer.LastAthenaPingTime = LastAthenaPingTime;
             writer.GpuUsagePercent = GpuUsagePercent;
+            writer.CpuUsagePercent.Init(CpuUsagePercent);
+            writer.NvmeTempC.Init(NvmeTempC);
+            writer.ModemTempC.Init(ModemTempC);
+            writer.ScreenBrightnessPercent = ScreenBrightnessPercent;
+            writer.ThermalZones.Init(ThermalZones, (_s1, _v1) => _v1?.serialize(_s1));
+            writer.PmicTempC.Init(PmicTempC);
+            writer.PowerDrawW = PowerDrawW;
         }
 
         void ICapnpSerializable.Serialize(SerializerState arg_)
@@ -3165,7 +3179,7 @@ namespace Cereal
             set;
         }
 
-        public string BatteryStatus
+        public string BatteryStatusDEPRECATED
         {
             get;
             set;
@@ -3207,7 +3221,7 @@ namespace Cereal
             set;
         }
 
-        public int BatteryVoltage
+        public int BatteryVoltageDEPRECATED
         {
             get;
             set;
@@ -3231,7 +3245,7 @@ namespace Cereal
             set;
         }
 
-        public sbyte CpuUsagePercent
+        public sbyte CpuUsagePercentDEPRECATED
         {
             get;
             set;
@@ -3285,7 +3299,7 @@ namespace Cereal
             set;
         }
 
-        public float BatteryTempC
+        public float BatteryTempCDEPRECATED
         {
             get;
             set;
@@ -3315,6 +3329,48 @@ namespace Cereal
             set;
         }
 
+        public IReadOnlyList<sbyte> CpuUsagePercent
+        {
+            get;
+            set;
+        }
+
+        public IReadOnlyList<float> NvmeTempC
+        {
+            get;
+            set;
+        }
+
+        public IReadOnlyList<float> ModemTempC
+        {
+            get;
+            set;
+        }
+
+        public sbyte ScreenBrightnessPercent
+        {
+            get;
+            set;
+        }
+
+        public IReadOnlyList<Cereal.DeviceState.ThermalZone> ThermalZones
+        {
+            get;
+            set;
+        }
+
+        public IReadOnlyList<float> PmicTempC
+        {
+            get;
+            set;
+        }
+
+        public float PowerDrawW
+        {
+            get;
+            set;
+        }
+
         public struct READER
         {
             readonly DeserializerState ctx;
@@ -3335,18 +3391,18 @@ namespace Cereal
             public uint BatDEPRECATED => ctx.ReadDataUInt(96UL, 0U);
             public float FreeSpacePercent => ctx.ReadDataFloat(128UL, 0F);
             public short BatteryPercent => ctx.ReadDataShort(160UL, (short)0);
-            public string BatteryStatus => ctx.ReadText(0, null);
+            public string BatteryStatusDEPRECATED => ctx.ReadText(0, null);
             public ushort FanSpeedPercentDesired => ctx.ReadDataUShort(176UL, (ushort)0);
             public bool Started => ctx.ReadDataBool(192UL, false);
             public bool UsbOnline => ctx.ReadDataBool(193UL, false);
             public ulong StartedMonoTime => ctx.ReadDataULong(256UL, 0UL);
             public Cereal.DeviceState.ThermalStatus TheThermalStatus => (Cereal.DeviceState.ThermalStatus)ctx.ReadDataUShort(208UL, (ushort)0);
             public int BatteryCurrent => ctx.ReadDataInt(224UL, 0);
-            public int BatteryVoltage => ctx.ReadDataInt(320UL, 0);
+            public int BatteryVoltageDEPRECATED => ctx.ReadDataInt(320UL, 0);
             public bool ChargingError => ctx.ReadDataBool(194UL, false);
             public bool ChargingDisabled => ctx.ReadDataBool(195UL, false);
             public sbyte MemoryUsagePercent => ctx.ReadDataSByte(200UL, (sbyte)0);
-            public sbyte CpuUsagePercent => ctx.ReadDataSByte(352UL, (sbyte)0);
+            public sbyte CpuUsagePercentDEPRECATED => ctx.ReadDataSByte(352UL, (sbyte)0);
             public ushort Pa0DEPRECATED => ctx.ReadDataUShort(368UL, (ushort)0);
             public Cereal.DeviceState.NetworkType TheNetworkType => (Cereal.DeviceState.NetworkType)ctx.ReadDataUShort(384UL, (ushort)0);
             public uint OffroadPowerUsageUwh => ctx.ReadDataUInt(416UL, 0U);
@@ -3355,18 +3411,25 @@ namespace Cereal
             public IReadOnlyList<float> CpuTempC => ctx.ReadList(1).CastFloat();
             public IReadOnlyList<float> GpuTempC => ctx.ReadList(2).CastFloat();
             public float MemoryTempC => ctx.ReadDataFloat(480UL, 0F);
-            public float BatteryTempC => ctx.ReadDataFloat(512UL, 0F);
+            public float BatteryTempCDEPRECATED => ctx.ReadDataFloat(512UL, 0F);
             public float AmbientTempC => ctx.ReadDataFloat(544UL, 0F);
             public Cereal.DeviceState.NetworkInfo.READER TheNetworkInfo => ctx.ReadStruct(3, Cereal.DeviceState.NetworkInfo.READER.create);
             public ulong LastAthenaPingTime => ctx.ReadDataULong(576UL, 0UL);
             public sbyte GpuUsagePercent => ctx.ReadDataSByte(360UL, (sbyte)0);
+            public IReadOnlyList<sbyte> CpuUsagePercent => ctx.ReadList(4).CastSByte();
+            public IReadOnlyList<float> NvmeTempC => ctx.ReadList(5).CastFloat();
+            public IReadOnlyList<float> ModemTempC => ctx.ReadList(6).CastFloat();
+            public sbyte ScreenBrightnessPercent => ctx.ReadDataSByte(640UL, (sbyte)0);
+            public IReadOnlyList<Cereal.DeviceState.ThermalZone.READER> ThermalZones => ctx.ReadList(7).Cast(Cereal.DeviceState.ThermalZone.READER.create);
+            public IReadOnlyList<float> PmicTempC => ctx.ReadList(8).CastFloat();
+            public float PowerDrawW => ctx.ReadDataFloat(672UL, 0F);
         }
 
         public class WRITER : SerializerState
         {
             public WRITER()
             {
-                this.SetStruct(10, 4);
+                this.SetStruct(11, 9);
             }
 
             public ushort Cpu0DEPRECATED
@@ -3423,7 +3486,7 @@ namespace Cereal
                 set => this.WriteData(160UL, value, (short)0);
             }
 
-            public string BatteryStatus
+            public string BatteryStatusDEPRECATED
             {
                 get => this.ReadText(0, null);
                 set => this.WriteText(0, value, null);
@@ -3465,7 +3528,7 @@ namespace Cereal
                 set => this.WriteData(224UL, value, 0);
             }
 
-            public int BatteryVoltage
+            public int BatteryVoltageDEPRECATED
             {
                 get => this.ReadDataInt(320UL, 0);
                 set => this.WriteData(320UL, value, 0);
@@ -3489,7 +3552,7 @@ namespace Cereal
                 set => this.WriteData(200UL, value, (sbyte)0);
             }
 
-            public sbyte CpuUsagePercent
+            public sbyte CpuUsagePercentDEPRECATED
             {
                 get => this.ReadDataSByte(352UL, (sbyte)0);
                 set => this.WriteData(352UL, value, (sbyte)0);
@@ -3543,7 +3606,7 @@ namespace Cereal
                 set => this.WriteData(480UL, value, 0F);
             }
 
-            public float BatteryTempC
+            public float BatteryTempCDEPRECATED
             {
                 get => this.ReadDataFloat(512UL, 0F);
                 set => this.WriteData(512UL, value, 0F);
@@ -3571,6 +3634,123 @@ namespace Cereal
             {
                 get => this.ReadDataSByte(360UL, (sbyte)0);
                 set => this.WriteData(360UL, value, (sbyte)0);
+            }
+
+            public ListOfPrimitivesSerializer<sbyte> CpuUsagePercent
+            {
+                get => BuildPointer<ListOfPrimitivesSerializer<sbyte>>(4);
+                set => Link(4, value);
+            }
+
+            public ListOfPrimitivesSerializer<float> NvmeTempC
+            {
+                get => BuildPointer<ListOfPrimitivesSerializer<float>>(5);
+                set => Link(5, value);
+            }
+
+            public ListOfPrimitivesSerializer<float> ModemTempC
+            {
+                get => BuildPointer<ListOfPrimitivesSerializer<float>>(6);
+                set => Link(6, value);
+            }
+
+            public sbyte ScreenBrightnessPercent
+            {
+                get => this.ReadDataSByte(640UL, (sbyte)0);
+                set => this.WriteData(640UL, value, (sbyte)0);
+            }
+
+            public ListOfStructsSerializer<Cereal.DeviceState.ThermalZone.WRITER> ThermalZones
+            {
+                get => BuildPointer<ListOfStructsSerializer<Cereal.DeviceState.ThermalZone.WRITER>>(7);
+                set => Link(7, value);
+            }
+
+            public ListOfPrimitivesSerializer<float> PmicTempC
+            {
+                get => BuildPointer<ListOfPrimitivesSerializer<float>>(8);
+                set => Link(8, value);
+            }
+
+            public float PowerDrawW
+            {
+                get => this.ReadDataFloat(672UL, 0F);
+                set => this.WriteData(672UL, value, 0F);
+            }
+        }
+
+        [System.CodeDom.Compiler.GeneratedCode("capnpc-csharp", "1.3.0.0"), TypeId(0xd0790029853df66fUL)]
+        public class ThermalZone : ICapnpSerializable
+        {
+            public const UInt64 typeId = 0xd0790029853df66fUL;
+            void ICapnpSerializable.Deserialize(DeserializerState arg_)
+            {
+                var reader = READER.create(arg_);
+                Name = reader.Name;
+                Temp = reader.Temp;
+                applyDefaults();
+            }
+
+            public void serialize(WRITER writer)
+            {
+                writer.Name = Name;
+                writer.Temp = Temp;
+            }
+
+            void ICapnpSerializable.Serialize(SerializerState arg_)
+            {
+                serialize(arg_.Rewrap<WRITER>());
+            }
+
+            public void applyDefaults()
+            {
+            }
+
+            public string Name
+            {
+                get;
+                set;
+            }
+
+            public float Temp
+            {
+                get;
+                set;
+            }
+
+            public struct READER
+            {
+                readonly DeserializerState ctx;
+                public READER(DeserializerState ctx)
+                {
+                    this.ctx = ctx;
+                }
+
+                public static READER create(DeserializerState ctx) => new READER(ctx);
+                public static implicit operator DeserializerState(READER reader) => reader.ctx;
+                public static implicit operator READER(DeserializerState ctx) => new READER(ctx);
+                public string Name => ctx.ReadText(0, null);
+                public float Temp => ctx.ReadDataFloat(0UL, 0F);
+            }
+
+            public class WRITER : SerializerState
+            {
+                public WRITER()
+                {
+                    this.SetStruct(1, 1);
+                }
+
+                public string Name
+                {
+                    get => this.ReadText(0, null);
+                    set => this.WriteText(0, value, null);
+                }
+
+                public float Temp
+                {
+                    get => this.ReadDataFloat(0UL, 0F);
+                    set => this.WriteData(0UL, value, 0F);
+                }
             }
         }
 
@@ -3748,19 +3928,19 @@ namespace Cereal
         void ICapnpSerializable.Deserialize(DeserializerState arg_)
         {
             var reader = READER.create(arg_);
-            Voltage = reader.Voltage;
-            Current = reader.Current;
+            VoltageDEPRECATED = reader.VoltageDEPRECATED;
+            CurrentDEPRECATED = reader.CurrentDEPRECATED;
             IgnitionLine = reader.IgnitionLine;
             ControlsAllowed = reader.ControlsAllowed;
             GasInterceptorDetected = reader.GasInterceptorDetected;
             StartedSignalDetectedDEPRECATED = reader.StartedSignalDetectedDEPRECATED;
-            HasGps = reader.HasGps;
+            HasGpsDEPRECATED = reader.HasGpsDEPRECATED;
             CanSendErrs = reader.CanSendErrs;
             CanFwdErrs = reader.CanFwdErrs;
             GmlanSendErrs = reader.GmlanSendErrs;
             ThePandaType = reader.ThePandaType;
-            FanSpeedRpm = reader.FanSpeedRpm;
-            TheUsbPowerMode = reader.TheUsbPowerMode;
+            FanSpeedRpmDEPRECATED = reader.FanSpeedRpmDEPRECATED;
+            UsbPowerModeDEPRECATED = reader.UsbPowerModeDEPRECATED;
             IgnitionCan = reader.IgnitionCan;
             SafetyModel = reader.SafetyModel;
             TheFaultStatus = reader.TheFaultStatus;
@@ -3771,24 +3951,26 @@ namespace Cereal
             SafetyParam = reader.SafetyParam;
             TheHarnessStatus = reader.TheHarnessStatus;
             HeartbeatLost = reader.HeartbeatLost;
+            UnsafeMode = reader.UnsafeMode;
+            BlockedCnt = reader.BlockedCnt;
             applyDefaults();
         }
 
         public void serialize(WRITER writer)
         {
-            writer.Voltage = Voltage;
-            writer.Current = Current;
+            writer.VoltageDEPRECATED = VoltageDEPRECATED;
+            writer.CurrentDEPRECATED = CurrentDEPRECATED;
             writer.IgnitionLine = IgnitionLine;
             writer.ControlsAllowed = ControlsAllowed;
             writer.GasInterceptorDetected = GasInterceptorDetected;
             writer.StartedSignalDetectedDEPRECATED = StartedSignalDetectedDEPRECATED;
-            writer.HasGps = HasGps;
+            writer.HasGpsDEPRECATED = HasGpsDEPRECATED;
             writer.CanSendErrs = CanSendErrs;
             writer.CanFwdErrs = CanFwdErrs;
             writer.GmlanSendErrs = GmlanSendErrs;
             writer.ThePandaType = ThePandaType;
-            writer.FanSpeedRpm = FanSpeedRpm;
-            writer.TheUsbPowerMode = TheUsbPowerMode;
+            writer.FanSpeedRpmDEPRECATED = FanSpeedRpmDEPRECATED;
+            writer.UsbPowerModeDEPRECATED = UsbPowerModeDEPRECATED;
             writer.IgnitionCan = IgnitionCan;
             writer.SafetyModel = SafetyModel;
             writer.TheFaultStatus = TheFaultStatus;
@@ -3799,6 +3981,8 @@ namespace Cereal
             writer.SafetyParam = SafetyParam;
             writer.TheHarnessStatus = TheHarnessStatus;
             writer.HeartbeatLost = HeartbeatLost;
+            writer.UnsafeMode = UnsafeMode;
+            writer.BlockedCnt = BlockedCnt;
         }
 
         void ICapnpSerializable.Serialize(SerializerState arg_)
@@ -3810,13 +3994,13 @@ namespace Cereal
         {
         }
 
-        public uint Voltage
+        public uint VoltageDEPRECATED
         {
             get;
             set;
         }
 
-        public uint Current
+        public uint CurrentDEPRECATED
         {
             get;
             set;
@@ -3846,7 +4030,7 @@ namespace Cereal
             set;
         }
 
-        public bool HasGps
+        public bool HasGpsDEPRECATED
         {
             get;
             set;
@@ -3876,13 +4060,13 @@ namespace Cereal
             set;
         }
 
-        public ushort FanSpeedRpm
+        public ushort FanSpeedRpmDEPRECATED
         {
             get;
             set;
         }
 
-        public Cereal.PandaState.UsbPowerMode TheUsbPowerMode
+        public Cereal.PeripheralState.UsbPowerMode UsbPowerModeDEPRECATED
         {
             get;
             set;
@@ -3948,6 +4132,18 @@ namespace Cereal
             set;
         }
 
+        public short UnsafeMode
+        {
+            get;
+            set;
+        }
+
+        public uint BlockedCnt
+        {
+            get;
+            set;
+        }
+
         public struct READER
         {
             readonly DeserializerState ctx;
@@ -3959,19 +4155,19 @@ namespace Cereal
             public static READER create(DeserializerState ctx) => new READER(ctx);
             public static implicit operator DeserializerState(READER reader) => reader.ctx;
             public static implicit operator READER(DeserializerState ctx) => new READER(ctx);
-            public uint Voltage => ctx.ReadDataUInt(0UL, 0U);
-            public uint Current => ctx.ReadDataUInt(32UL, 0U);
+            public uint VoltageDEPRECATED => ctx.ReadDataUInt(0UL, 0U);
+            public uint CurrentDEPRECATED => ctx.ReadDataUInt(32UL, 0U);
             public bool IgnitionLine => ctx.ReadDataBool(64UL, false);
             public bool ControlsAllowed => ctx.ReadDataBool(65UL, false);
             public bool GasInterceptorDetected => ctx.ReadDataBool(66UL, false);
             public bool StartedSignalDetectedDEPRECATED => ctx.ReadDataBool(67UL, false);
-            public bool HasGps => ctx.ReadDataBool(68UL, false);
+            public bool HasGpsDEPRECATED => ctx.ReadDataBool(68UL, false);
             public uint CanSendErrs => ctx.ReadDataUInt(96UL, 0U);
             public uint CanFwdErrs => ctx.ReadDataUInt(128UL, 0U);
             public uint GmlanSendErrs => ctx.ReadDataUInt(160UL, 0U);
             public Cereal.PandaState.PandaType ThePandaType => (Cereal.PandaState.PandaType)ctx.ReadDataUShort(80UL, (ushort)0);
-            public ushort FanSpeedRpm => ctx.ReadDataUShort(192UL, (ushort)0);
-            public Cereal.PandaState.UsbPowerMode TheUsbPowerMode => (Cereal.PandaState.UsbPowerMode)ctx.ReadDataUShort(208UL, (ushort)0);
+            public ushort FanSpeedRpmDEPRECATED => ctx.ReadDataUShort(192UL, (ushort)0);
+            public Cereal.PeripheralState.UsbPowerMode UsbPowerModeDEPRECATED => (Cereal.PeripheralState.UsbPowerMode)ctx.ReadDataUShort(208UL, (ushort)0);
             public bool IgnitionCan => ctx.ReadDataBool(69UL, false);
             public Cereal.CarParams.SafetyModel SafetyModel => (Cereal.CarParams.SafetyModel)ctx.ReadDataUShort(224UL, (ushort)0);
             public Cereal.PandaState.FaultStatus TheFaultStatus => (Cereal.PandaState.FaultStatus)ctx.ReadDataUShort(240UL, (ushort)0);
@@ -3982,22 +4178,24 @@ namespace Cereal
             public short SafetyParam => ctx.ReadDataShort(320UL, (short)0);
             public Cereal.PandaState.HarnessStatus TheHarnessStatus => (Cereal.PandaState.HarnessStatus)ctx.ReadDataUShort(336UL, (ushort)0);
             public bool HeartbeatLost => ctx.ReadDataBool(71UL, false);
+            public short UnsafeMode => ctx.ReadDataShort(352UL, (short)0);
+            public uint BlockedCnt => ctx.ReadDataUInt(384UL, 0U);
         }
 
         public class WRITER : SerializerState
         {
             public WRITER()
             {
-                this.SetStruct(6, 1);
+                this.SetStruct(7, 1);
             }
 
-            public uint Voltage
+            public uint VoltageDEPRECATED
             {
                 get => this.ReadDataUInt(0UL, 0U);
                 set => this.WriteData(0UL, value, 0U);
             }
 
-            public uint Current
+            public uint CurrentDEPRECATED
             {
                 get => this.ReadDataUInt(32UL, 0U);
                 set => this.WriteData(32UL, value, 0U);
@@ -4027,7 +4225,7 @@ namespace Cereal
                 set => this.WriteData(67UL, value, false);
             }
 
-            public bool HasGps
+            public bool HasGpsDEPRECATED
             {
                 get => this.ReadDataBool(68UL, false);
                 set => this.WriteData(68UL, value, false);
@@ -4057,15 +4255,15 @@ namespace Cereal
                 set => this.WriteData(80UL, (ushort)value, (ushort)0);
             }
 
-            public ushort FanSpeedRpm
+            public ushort FanSpeedRpmDEPRECATED
             {
                 get => this.ReadDataUShort(192UL, (ushort)0);
                 set => this.WriteData(192UL, value, (ushort)0);
             }
 
-            public Cereal.PandaState.UsbPowerMode TheUsbPowerMode
+            public Cereal.PeripheralState.UsbPowerMode UsbPowerModeDEPRECATED
             {
-                get => (Cereal.PandaState.UsbPowerMode)this.ReadDataUShort(208UL, (ushort)0);
+                get => (Cereal.PeripheralState.UsbPowerMode)this.ReadDataUShort(208UL, (ushort)0);
                 set => this.WriteData(208UL, (ushort)value, (ushort)0);
             }
 
@@ -4128,6 +4326,18 @@ namespace Cereal
                 get => this.ReadDataBool(71UL, false);
                 set => this.WriteData(71UL, value, false);
             }
+
+            public short UnsafeMode
+            {
+                get => this.ReadDataShort(352UL, (short)0);
+                set => this.WriteData(352UL, value, (short)0);
+            }
+
+            public uint BlockedCnt
+            {
+                get => this.ReadDataUInt(384UL, 0U);
+                set => this.WriteData(384UL, value, 0U);
+            }
         }
 
         [System.CodeDom.Compiler.GeneratedCode("capnpc-csharp", "1.3.0.0"), TypeId(0xf2fd0b8b0ac9adbbUL)]
@@ -4175,7 +4385,135 @@ namespace Cereal
             pedal,
             uno,
             dos,
-            red
+            redPanda
+        }
+
+        [System.CodeDom.Compiler.GeneratedCode("capnpc-csharp", "1.3.0.0"), TypeId(0xf69a3ed1e8c081bfUL)]
+        public enum HarnessStatus : ushort
+        {
+            notConnected,
+            normal,
+            flipped
+        }
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("capnpc-csharp", "1.3.0.0"), TypeId(0xceb8f49734857a88UL)]
+    public class PeripheralState : ICapnpSerializable
+    {
+        public const UInt64 typeId = 0xceb8f49734857a88UL;
+        void ICapnpSerializable.Deserialize(DeserializerState arg_)
+        {
+            var reader = READER.create(arg_);
+            PandaType = reader.PandaType;
+            Voltage = reader.Voltage;
+            Current = reader.Current;
+            FanSpeedRpm = reader.FanSpeedRpm;
+            TheUsbPowerMode = reader.TheUsbPowerMode;
+            applyDefaults();
+        }
+
+        public void serialize(WRITER writer)
+        {
+            writer.PandaType = PandaType;
+            writer.Voltage = Voltage;
+            writer.Current = Current;
+            writer.FanSpeedRpm = FanSpeedRpm;
+            writer.TheUsbPowerMode = TheUsbPowerMode;
+        }
+
+        void ICapnpSerializable.Serialize(SerializerState arg_)
+        {
+            serialize(arg_.Rewrap<WRITER>());
+        }
+
+        public void applyDefaults()
+        {
+        }
+
+        public Cereal.PandaState.PandaType PandaType
+        {
+            get;
+            set;
+        }
+
+        public uint Voltage
+        {
+            get;
+            set;
+        }
+
+        public uint Current
+        {
+            get;
+            set;
+        }
+
+        public ushort FanSpeedRpm
+        {
+            get;
+            set;
+        }
+
+        public Cereal.PeripheralState.UsbPowerMode TheUsbPowerMode
+        {
+            get;
+            set;
+        }
+
+        public struct READER
+        {
+            readonly DeserializerState ctx;
+            public READER(DeserializerState ctx)
+            {
+                this.ctx = ctx;
+            }
+
+            public static READER create(DeserializerState ctx) => new READER(ctx);
+            public static implicit operator DeserializerState(READER reader) => reader.ctx;
+            public static implicit operator READER(DeserializerState ctx) => new READER(ctx);
+            public Cereal.PandaState.PandaType PandaType => (Cereal.PandaState.PandaType)ctx.ReadDataUShort(0UL, (ushort)0);
+            public uint Voltage => ctx.ReadDataUInt(32UL, 0U);
+            public uint Current => ctx.ReadDataUInt(64UL, 0U);
+            public ushort FanSpeedRpm => ctx.ReadDataUShort(16UL, (ushort)0);
+            public Cereal.PeripheralState.UsbPowerMode TheUsbPowerMode => (Cereal.PeripheralState.UsbPowerMode)ctx.ReadDataUShort(96UL, (ushort)0);
+        }
+
+        public class WRITER : SerializerState
+        {
+            public WRITER()
+            {
+                this.SetStruct(2, 0);
+            }
+
+            public Cereal.PandaState.PandaType PandaType
+            {
+                get => (Cereal.PandaState.PandaType)this.ReadDataUShort(0UL, (ushort)0);
+                set => this.WriteData(0UL, (ushort)value, (ushort)0);
+            }
+
+            public uint Voltage
+            {
+                get => this.ReadDataUInt(32UL, 0U);
+                set => this.WriteData(32UL, value, 0U);
+            }
+
+            public uint Current
+            {
+                get => this.ReadDataUInt(64UL, 0U);
+                set => this.WriteData(64UL, value, 0U);
+            }
+
+            public ushort FanSpeedRpm
+            {
+                get => this.ReadDataUShort(16UL, (ushort)0);
+                set => this.WriteData(16UL, value, (ushort)0);
+            }
+
+            public Cereal.PeripheralState.UsbPowerMode TheUsbPowerMode
+            {
+                get => (Cereal.PeripheralState.UsbPowerMode)this.ReadDataUShort(96UL, (ushort)0);
+                set => this.WriteData(96UL, (ushort)value, (ushort)0);
+            }
         }
 
         [System.CodeDom.Compiler.GeneratedCode("capnpc-csharp", "1.3.0.0"), TypeId(0xa8883583b32c9877UL)]
@@ -4185,14 +4523,6 @@ namespace Cereal
             client,
             cdp,
             dcp
-        }
-
-        [System.CodeDom.Compiler.GeneratedCode("capnpc-csharp", "1.3.0.0"), TypeId(0xf69a3ed1e8c081bfUL)]
-        public enum HarnessStatus : ushort
-        {
-            notConnected,
-            normal,
-            flipped
         }
     }
 
@@ -5133,7 +5463,7 @@ namespace Cereal
             AngleModelBiasDEPRECATED = reader.AngleModelBiasDEPRECATED;
             LongitudinalPlanMonoTime = reader.LongitudinalPlanMonoTime;
             SteeringAngleDesiredDegDEPRECATED = reader.SteeringAngleDesiredDegDEPRECATED;
-            TheLongControlState = reader.TheLongControlState;
+            LongControlState = reader.LongControlState;
             State = reader.State;
             VEgoRawDEPRECATED = reader.VEgoRawDEPRECATED;
             UfAccelCmd = reader.UfAccelCmd;
@@ -5159,6 +5489,8 @@ namespace Cereal
             DecelForModelDEPRECATED = reader.DecelForModelDEPRECATED;
             AlertSound = reader.AlertSound;
             CanErrorCounter = reader.CanErrorCounter;
+            Paused = reader.Paused;
+            LkasEnabled = reader.LkasEnabled;
             applyDefaults();
         }
 
@@ -5194,7 +5526,7 @@ namespace Cereal
             writer.AngleModelBiasDEPRECATED = AngleModelBiasDEPRECATED;
             writer.LongitudinalPlanMonoTime = LongitudinalPlanMonoTime;
             writer.SteeringAngleDesiredDegDEPRECATED = SteeringAngleDesiredDegDEPRECATED;
-            writer.TheLongControlState = TheLongControlState;
+            writer.LongControlState = LongControlState;
             writer.State = State;
             writer.VEgoRawDEPRECATED = VEgoRawDEPRECATED;
             writer.UfAccelCmd = UfAccelCmd;
@@ -5220,6 +5552,8 @@ namespace Cereal
             writer.DecelForModelDEPRECATED = DecelForModelDEPRECATED;
             writer.AlertSound = AlertSound;
             writer.CanErrorCounter = CanErrorCounter;
+            writer.Paused = Paused;
+            writer.LkasEnabled = LkasEnabled;
         }
 
         void ICapnpSerializable.Serialize(SerializerState arg_)
@@ -5411,7 +5745,7 @@ namespace Cereal
             set;
         }
 
-        public Cereal.ControlsState.LongControlState TheLongControlState
+        public Cereal.CarControl.Actuators.LongControlState LongControlState
         {
             get;
             set;
@@ -5567,6 +5901,18 @@ namespace Cereal
             set;
         }
 
+        public bool Paused
+        {
+            get;
+            set;
+        }
+
+        public bool LkasEnabled
+        {
+            get;
+            set;
+        }
+
         public struct READER
         {
             readonly DeserializerState ctx;
@@ -5608,7 +5954,7 @@ namespace Cereal
             public float AngleModelBiasDEPRECATED => ctx.ReadDataFloat(800UL, 0F);
             public ulong LongitudinalPlanMonoTime => ctx.ReadDataULong(832UL, 0UL);
             public float SteeringAngleDesiredDegDEPRECATED => ctx.ReadDataFloat(896UL, 0F);
-            public Cereal.ControlsState.LongControlState TheLongControlState => (Cereal.ControlsState.LongControlState)ctx.ReadDataUShort(720UL, (ushort)0);
+            public Cereal.CarControl.Actuators.LongControlState LongControlState => (Cereal.CarControl.Actuators.LongControlState)ctx.ReadDataUShort(720UL, (ushort)0);
             public Cereal.ControlsState.OpenpilotState State => (Cereal.ControlsState.OpenpilotState)ctx.ReadDataUShort(928UL, (ushort)0);
             public float VEgoRawDEPRECATED => ctx.ReadDataFloat(960UL, 0F);
             public float UfAccelCmd => ctx.ReadDataFloat(992UL, 0F);
@@ -5634,6 +5980,8 @@ namespace Cereal
             public bool DecelForModelDEPRECATED => ctx.ReadDataBool(714UL, false);
             public Cereal.CarControl.HUDControl.AudibleAlert AlertSound => (Cereal.CarControl.HUDControl.AudibleAlert)ctx.ReadDataUShort(1344UL, (ushort)0);
             public uint CanErrorCounter => ctx.ReadDataUInt(1376UL, 0U);
+            public bool Paused => ctx.ReadDataBool(715UL, false);
+            public bool LkasEnabled => ctx.ReadDataBool(716UL, false);
         }
 
         public class WRITER : SerializerState
@@ -5823,9 +6171,9 @@ namespace Cereal
                 set => this.WriteData(896UL, value, 0F);
             }
 
-            public Cereal.ControlsState.LongControlState TheLongControlState
+            public Cereal.CarControl.Actuators.LongControlState LongControlState
             {
-                get => (Cereal.ControlsState.LongControlState)this.ReadDataUShort(720UL, (ushort)0);
+                get => (Cereal.CarControl.Actuators.LongControlState)this.ReadDataUShort(720UL, (ushort)0);
                 set => this.WriteData(720UL, (ushort)value, (ushort)0);
             }
 
@@ -5976,6 +6324,18 @@ namespace Cereal
             {
                 get => this.ReadDataUInt(1376UL, 0U);
                 set => this.WriteData(1376UL, value, 0U);
+            }
+
+            public bool Paused
+            {
+                get => this.ReadDataBool(715UL, false);
+                set => this.WriteData(715UL, value, false);
+            }
+
+            public bool LkasEnabled
+            {
+                get => this.ReadDataBool(716UL, false);
+                set => this.WriteData(716UL, value, false);
             }
         }
 
@@ -6203,15 +6563,6 @@ namespace Cereal
             softDisabling
         }
 
-        [System.CodeDom.Compiler.GeneratedCode("capnpc-csharp", "1.3.0.0"), TypeId(0xe40f3a917d908282UL)]
-        public enum LongControlState : ushort
-        {
-            off,
-            pid,
-            stopping,
-            starting
-        }
-
         [System.CodeDom.Compiler.GeneratedCode("capnpc-csharp", "1.3.0.0"), TypeId(0xa0d0dcd113193c62UL)]
         public enum AlertStatus : ushort
         {
@@ -6247,6 +6598,8 @@ namespace Cereal
                 Delta = reader.Delta;
                 Output = reader.Output;
                 Saturated = reader.Saturated;
+                SteeringAngleDesiredDeg = reader.SteeringAngleDesiredDeg;
+                SteeringRateDesiredDeg = reader.SteeringRateDesiredDeg;
                 applyDefaults();
             }
 
@@ -6263,6 +6616,8 @@ namespace Cereal
                 writer.Delta = Delta;
                 writer.Output = Output;
                 writer.Saturated = Saturated;
+                writer.SteeringAngleDesiredDeg = SteeringAngleDesiredDeg;
+                writer.SteeringRateDesiredDeg = SteeringRateDesiredDeg;
             }
 
             void ICapnpSerializable.Serialize(SerializerState arg_)
@@ -6340,6 +6695,18 @@ namespace Cereal
                 set;
             }
 
+            public float SteeringAngleDesiredDeg
+            {
+                get;
+                set;
+            }
+
+            public float SteeringRateDesiredDeg
+            {
+                get;
+                set;
+            }
+
             public struct READER
             {
                 readonly DeserializerState ctx;
@@ -6362,13 +6729,15 @@ namespace Cereal
                 public float Delta => ctx.ReadDataFloat(256UL, 0F);
                 public float Output => ctx.ReadDataFloat(288UL, 0F);
                 public bool Saturated => ctx.ReadDataBool(1UL, false);
+                public float SteeringAngleDesiredDeg => ctx.ReadDataFloat(320UL, 0F);
+                public float SteeringRateDesiredDeg => ctx.ReadDataFloat(352UL, 0F);
             }
 
             public class WRITER : SerializerState
             {
                 public WRITER()
                 {
-                    this.SetStruct(5, 0);
+                    this.SetStruct(6, 0);
                 }
 
                 public bool Active
@@ -6436,6 +6805,18 @@ namespace Cereal
                     get => this.ReadDataBool(1UL, false);
                     set => this.WriteData(1UL, value, false);
                 }
+
+                public float SteeringAngleDesiredDeg
+                {
+                    get => this.ReadDataFloat(320UL, 0F);
+                    set => this.WriteData(320UL, value, 0F);
+                }
+
+                public float SteeringRateDesiredDeg
+                {
+                    get => this.ReadDataFloat(352UL, 0F);
+                    set => this.WriteData(352UL, value, 0F);
+                }
             }
         }
 
@@ -6455,6 +6836,7 @@ namespace Cereal
                 F = reader.F;
                 Output = reader.Output;
                 Saturated = reader.Saturated;
+                SteeringAngleDesiredDeg = reader.SteeringAngleDesiredDeg;
                 applyDefaults();
             }
 
@@ -6469,6 +6851,7 @@ namespace Cereal
                 writer.F = F;
                 writer.Output = Output;
                 writer.Saturated = Saturated;
+                writer.SteeringAngleDesiredDeg = SteeringAngleDesiredDeg;
             }
 
             void ICapnpSerializable.Serialize(SerializerState arg_)
@@ -6534,6 +6917,12 @@ namespace Cereal
                 set;
             }
 
+            public float SteeringAngleDesiredDeg
+            {
+                get;
+                set;
+            }
+
             public struct READER
             {
                 readonly DeserializerState ctx;
@@ -6554,13 +6943,14 @@ namespace Cereal
                 public float F => ctx.ReadDataFloat(192UL, 0F);
                 public float Output => ctx.ReadDataFloat(224UL, 0F);
                 public bool Saturated => ctx.ReadDataBool(1UL, false);
+                public float SteeringAngleDesiredDeg => ctx.ReadDataFloat(256UL, 0F);
             }
 
             public class WRITER : SerializerState
             {
                 public WRITER()
                 {
-                    this.SetStruct(4, 0);
+                    this.SetStruct(5, 0);
                 }
 
                 public bool Active
@@ -6616,6 +7006,12 @@ namespace Cereal
                     get => this.ReadDataBool(1UL, false);
                     set => this.WriteData(1UL, value, false);
                 }
+
+                public float SteeringAngleDesiredDeg
+                {
+                    get => this.ReadDataFloat(256UL, 0F);
+                    set => this.WriteData(256UL, value, 0F);
+                }
             }
         }
 
@@ -6632,6 +7028,7 @@ namespace Cereal
                 Output = reader.Output;
                 LqrOutput = reader.LqrOutput;
                 Saturated = reader.Saturated;
+                SteeringAngleDesiredDeg = reader.SteeringAngleDesiredDeg;
                 applyDefaults();
             }
 
@@ -6643,6 +7040,7 @@ namespace Cereal
                 writer.Output = Output;
                 writer.LqrOutput = LqrOutput;
                 writer.Saturated = Saturated;
+                writer.SteeringAngleDesiredDeg = SteeringAngleDesiredDeg;
             }
 
             void ICapnpSerializable.Serialize(SerializerState arg_)
@@ -6690,6 +7088,12 @@ namespace Cereal
                 set;
             }
 
+            public float SteeringAngleDesiredDeg
+            {
+                get;
+                set;
+            }
+
             public struct READER
             {
                 readonly DeserializerState ctx;
@@ -6707,6 +7111,7 @@ namespace Cereal
                 public float Output => ctx.ReadDataFloat(96UL, 0F);
                 public float LqrOutput => ctx.ReadDataFloat(128UL, 0F);
                 public bool Saturated => ctx.ReadDataBool(1UL, false);
+                public float SteeringAngleDesiredDeg => ctx.ReadDataFloat(160UL, 0F);
             }
 
             public class WRITER : SerializerState
@@ -6751,6 +7156,12 @@ namespace Cereal
                     get => this.ReadDataBool(1UL, false);
                     set => this.WriteData(1UL, value, false);
                 }
+
+                public float SteeringAngleDesiredDeg
+                {
+                    get => this.ReadDataFloat(160UL, 0F);
+                    set => this.WriteData(160UL, value, 0F);
+                }
             }
         }
 
@@ -6765,6 +7176,7 @@ namespace Cereal
                 SteeringAngleDeg = reader.SteeringAngleDeg;
                 Output = reader.Output;
                 Saturated = reader.Saturated;
+                SteeringAngleDesiredDeg = reader.SteeringAngleDesiredDeg;
                 applyDefaults();
             }
 
@@ -6774,6 +7186,7 @@ namespace Cereal
                 writer.SteeringAngleDeg = SteeringAngleDeg;
                 writer.Output = Output;
                 writer.Saturated = Saturated;
+                writer.SteeringAngleDesiredDeg = SteeringAngleDesiredDeg;
             }
 
             void ICapnpSerializable.Serialize(SerializerState arg_)
@@ -6809,6 +7222,12 @@ namespace Cereal
                 set;
             }
 
+            public float SteeringAngleDesiredDeg
+            {
+                get;
+                set;
+            }
+
             public struct READER
             {
                 readonly DeserializerState ctx;
@@ -6824,6 +7243,7 @@ namespace Cereal
                 public float SteeringAngleDeg => ctx.ReadDataFloat(32UL, 0F);
                 public float Output => ctx.ReadDataFloat(64UL, 0F);
                 public bool Saturated => ctx.ReadDataBool(1UL, false);
+                public float SteeringAngleDesiredDeg => ctx.ReadDataFloat(96UL, 0F);
             }
 
             public class WRITER : SerializerState
@@ -6855,6 +7275,12 @@ namespace Cereal
                 {
                     get => this.ReadDataBool(1UL, false);
                     set => this.WriteData(1UL, value, false);
+                }
+
+                public float SteeringAngleDesiredDeg
+                {
+                    get => this.ReadDataFloat(96UL, 0F);
+                    set => this.WriteData(96UL, value, 0F);
                 }
             }
         }
@@ -6991,6 +7417,7 @@ namespace Cereal
             RawPredictions = reader.RawPredictions;
             GpuExecutionTime = reader.GpuExecutionTime;
             LeadsV3 = reader.LeadsV3?.ToReadOnlyList(_ => CapnpSerializable.Create<Cereal.ModelDataV2.LeadDataV3>(_));
+            Acceleration = CapnpSerializable.Create<Cereal.ModelDataV2.XYZTData>(reader.Acceleration);
             applyDefaults();
         }
 
@@ -7015,6 +7442,7 @@ namespace Cereal
             writer.RawPredictions.Init(RawPredictions);
             writer.GpuExecutionTime = GpuExecutionTime;
             writer.LeadsV3.Init(LeadsV3, (_s1, _v1) => _v1?.serialize(_s1));
+            Acceleration?.serialize(writer.Acceleration);
         }
 
         void ICapnpSerializable.Serialize(SerializerState arg_)
@@ -7140,6 +7568,12 @@ namespace Cereal
             set;
         }
 
+        public Cereal.ModelDataV2.XYZTData Acceleration
+        {
+            get;
+            set;
+        }
+
         public struct READER
         {
             readonly DeserializerState ctx;
@@ -7170,13 +7604,14 @@ namespace Cereal
             public IReadOnlyList<byte> RawPredictions => ctx.ReadList(11).CastByte();
             public float GpuExecutionTime => ctx.ReadDataFloat(192UL, 0F);
             public IReadOnlyList<Cereal.ModelDataV2.LeadDataV3.READER> LeadsV3 => ctx.ReadList(12).Cast(Cereal.ModelDataV2.LeadDataV3.READER.create);
+            public Cereal.ModelDataV2.XYZTData.READER Acceleration => ctx.ReadStruct(13, Cereal.ModelDataV2.XYZTData.READER.create);
         }
 
         public class WRITER : SerializerState
         {
             public WRITER()
             {
-                this.SetStruct(4, 13);
+                this.SetStruct(4, 14);
             }
 
             public uint FrameId
@@ -7291,6 +7726,12 @@ namespace Cereal
             {
                 get => BuildPointer<ListOfStructsSerializer<Cereal.ModelDataV2.LeadDataV3.WRITER>>(12);
                 set => Link(12, value);
+            }
+
+            public Cereal.ModelDataV2.XYZTData.WRITER Acceleration
+            {
+                get => BuildPointer<Cereal.ModelDataV2.XYZTData.WRITER>(13);
+                set => Link(13, value);
             }
         }
 
@@ -8443,6 +8884,7 @@ namespace Cereal
             Accels = reader.Accels;
             Speeds = reader.Speeds;
             Jerks = reader.Jerks;
+            SolverExecutionTime = reader.SolverExecutionTime;
             applyDefaults();
         }
 
@@ -8483,6 +8925,7 @@ namespace Cereal
             writer.Accels.Init(Accels);
             writer.Speeds.Init(Speeds);
             writer.Jerks.Init(Jerks);
+            writer.SolverExecutionTime = SolverExecutionTime;
         }
 
         void ICapnpSerializable.Serialize(SerializerState arg_)
@@ -8704,6 +9147,12 @@ namespace Cereal
             set;
         }
 
+        public float SolverExecutionTime
+        {
+            get;
+            set;
+        }
+
         public struct READER
         {
             readonly DeserializerState ctx;
@@ -8750,6 +9199,7 @@ namespace Cereal
             public IReadOnlyList<float> Accels => ctx.ReadList(3).CastFloat();
             public IReadOnlyList<float> Speeds => ctx.ReadList(4).CastFloat();
             public IReadOnlyList<float> Jerks => ctx.ReadList(5).CastFloat();
+            public float SolverExecutionTime => ctx.ReadDataFloat(608UL, 0F);
         }
 
         public class WRITER : SerializerState
@@ -8968,6 +9418,12 @@ namespace Cereal
                 get => BuildPointer<ListOfPrimitivesSerializer<float>>(5);
                 set => Link(5, value);
             }
+
+            public float SolverExecutionTime
+            {
+                get => this.ReadDataFloat(608UL, 0F);
+                set => this.WriteData(608UL, value, 0F);
+            }
         }
 
         [System.CodeDom.Compiler.GeneratedCode("capnpc-csharp", "1.3.0.0"), TypeId(0xb231a753cc079120UL)]
@@ -9092,6 +9548,8 @@ namespace Cereal
             Psis = reader.Psis;
             Curvatures = reader.Curvatures;
             CurvatureRates = reader.CurvatureRates;
+            UseLaneLines = reader.UseLaneLines;
+            SolverExecutionTime = reader.SolverExecutionTime;
             applyDefaults();
         }
 
@@ -9126,6 +9584,8 @@ namespace Cereal
             writer.Psis.Init(Psis);
             writer.Curvatures.Init(Curvatures);
             writer.CurvatureRates.Init(CurvatureRates);
+            writer.UseLaneLines = UseLaneLines;
+            writer.SolverExecutionTime = SolverExecutionTime;
         }
 
         void ICapnpSerializable.Serialize(SerializerState arg_)
@@ -9311,6 +9771,18 @@ namespace Cereal
             set;
         }
 
+        public bool UseLaneLines
+        {
+            get;
+            set;
+        }
+
+        public float SolverExecutionTime
+        {
+            get;
+            set;
+        }
+
         public struct READER
         {
             readonly DeserializerState ctx;
@@ -9351,13 +9823,15 @@ namespace Cereal
             public IReadOnlyList<float> Psis => ctx.ReadList(5).CastFloat();
             public IReadOnlyList<float> Curvatures => ctx.ReadList(6).CastFloat();
             public IReadOnlyList<float> CurvatureRates => ctx.ReadList(7).CastFloat();
+            public bool UseLaneLines => ctx.ReadDataBool(166UL, false);
+            public float SolverExecutionTime => ctx.ReadDataFloat(448UL, 0F);
         }
 
         public class WRITER : SerializerState
         {
             public WRITER()
             {
-                this.SetStruct(7, 8);
+                this.SetStruct(8, 8);
             }
 
             public float LaneWidth
@@ -9533,6 +10007,18 @@ namespace Cereal
                 get => BuildPointer<ListOfPrimitivesSerializer<float>>(7);
                 set => Link(7, value);
             }
+
+            public bool UseLaneLines
+            {
+                get => this.ReadDataBool(166UL, false);
+                set => this.WriteData(166UL, value, false);
+            }
+
+            public float SolverExecutionTime
+            {
+                get => this.ReadDataFloat(448UL, 0F);
+                set => this.WriteData(448UL, value, 0F);
+            }
         }
 
         [System.CodeDom.Compiler.GeneratedCode("capnpc-csharp", "1.3.0.0"), TypeId(0xbb53ef3fcf2a7f0dUL)]
@@ -9581,7 +10067,7 @@ namespace Cereal
             OrientationECEF = CapnpSerializable.Create<Cereal.LiveLocationKalman.Measurement>(reader.OrientationECEF);
             OrientationNED = CapnpSerializable.Create<Cereal.LiveLocationKalman.Measurement>(reader.OrientationNED);
             AngularVelocityDevice = CapnpSerializable.Create<Cereal.LiveLocationKalman.Measurement>(reader.AngularVelocityDevice);
-            OrientationNEDCalibrated = CapnpSerializable.Create<Cereal.LiveLocationKalman.Measurement>(reader.OrientationNEDCalibrated);
+            CalibratedOrientationNED = CapnpSerializable.Create<Cereal.LiveLocationKalman.Measurement>(reader.CalibratedOrientationNED);
             VelocityCalibrated = CapnpSerializable.Create<Cereal.LiveLocationKalman.Measurement>(reader.VelocityCalibrated);
             AccelerationCalibrated = CapnpSerializable.Create<Cereal.LiveLocationKalman.Measurement>(reader.AccelerationCalibrated);
             AngularVelocityCalibrated = CapnpSerializable.Create<Cereal.LiveLocationKalman.Measurement>(reader.AngularVelocityCalibrated);
@@ -9611,7 +10097,7 @@ namespace Cereal
             OrientationECEF?.serialize(writer.OrientationECEF);
             OrientationNED?.serialize(writer.OrientationNED);
             AngularVelocityDevice?.serialize(writer.AngularVelocityDevice);
-            OrientationNEDCalibrated?.serialize(writer.OrientationNEDCalibrated);
+            CalibratedOrientationNED?.serialize(writer.CalibratedOrientationNED);
             VelocityCalibrated?.serialize(writer.VelocityCalibrated);
             AccelerationCalibrated?.serialize(writer.AccelerationCalibrated);
             AngularVelocityCalibrated?.serialize(writer.AngularVelocityCalibrated);
@@ -9692,7 +10178,7 @@ namespace Cereal
             set;
         }
 
-        public Cereal.LiveLocationKalman.Measurement OrientationNEDCalibrated
+        public Cereal.LiveLocationKalman.Measurement CalibratedOrientationNED
         {
             get;
             set;
@@ -9813,7 +10299,7 @@ namespace Cereal
             public Cereal.LiveLocationKalman.Measurement.READER OrientationECEF => ctx.ReadStruct(6, Cereal.LiveLocationKalman.Measurement.READER.create);
             public Cereal.LiveLocationKalman.Measurement.READER OrientationNED => ctx.ReadStruct(7, Cereal.LiveLocationKalman.Measurement.READER.create);
             public Cereal.LiveLocationKalman.Measurement.READER AngularVelocityDevice => ctx.ReadStruct(8, Cereal.LiveLocationKalman.Measurement.READER.create);
-            public Cereal.LiveLocationKalman.Measurement.READER OrientationNEDCalibrated => ctx.ReadStruct(9, Cereal.LiveLocationKalman.Measurement.READER.create);
+            public Cereal.LiveLocationKalman.Measurement.READER CalibratedOrientationNED => ctx.ReadStruct(9, Cereal.LiveLocationKalman.Measurement.READER.create);
             public Cereal.LiveLocationKalman.Measurement.READER VelocityCalibrated => ctx.ReadStruct(10, Cereal.LiveLocationKalman.Measurement.READER.create);
             public Cereal.LiveLocationKalman.Measurement.READER AccelerationCalibrated => ctx.ReadStruct(11, Cereal.LiveLocationKalman.Measurement.READER.create);
             public Cereal.LiveLocationKalman.Measurement.READER AngularVelocityCalibrated => ctx.ReadStruct(12, Cereal.LiveLocationKalman.Measurement.READER.create);
@@ -9892,7 +10378,7 @@ namespace Cereal
                 set => Link(8, value);
             }
 
-            public Cereal.LiveLocationKalman.Measurement.WRITER OrientationNEDCalibrated
+            public Cereal.LiveLocationKalman.Measurement.WRITER CalibratedOrientationNED
             {
                 get => BuildPointer<Cereal.LiveLocationKalman.Measurement.WRITER>(9);
                 set => Link(9, value);
@@ -13272,6 +13758,7 @@ namespace Cereal
             DistractedEyes = reader.DistractedEyes;
             EyesOnRoad = reader.EyesOnRoad;
             PhoneUse = reader.PhoneUse;
+            OccludedProb = reader.OccludedProb;
             applyDefaults();
         }
 
@@ -13300,6 +13787,7 @@ namespace Cereal
             writer.DistractedEyes = DistractedEyes;
             writer.EyesOnRoad = EyesOnRoad;
             writer.PhoneUse = PhoneUse;
+            writer.OccludedProb = OccludedProb;
         }
 
         void ICapnpSerializable.Serialize(SerializerState arg_)
@@ -13449,6 +13937,12 @@ namespace Cereal
             set;
         }
 
+        public float OccludedProb
+        {
+            get;
+            set;
+        }
+
         public struct READER
         {
             readonly DeserializerState ctx;
@@ -13483,6 +13977,7 @@ namespace Cereal
             public float DistractedEyes => ctx.ReadDataFloat(448UL, 0F);
             public float EyesOnRoad => ctx.ReadDataFloat(480UL, 0F);
             public float PhoneUse => ctx.ReadDataFloat(512UL, 0F);
+            public float OccludedProb => ctx.ReadDataFloat(544UL, 0F);
         }
 
         public class WRITER : SerializerState
@@ -13628,6 +14123,12 @@ namespace Cereal
             {
                 get => this.ReadDataFloat(512UL, 0F);
                 set => this.WriteData(512UL, value, 0F);
+            }
+
+            public float OccludedProb
+            {
+                get => this.ReadDataFloat(544UL, 0F);
+                set => this.WriteData(544UL, value, 0F);
             }
         }
     }
@@ -13944,6 +14445,7 @@ namespace Cereal
             LastPmsgDEPRECATED = reader.LastPmsgDEPRECATED;
             LaunchLog = reader.LaunchLog;
             Pstore = CapnpSerializable.Create<Cereal.Map<string, IReadOnlyList<byte>>>(reader.Pstore);
+            Commands = CapnpSerializable.Create<Cereal.Map<string, IReadOnlyList<byte>>>(reader.Commands);
             applyDefaults();
         }
 
@@ -13954,6 +14456,7 @@ namespace Cereal
             writer.LastPmsgDEPRECATED.Init(LastPmsgDEPRECATED);
             writer.LaunchLog = LaunchLog;
             Pstore?.serialize(writer.Pstore);
+            Commands?.serialize(writer.Commands);
         }
 
         void ICapnpSerializable.Serialize(SerializerState arg_)
@@ -13995,6 +14498,12 @@ namespace Cereal
             set;
         }
 
+        public Cereal.Map<string, IReadOnlyList<byte>> Commands
+        {
+            get;
+            set;
+        }
+
         public struct READER
         {
             readonly DeserializerState ctx;
@@ -14011,13 +14520,14 @@ namespace Cereal
             public IReadOnlyList<byte> LastPmsgDEPRECATED => ctx.ReadList(1).CastByte();
             public string LaunchLog => ctx.ReadText(2, null);
             public Cereal.Map<string, IReadOnlyList<byte>>.READER Pstore => ctx.ReadStruct(3, Cereal.Map<string, IReadOnlyList<byte>>.READER.create);
+            public Cereal.Map<string, IReadOnlyList<byte>>.READER Commands => ctx.ReadStruct(4, Cereal.Map<string, IReadOnlyList<byte>>.READER.create);
         }
 
         public class WRITER : SerializerState
         {
             public WRITER()
             {
-                this.SetStruct(1, 4);
+                this.SetStruct(1, 5);
             }
 
             public ulong WallTimeNanos
@@ -14049,6 +14559,12 @@ namespace Cereal
                 get => BuildPointer<Cereal.Map<string, IReadOnlyList<byte>>.WRITER>(3);
                 set => Link(3, value);
             }
+
+            public Cereal.Map<string, IReadOnlyList<byte>>.WRITER Commands
+            {
+                get => BuildPointer<Cereal.Map<string, IReadOnlyList<byte>>.WRITER>(4);
+                set => Link(4, value);
+            }
         }
     }
 
@@ -14069,6 +14585,11 @@ namespace Cereal
             YawRate = reader.YawRate;
             PosenetSpeed = reader.PosenetSpeed;
             PosenetValid = reader.PosenetValid;
+            AngleOffsetFastStd = reader.AngleOffsetFastStd;
+            AngleOffsetAverageStd = reader.AngleOffsetAverageStd;
+            StiffnessFactorStd = reader.StiffnessFactorStd;
+            SteerRatioStd = reader.SteerRatioStd;
+            Roll = reader.Roll;
             applyDefaults();
         }
 
@@ -14084,6 +14605,11 @@ namespace Cereal
             writer.YawRate = YawRate;
             writer.PosenetSpeed = PosenetSpeed;
             writer.PosenetValid = PosenetValid;
+            writer.AngleOffsetFastStd = AngleOffsetFastStd;
+            writer.AngleOffsetAverageStd = AngleOffsetAverageStd;
+            writer.StiffnessFactorStd = StiffnessFactorStd;
+            writer.SteerRatioStd = SteerRatioStd;
+            writer.Roll = Roll;
         }
 
         void ICapnpSerializable.Serialize(SerializerState arg_)
@@ -14155,6 +14681,36 @@ namespace Cereal
             set;
         }
 
+        public float AngleOffsetFastStd
+        {
+            get;
+            set;
+        }
+
+        public float AngleOffsetAverageStd
+        {
+            get;
+            set;
+        }
+
+        public float StiffnessFactorStd
+        {
+            get;
+            set;
+        }
+
+        public float SteerRatioStd
+        {
+            get;
+            set;
+        }
+
+        public float Roll
+        {
+            get;
+            set;
+        }
+
         public struct READER
         {
             readonly DeserializerState ctx;
@@ -14176,13 +14732,18 @@ namespace Cereal
             public float YawRate => ctx.ReadDataFloat(192UL, 0F);
             public float PosenetSpeed => ctx.ReadDataFloat(224UL, 0F);
             public bool PosenetValid => ctx.ReadDataBool(2UL, false);
+            public float AngleOffsetFastStd => ctx.ReadDataFloat(256UL, 0F);
+            public float AngleOffsetAverageStd => ctx.ReadDataFloat(288UL, 0F);
+            public float StiffnessFactorStd => ctx.ReadDataFloat(320UL, 0F);
+            public float SteerRatioStd => ctx.ReadDataFloat(352UL, 0F);
+            public float Roll => ctx.ReadDataFloat(384UL, 0F);
         }
 
         public class WRITER : SerializerState
         {
             public WRITER()
             {
-                this.SetStruct(4, 0);
+                this.SetStruct(7, 0);
             }
 
             public bool Valid
@@ -14243,6 +14804,36 @@ namespace Cereal
             {
                 get => this.ReadDataBool(2UL, false);
                 set => this.WriteData(2UL, value, false);
+            }
+
+            public float AngleOffsetFastStd
+            {
+                get => this.ReadDataFloat(256UL, 0F);
+                set => this.WriteData(256UL, value, 0F);
+            }
+
+            public float AngleOffsetAverageStd
+            {
+                get => this.ReadDataFloat(288UL, 0F);
+                set => this.WriteData(288UL, value, 0F);
+            }
+
+            public float StiffnessFactorStd
+            {
+                get => this.ReadDataFloat(320UL, 0F);
+                set => this.WriteData(320UL, value, 0F);
+            }
+
+            public float SteerRatioStd
+            {
+                get => this.ReadDataFloat(352UL, 0F);
+                set => this.WriteData(352UL, value, 0F);
+            }
+
+            public float Roll
+            {
+                get => this.ReadDataFloat(384UL, 0F);
+                set => this.WriteData(384UL, value, 0F);
             }
         }
     }
@@ -14836,6 +15427,7 @@ namespace Cereal
                 Pid = reader.Pid;
                 Running = reader.Running;
                 ExitCode = reader.ExitCode;
+                ShouldBeRunning = reader.ShouldBeRunning;
                 applyDefaults();
             }
 
@@ -14845,6 +15437,7 @@ namespace Cereal
                 writer.Pid = Pid;
                 writer.Running = Running;
                 writer.ExitCode = ExitCode;
+                writer.ShouldBeRunning = ShouldBeRunning;
             }
 
             void ICapnpSerializable.Serialize(SerializerState arg_)
@@ -14880,6 +15473,12 @@ namespace Cereal
                 set;
             }
 
+            public bool ShouldBeRunning
+            {
+                get;
+                set;
+            }
+
             public struct READER
             {
                 readonly DeserializerState ctx;
@@ -14895,6 +15494,7 @@ namespace Cereal
                 public int Pid => ctx.ReadDataInt(0UL, 0);
                 public bool Running => ctx.ReadDataBool(32UL, false);
                 public int ExitCode => ctx.ReadDataInt(64UL, 0);
+                public bool ShouldBeRunning => ctx.ReadDataBool(33UL, false);
             }
 
             public class WRITER : SerializerState
@@ -14926,6 +15526,12 @@ namespace Cereal
                 {
                     get => this.ReadDataInt(64UL, 0);
                     set => this.WriteData(64UL, value, 0);
+                }
+
+                public bool ShouldBeRunning
+                {
+                    get => this.ReadDataBool(33UL, false);
+                    set => this.WriteData(33UL, value, false);
                 }
             }
         }
@@ -15081,6 +15687,435 @@ namespace Cereal
         }
     }
 
+    [System.CodeDom.Compiler.GeneratedCode("capnpc-csharp", "1.3.0.0"), TypeId(0xc18216b27f8602afUL)]
+    public class NavInstruction : ICapnpSerializable
+    {
+        public const UInt64 typeId = 0xc18216b27f8602afUL;
+        void ICapnpSerializable.Deserialize(DeserializerState arg_)
+        {
+            var reader = READER.create(arg_);
+            ManeuverPrimaryText = reader.ManeuverPrimaryText;
+            ManeuverSecondaryText = reader.ManeuverSecondaryText;
+            ManeuverDistance = reader.ManeuverDistance;
+            ManeuverType = reader.ManeuverType;
+            ManeuverModifier = reader.ManeuverModifier;
+            DistanceRemaining = reader.DistanceRemaining;
+            TimeRemaining = reader.TimeRemaining;
+            TimeRemainingTypical = reader.TimeRemainingTypical;
+            Lanes = reader.Lanes?.ToReadOnlyList(_ => CapnpSerializable.Create<Cereal.NavInstruction.Lane>(_));
+            ShowFull = reader.ShowFull;
+            applyDefaults();
+        }
+
+        public void serialize(WRITER writer)
+        {
+            writer.ManeuverPrimaryText = ManeuverPrimaryText;
+            writer.ManeuverSecondaryText = ManeuverSecondaryText;
+            writer.ManeuverDistance = ManeuverDistance;
+            writer.ManeuverType = ManeuverType;
+            writer.ManeuverModifier = ManeuverModifier;
+            writer.DistanceRemaining = DistanceRemaining;
+            writer.TimeRemaining = TimeRemaining;
+            writer.TimeRemainingTypical = TimeRemainingTypical;
+            writer.Lanes.Init(Lanes, (_s1, _v1) => _v1?.serialize(_s1));
+            writer.ShowFull = ShowFull;
+        }
+
+        void ICapnpSerializable.Serialize(SerializerState arg_)
+        {
+            serialize(arg_.Rewrap<WRITER>());
+        }
+
+        public void applyDefaults()
+        {
+        }
+
+        public string ManeuverPrimaryText
+        {
+            get;
+            set;
+        }
+
+        public string ManeuverSecondaryText
+        {
+            get;
+            set;
+        }
+
+        public float ManeuverDistance
+        {
+            get;
+            set;
+        }
+
+        public string ManeuverType
+        {
+            get;
+            set;
+        }
+
+        public string ManeuverModifier
+        {
+            get;
+            set;
+        }
+
+        public float DistanceRemaining
+        {
+            get;
+            set;
+        }
+
+        public float TimeRemaining
+        {
+            get;
+            set;
+        }
+
+        public float TimeRemainingTypical
+        {
+            get;
+            set;
+        }
+
+        public IReadOnlyList<Cereal.NavInstruction.Lane> Lanes
+        {
+            get;
+            set;
+        }
+
+        public bool ShowFull
+        {
+            get;
+            set;
+        }
+
+        public struct READER
+        {
+            readonly DeserializerState ctx;
+            public READER(DeserializerState ctx)
+            {
+                this.ctx = ctx;
+            }
+
+            public static READER create(DeserializerState ctx) => new READER(ctx);
+            public static implicit operator DeserializerState(READER reader) => reader.ctx;
+            public static implicit operator READER(DeserializerState ctx) => new READER(ctx);
+            public string ManeuverPrimaryText => ctx.ReadText(0, null);
+            public string ManeuverSecondaryText => ctx.ReadText(1, null);
+            public float ManeuverDistance => ctx.ReadDataFloat(0UL, 0F);
+            public string ManeuverType => ctx.ReadText(2, null);
+            public string ManeuverModifier => ctx.ReadText(3, null);
+            public float DistanceRemaining => ctx.ReadDataFloat(32UL, 0F);
+            public float TimeRemaining => ctx.ReadDataFloat(64UL, 0F);
+            public float TimeRemainingTypical => ctx.ReadDataFloat(96UL, 0F);
+            public IReadOnlyList<Cereal.NavInstruction.Lane.READER> Lanes => ctx.ReadList(4).Cast(Cereal.NavInstruction.Lane.READER.create);
+            public bool ShowFull => ctx.ReadDataBool(128UL, false);
+        }
+
+        public class WRITER : SerializerState
+        {
+            public WRITER()
+            {
+                this.SetStruct(3, 5);
+            }
+
+            public string ManeuverPrimaryText
+            {
+                get => this.ReadText(0, null);
+                set => this.WriteText(0, value, null);
+            }
+
+            public string ManeuverSecondaryText
+            {
+                get => this.ReadText(1, null);
+                set => this.WriteText(1, value, null);
+            }
+
+            public float ManeuverDistance
+            {
+                get => this.ReadDataFloat(0UL, 0F);
+                set => this.WriteData(0UL, value, 0F);
+            }
+
+            public string ManeuverType
+            {
+                get => this.ReadText(2, null);
+                set => this.WriteText(2, value, null);
+            }
+
+            public string ManeuverModifier
+            {
+                get => this.ReadText(3, null);
+                set => this.WriteText(3, value, null);
+            }
+
+            public float DistanceRemaining
+            {
+                get => this.ReadDataFloat(32UL, 0F);
+                set => this.WriteData(32UL, value, 0F);
+            }
+
+            public float TimeRemaining
+            {
+                get => this.ReadDataFloat(64UL, 0F);
+                set => this.WriteData(64UL, value, 0F);
+            }
+
+            public float TimeRemainingTypical
+            {
+                get => this.ReadDataFloat(96UL, 0F);
+                set => this.WriteData(96UL, value, 0F);
+            }
+
+            public ListOfStructsSerializer<Cereal.NavInstruction.Lane.WRITER> Lanes
+            {
+                get => BuildPointer<ListOfStructsSerializer<Cereal.NavInstruction.Lane.WRITER>>(4);
+                set => Link(4, value);
+            }
+
+            public bool ShowFull
+            {
+                get => this.ReadDataBool(128UL, false);
+                set => this.WriteData(128UL, value, false);
+            }
+        }
+
+        [System.CodeDom.Compiler.GeneratedCode("capnpc-csharp", "1.3.0.0"), TypeId(0xa4cd1689c0a439d9UL)]
+        public class Lane : ICapnpSerializable
+        {
+            public const UInt64 typeId = 0xa4cd1689c0a439d9UL;
+            void ICapnpSerializable.Deserialize(DeserializerState arg_)
+            {
+                var reader = READER.create(arg_);
+                Directions = reader.Directions;
+                Active = reader.Active;
+                ActiveDirection = reader.ActiveDirection;
+                applyDefaults();
+            }
+
+            public void serialize(WRITER writer)
+            {
+                writer.Directions.Init(Directions);
+                writer.Active = Active;
+                writer.ActiveDirection = ActiveDirection;
+            }
+
+            void ICapnpSerializable.Serialize(SerializerState arg_)
+            {
+                serialize(arg_.Rewrap<WRITER>());
+            }
+
+            public void applyDefaults()
+            {
+            }
+
+            public IReadOnlyList<Cereal.NavInstruction.Direction> Directions
+            {
+                get;
+                set;
+            }
+
+            public bool Active
+            {
+                get;
+                set;
+            }
+
+            public Cereal.NavInstruction.Direction ActiveDirection
+            {
+                get;
+                set;
+            }
+
+            public struct READER
+            {
+                readonly DeserializerState ctx;
+                public READER(DeserializerState ctx)
+                {
+                    this.ctx = ctx;
+                }
+
+                public static READER create(DeserializerState ctx) => new READER(ctx);
+                public static implicit operator DeserializerState(READER reader) => reader.ctx;
+                public static implicit operator READER(DeserializerState ctx) => new READER(ctx);
+                public IReadOnlyList<Cereal.NavInstruction.Direction> Directions => ctx.ReadList(0).CastEnums(_0 => (Cereal.NavInstruction.Direction)_0);
+                public bool Active => ctx.ReadDataBool(0UL, false);
+                public Cereal.NavInstruction.Direction ActiveDirection => (Cereal.NavInstruction.Direction)ctx.ReadDataUShort(16UL, (ushort)0);
+            }
+
+            public class WRITER : SerializerState
+            {
+                public WRITER()
+                {
+                    this.SetStruct(1, 1);
+                }
+
+                public ListOfPrimitivesSerializer<Cereal.NavInstruction.Direction> Directions
+                {
+                    get => BuildPointer<ListOfPrimitivesSerializer<Cereal.NavInstruction.Direction>>(0);
+                    set => Link(0, value);
+                }
+
+                public bool Active
+                {
+                    get => this.ReadDataBool(0UL, false);
+                    set => this.WriteData(0UL, value, false);
+                }
+
+                public Cereal.NavInstruction.Direction ActiveDirection
+                {
+                    get => (Cereal.NavInstruction.Direction)this.ReadDataUShort(16UL, (ushort)0);
+                    set => this.WriteData(16UL, (ushort)value, (ushort)0);
+                }
+            }
+        }
+
+        [System.CodeDom.Compiler.GeneratedCode("capnpc-csharp", "1.3.0.0"), TypeId(0xeea5b9d8c9e5c192UL)]
+        public enum Direction : ushort
+        {
+            none,
+            left,
+            right,
+            straight
+        }
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("capnpc-csharp", "1.3.0.0"), TypeId(0xa61452f6440d97d3UL)]
+    public class NavRoute : ICapnpSerializable
+    {
+        public const UInt64 typeId = 0xa61452f6440d97d3UL;
+        void ICapnpSerializable.Deserialize(DeserializerState arg_)
+        {
+            var reader = READER.create(arg_);
+            Coordinates = reader.Coordinates?.ToReadOnlyList(_ => CapnpSerializable.Create<Cereal.NavRoute.Coordinate>(_));
+            applyDefaults();
+        }
+
+        public void serialize(WRITER writer)
+        {
+            writer.Coordinates.Init(Coordinates, (_s1, _v1) => _v1?.serialize(_s1));
+        }
+
+        void ICapnpSerializable.Serialize(SerializerState arg_)
+        {
+            serialize(arg_.Rewrap<WRITER>());
+        }
+
+        public void applyDefaults()
+        {
+        }
+
+        public IReadOnlyList<Cereal.NavRoute.Coordinate> Coordinates
+        {
+            get;
+            set;
+        }
+
+        public struct READER
+        {
+            readonly DeserializerState ctx;
+            public READER(DeserializerState ctx)
+            {
+                this.ctx = ctx;
+            }
+
+            public static READER create(DeserializerState ctx) => new READER(ctx);
+            public static implicit operator DeserializerState(READER reader) => reader.ctx;
+            public static implicit operator READER(DeserializerState ctx) => new READER(ctx);
+            public IReadOnlyList<Cereal.NavRoute.Coordinate.READER> Coordinates => ctx.ReadList(0).Cast(Cereal.NavRoute.Coordinate.READER.create);
+        }
+
+        public class WRITER : SerializerState
+        {
+            public WRITER()
+            {
+                this.SetStruct(0, 1);
+            }
+
+            public ListOfStructsSerializer<Cereal.NavRoute.Coordinate.WRITER> Coordinates
+            {
+                get => BuildPointer<ListOfStructsSerializer<Cereal.NavRoute.Coordinate.WRITER>>(0);
+                set => Link(0, value);
+            }
+        }
+
+        [System.CodeDom.Compiler.GeneratedCode("capnpc-csharp", "1.3.0.0"), TypeId(0xc4c96f53ad1e7485UL)]
+        public class Coordinate : ICapnpSerializable
+        {
+            public const UInt64 typeId = 0xc4c96f53ad1e7485UL;
+            void ICapnpSerializable.Deserialize(DeserializerState arg_)
+            {
+                var reader = READER.create(arg_);
+                Latitude = reader.Latitude;
+                Longitude = reader.Longitude;
+                applyDefaults();
+            }
+
+            public void serialize(WRITER writer)
+            {
+                writer.Latitude = Latitude;
+                writer.Longitude = Longitude;
+            }
+
+            void ICapnpSerializable.Serialize(SerializerState arg_)
+            {
+                serialize(arg_.Rewrap<WRITER>());
+            }
+
+            public void applyDefaults()
+            {
+            }
+
+            public float Latitude
+            {
+                get;
+                set;
+            }
+
+            public float Longitude
+            {
+                get;
+                set;
+            }
+
+            public struct READER
+            {
+                readonly DeserializerState ctx;
+                public READER(DeserializerState ctx)
+                {
+                    this.ctx = ctx;
+                }
+
+                public static READER create(DeserializerState ctx) => new READER(ctx);
+                public static implicit operator DeserializerState(READER reader) => reader.ctx;
+                public static implicit operator READER(DeserializerState ctx) => new READER(ctx);
+                public float Latitude => ctx.ReadDataFloat(0UL, 0F);
+                public float Longitude => ctx.ReadDataFloat(32UL, 0F);
+            }
+
+            public class WRITER : SerializerState
+            {
+                public WRITER()
+                {
+                    this.SetStruct(1, 0);
+                }
+
+                public float Latitude
+                {
+                    get => this.ReadDataFloat(0UL, 0F);
+                    set => this.WriteData(0UL, value, 0F);
+                }
+
+                public float Longitude
+                {
+                    get => this.ReadDataFloat(32UL, 0F);
+                    set => this.WriteData(32UL, value, 0F);
+                }
+            }
+        }
+    }
+
     [System.CodeDom.Compiler.GeneratedCode("capnpc-csharp", "1.3.0.0"), TypeId(0xd314cfd957229c11UL)]
     public class Event : ICapnpSerializable
     {
@@ -15098,7 +16133,7 @@ namespace Cereal
             Model = 8,
             FeaturesDEPRECATED = 9,
             SensorEvents = 10,
-            PandaState = 11,
+            PandaStateDEPRECATED = 11,
             RadarState = 12,
             LiveUIDEPRECATED = 13,
             RoadEncodeIdx = 14,
@@ -15165,6 +16200,12 @@ namespace Cereal
             WideRoadEncodeIdx = 75,
             ManagerState = 76,
             UploaderState = 77,
+            PeripheralState = 78,
+            PandaStates = 79,
+            NavInstruction = 80,
+            NavRoute = 81,
+            NavThumbnail = 82,
+            ErrorLogMessage = 83,
             undefined = 65535
         }
 
@@ -15206,8 +16247,8 @@ namespace Cereal
                 case WHICH.SensorEvents:
                     SensorEvents = reader.SensorEvents?.ToReadOnlyList(_ => CapnpSerializable.Create<Cereal.SensorEventData>(_));
                     break;
-                case WHICH.PandaState:
-                    PandaState = CapnpSerializable.Create<Cereal.PandaState>(reader.PandaState);
+                case WHICH.PandaStateDEPRECATED:
+                    PandaStateDEPRECATED = CapnpSerializable.Create<Cereal.PandaState>(reader.PandaStateDEPRECATED);
                     break;
                 case WHICH.RadarState:
                     RadarState = CapnpSerializable.Create<Cereal.RadarState>(reader.RadarState);
@@ -15407,6 +16448,24 @@ namespace Cereal
                 case WHICH.UploaderState:
                     UploaderState = CapnpSerializable.Create<Cereal.UploaderState>(reader.UploaderState);
                     break;
+                case WHICH.PeripheralState:
+                    PeripheralState = CapnpSerializable.Create<Cereal.PeripheralState>(reader.PeripheralState);
+                    break;
+                case WHICH.PandaStates:
+                    PandaStates = reader.PandaStates?.ToReadOnlyList(_ => CapnpSerializable.Create<Cereal.PandaState>(_));
+                    break;
+                case WHICH.NavInstruction:
+                    NavInstruction = CapnpSerializable.Create<Cereal.NavInstruction>(reader.NavInstruction);
+                    break;
+                case WHICH.NavRoute:
+                    NavRoute = CapnpSerializable.Create<Cereal.NavRoute>(reader.NavRoute);
+                    break;
+                case WHICH.NavThumbnail:
+                    NavThumbnail = CapnpSerializable.Create<Cereal.Thumbnail>(reader.NavThumbnail);
+                    break;
+                case WHICH.ErrorLogMessage:
+                    ErrorLogMessage = reader.ErrorLogMessage;
+                    break;
             }
 
             LogMonoTime = reader.LogMonoTime;
@@ -15459,7 +16518,7 @@ namespace Cereal
                     case WHICH.SensorEvents:
                         _content = null;
                         break;
-                    case WHICH.PandaState:
+                    case WHICH.PandaStateDEPRECATED:
                         _content = null;
                         break;
                     case WHICH.RadarState:
@@ -15660,6 +16719,24 @@ namespace Cereal
                     case WHICH.UploaderState:
                         _content = null;
                         break;
+                    case WHICH.PeripheralState:
+                        _content = null;
+                        break;
+                    case WHICH.PandaStates:
+                        _content = null;
+                        break;
+                    case WHICH.NavInstruction:
+                        _content = null;
+                        break;
+                    case WHICH.NavRoute:
+                        _content = null;
+                        break;
+                    case WHICH.NavThumbnail:
+                        _content = null;
+                        break;
+                    case WHICH.ErrorLogMessage:
+                        _content = null;
+                        break;
                 }
             }
         }
@@ -15702,8 +16779,8 @@ namespace Cereal
                 case WHICH.SensorEvents:
                     writer.SensorEvents.Init(SensorEvents, (_s1, _v1) => _v1?.serialize(_s1));
                     break;
-                case WHICH.PandaState:
-                    PandaState?.serialize(writer.PandaState);
+                case WHICH.PandaStateDEPRECATED:
+                    PandaStateDEPRECATED?.serialize(writer.PandaStateDEPRECATED);
                     break;
                 case WHICH.RadarState:
                     RadarState?.serialize(writer.RadarState);
@@ -15903,6 +16980,24 @@ namespace Cereal
                 case WHICH.UploaderState:
                     UploaderState?.serialize(writer.UploaderState);
                     break;
+                case WHICH.PeripheralState:
+                    PeripheralState?.serialize(writer.PeripheralState);
+                    break;
+                case WHICH.PandaStates:
+                    writer.PandaStates.Init(PandaStates, (_s1, _v1) => _v1?.serialize(_s1));
+                    break;
+                case WHICH.NavInstruction:
+                    NavInstruction?.serialize(writer.NavInstruction);
+                    break;
+                case WHICH.NavRoute:
+                    NavRoute?.serialize(writer.NavRoute);
+                    break;
+                case WHICH.NavThumbnail:
+                    NavThumbnail?.serialize(writer.NavThumbnail);
+                    break;
+                case WHICH.ErrorLogMessage:
+                    writer.ErrorLogMessage = ErrorLogMessage;
+                    break;
             }
 
             writer.LogMonoTime = LogMonoTime;
@@ -16034,12 +17129,12 @@ namespace Cereal
             }
         }
 
-        public Cereal.PandaState PandaState
+        public Cereal.PandaState PandaStateDEPRECATED
         {
-            get => _which == WHICH.PandaState ? (Cereal.PandaState)_content : null;
+            get => _which == WHICH.PandaStateDEPRECATED ? (Cereal.PandaState)_content : null;
             set
             {
-                _which = WHICH.PandaState;
+                _which = WHICH.PandaStateDEPRECATED;
                 _content = value;
             }
         }
@@ -16711,6 +17806,66 @@ namespace Cereal
             }
         }
 
+        public Cereal.PeripheralState PeripheralState
+        {
+            get => _which == WHICH.PeripheralState ? (Cereal.PeripheralState)_content : null;
+            set
+            {
+                _which = WHICH.PeripheralState;
+                _content = value;
+            }
+        }
+
+        public IReadOnlyList<Cereal.PandaState> PandaStates
+        {
+            get => _which == WHICH.PandaStates ? (IReadOnlyList<Cereal.PandaState>)_content : null;
+            set
+            {
+                _which = WHICH.PandaStates;
+                _content = value;
+            }
+        }
+
+        public Cereal.NavInstruction NavInstruction
+        {
+            get => _which == WHICH.NavInstruction ? (Cereal.NavInstruction)_content : null;
+            set
+            {
+                _which = WHICH.NavInstruction;
+                _content = value;
+            }
+        }
+
+        public Cereal.NavRoute NavRoute
+        {
+            get => _which == WHICH.NavRoute ? (Cereal.NavRoute)_content : null;
+            set
+            {
+                _which = WHICH.NavRoute;
+                _content = value;
+            }
+        }
+
+        public Cereal.Thumbnail NavThumbnail
+        {
+            get => _which == WHICH.NavThumbnail ? (Cereal.Thumbnail)_content : null;
+            set
+            {
+                _which = WHICH.NavThumbnail;
+                _content = value;
+            }
+        }
+
+        public string ErrorLogMessage
+        {
+            get => _which == WHICH.ErrorLogMessage ? (string)_content : null;
+            set
+            {
+                _which = WHICH.ErrorLogMessage;
+                _content = value;
+            }
+        }
+
         public struct READER
         {
             readonly DeserializerState ctx;
@@ -16735,7 +17890,7 @@ namespace Cereal
             public Cereal.ModelData.READER Model => which == WHICH.Model ? ctx.ReadStruct(0, Cereal.ModelData.READER.create) : default;
             public Cereal.CalibrationFeatures.READER FeaturesDEPRECATED => which == WHICH.FeaturesDEPRECATED ? ctx.ReadStruct(0, Cereal.CalibrationFeatures.READER.create) : default;
             public IReadOnlyList<Cereal.SensorEventData.READER> SensorEvents => which == WHICH.SensorEvents ? ctx.ReadList(0).Cast(Cereal.SensorEventData.READER.create) : default;
-            public Cereal.PandaState.READER PandaState => which == WHICH.PandaState ? ctx.ReadStruct(0, Cereal.PandaState.READER.create) : default;
+            public Cereal.PandaState.READER PandaStateDEPRECATED => which == WHICH.PandaStateDEPRECATED ? ctx.ReadStruct(0, Cereal.PandaState.READER.create) : default;
             public Cereal.RadarState.READER RadarState => which == WHICH.RadarState ? ctx.ReadStruct(0, Cereal.RadarState.READER.create) : default;
             public Cereal.LiveUI.READER LiveUIDEPRECATED => which == WHICH.LiveUIDEPRECATED ? ctx.ReadStruct(0, Cereal.LiveUI.READER.create) : default;
             public Cereal.EncodeIndex.READER RoadEncodeIdx => which == WHICH.RoadEncodeIdx ? ctx.ReadStruct(0, Cereal.EncodeIndex.READER.create) : default;
@@ -16803,6 +17958,12 @@ namespace Cereal
             public Cereal.EncodeIndex.READER WideRoadEncodeIdx => which == WHICH.WideRoadEncodeIdx ? ctx.ReadStruct(0, Cereal.EncodeIndex.READER.create) : default;
             public Cereal.ManagerState.READER ManagerState => which == WHICH.ManagerState ? ctx.ReadStruct(0, Cereal.ManagerState.READER.create) : default;
             public Cereal.UploaderState.READER UploaderState => which == WHICH.UploaderState ? ctx.ReadStruct(0, Cereal.UploaderState.READER.create) : default;
+            public Cereal.PeripheralState.READER PeripheralState => which == WHICH.PeripheralState ? ctx.ReadStruct(0, Cereal.PeripheralState.READER.create) : default;
+            public IReadOnlyList<Cereal.PandaState.READER> PandaStates => which == WHICH.PandaStates ? ctx.ReadList(0).Cast(Cereal.PandaState.READER.create) : default;
+            public Cereal.NavInstruction.READER NavInstruction => which == WHICH.NavInstruction ? ctx.ReadStruct(0, Cereal.NavInstruction.READER.create) : default;
+            public Cereal.NavRoute.READER NavRoute => which == WHICH.NavRoute ? ctx.ReadStruct(0, Cereal.NavRoute.READER.create) : default;
+            public Cereal.Thumbnail.READER NavThumbnail => which == WHICH.NavThumbnail ? ctx.ReadStruct(0, Cereal.Thumbnail.READER.create) : default;
+            public string ErrorLogMessage => which == WHICH.ErrorLogMessage ? ctx.ReadText(0, null) : default;
         }
 
         public class WRITER : SerializerState
@@ -16890,9 +18051,9 @@ namespace Cereal
                 set => Link(0, value);
             }
 
-            public Cereal.PandaState.WRITER PandaState
+            public Cereal.PandaState.WRITER PandaStateDEPRECATED
             {
-                get => which == WHICH.PandaState ? BuildPointer<Cereal.PandaState.WRITER>(0) : default;
+                get => which == WHICH.PandaStateDEPRECATED ? BuildPointer<Cereal.PandaState.WRITER>(0) : default;
                 set => Link(0, value);
             }
 
@@ -17296,6 +18457,42 @@ namespace Cereal
             {
                 get => which == WHICH.UploaderState ? BuildPointer<Cereal.UploaderState.WRITER>(0) : default;
                 set => Link(0, value);
+            }
+
+            public Cereal.PeripheralState.WRITER PeripheralState
+            {
+                get => which == WHICH.PeripheralState ? BuildPointer<Cereal.PeripheralState.WRITER>(0) : default;
+                set => Link(0, value);
+            }
+
+            public ListOfStructsSerializer<Cereal.PandaState.WRITER> PandaStates
+            {
+                get => which == WHICH.PandaStates ? BuildPointer<ListOfStructsSerializer<Cereal.PandaState.WRITER>>(0) : default;
+                set => Link(0, value);
+            }
+
+            public Cereal.NavInstruction.WRITER NavInstruction
+            {
+                get => which == WHICH.NavInstruction ? BuildPointer<Cereal.NavInstruction.WRITER>(0) : default;
+                set => Link(0, value);
+            }
+
+            public Cereal.NavRoute.WRITER NavRoute
+            {
+                get => which == WHICH.NavRoute ? BuildPointer<Cereal.NavRoute.WRITER>(0) : default;
+                set => Link(0, value);
+            }
+
+            public Cereal.Thumbnail.WRITER NavThumbnail
+            {
+                get => which == WHICH.NavThumbnail ? BuildPointer<Cereal.Thumbnail.WRITER>(0) : default;
+                set => Link(0, value);
+            }
+
+            public string ErrorLogMessage
+            {
+                get => which == WHICH.ErrorLogMessage ? this.ReadText(0, null) : default;
+                set => this.WriteText(0, value, null);
             }
         }
     }

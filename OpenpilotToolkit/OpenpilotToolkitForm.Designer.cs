@@ -89,13 +89,16 @@ namespace OpenpilotToolkit
             this.txtLog = new MaterialSkin.Controls.MaterialMultiLineTextBox();
             this.tpExplore = new System.Windows.Forms.TabPage();
             this.panel1 = new System.Windows.Forms.Panel();
+            this.tableLayoutPanel2 = new System.Windows.Forms.TableLayoutPanel();
+            this.tlpExplorerTasks = new System.Windows.Forms.TableLayoutPanel();
+            this.panel3 = new System.Windows.Forms.Panel();
+            this.txtWorkingDirectory = new MaterialSkin.Controls.MaterialTextBox();
             this.dgvExplorer = new OpenpilotToolkit.Controls.MaterialSkinDataGridView();
             this.colName = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.colSize = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.colType = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.colChanged = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.txtSearch = new MaterialSkin.Controls.MaterialTextBox();
-            this.txtWorkingDirectory = new MaterialSkin.Controls.MaterialTextBox();
             this.tpFingerprint = new System.Windows.Forms.TabPage();
             this.txtFingerprint = new MaterialSkin.Controls.MaterialMultiLineTextBox();
             this.tpSSH = new System.Windows.Forms.TabPage();
@@ -107,7 +110,9 @@ namespace OpenpilotToolkit
             this.tpFlash = new System.Windows.Forms.TabPage();
             this.tpShell = new System.Windows.Forms.TabPage();
             this.tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
-            this.txtSshCommand = new MaterialSkin.Controls.MaterialTextBox();
+            this.panel4 = new System.Windows.Forms.Panel();
+            this.btnTmux = new MaterialSkin.Controls.MaterialButton();
+            this.btnExitTmux = new MaterialSkin.Controls.MaterialButton();
             this.tpDonate = new System.Windows.Forms.TabPage();
             this.label1 = new System.Windows.Forms.Label();
             this.btnPaypal = new MaterialSkin.Controls.MaterialButton();
@@ -134,12 +139,15 @@ namespace OpenpilotToolkit
             this.tpLogFile.SuspendLayout();
             this.tpExplore.SuspendLayout();
             this.panel1.SuspendLayout();
+            this.tableLayoutPanel2.SuspendLayout();
+            this.panel3.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dgvExplorer)).BeginInit();
             this.tpFingerprint.SuspendLayout();
             this.tpSSH.SuspendLayout();
             this.tpFork.SuspendLayout();
             this.tpShell.SuspendLayout();
             this.tableLayoutPanel1.SuspendLayout();
+            this.panel4.SuspendLayout();
             this.tpDonate.SuspendLayout();
             this.tabPage1.SuspendLayout();
             this.themePanel.SuspendLayout();
@@ -333,6 +341,7 @@ namespace OpenpilotToolkit
             this.txtExportFolder.TabIndex = 26;
             this.txtExportFolder.Text = "C:\\Openpilot";
             this.txtExportFolder.TrailingIcon = null;
+            this.txtExportFolder.DoubleClick += new System.EventHandler(this.txtExportFolder_DoubleClick);
             // 
             // adbConnected
             // 
@@ -1038,14 +1047,75 @@ namespace OpenpilotToolkit
             // panel1
             // 
             this.panel1.AutoScroll = true;
-            this.panel1.Controls.Add(this.dgvExplorer);
-            this.panel1.Controls.Add(this.txtSearch);
-            this.panel1.Controls.Add(this.txtWorkingDirectory);
+            this.panel1.Controls.Add(this.tableLayoutPanel2);
             this.panel1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panel1.Location = new System.Drawing.Point(3, 3);
             this.panel1.Name = "panel1";
             this.panel1.Size = new System.Drawing.Size(1096, 496);
             this.panel1.TabIndex = 0;
+            // 
+            // tableLayoutPanel2
+            // 
+            this.tableLayoutPanel2.ColumnCount = 2;
+            this.tableLayoutPanel2.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tableLayoutPanel2.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 200F));
+            this.tableLayoutPanel2.Controls.Add(this.tlpExplorerTasks, 1, 0);
+            this.tableLayoutPanel2.Controls.Add(this.panel3, 0, 0);
+            this.tableLayoutPanel2.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tableLayoutPanel2.Location = new System.Drawing.Point(0, 0);
+            this.tableLayoutPanel2.Name = "tableLayoutPanel2";
+            this.tableLayoutPanel2.RowCount = 1;
+            this.tableLayoutPanel2.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tableLayoutPanel2.Size = new System.Drawing.Size(1096, 496);
+            this.tableLayoutPanel2.TabIndex = 0;
+            // 
+            // tlpExplorerTasks
+            // 
+            this.tlpExplorerTasks.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.tlpExplorerTasks.AutoScroll = true;
+            this.tlpExplorerTasks.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.tlpExplorerTasks.ColumnCount = 1;
+            this.tlpExplorerTasks.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
+            this.tlpExplorerTasks.Location = new System.Drawing.Point(900, 3);
+            this.tlpExplorerTasks.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.tlpExplorerTasks.Name = "tlpExplorerTasks";
+            this.tlpExplorerTasks.RowCount = 1;
+            this.tlpExplorerTasks.RowStyles.Add(new System.Windows.Forms.RowStyle());
+            this.tlpExplorerTasks.Size = new System.Drawing.Size(192, 490);
+            this.tlpExplorerTasks.TabIndex = 17;
+            // 
+            // panel3
+            // 
+            this.panel3.Controls.Add(this.txtWorkingDirectory);
+            this.panel3.Controls.Add(this.dgvExplorer);
+            this.panel3.Controls.Add(this.txtSearch);
+            this.panel3.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.panel3.Location = new System.Drawing.Point(3, 3);
+            this.panel3.Name = "panel3";
+            this.panel3.Size = new System.Drawing.Size(890, 490);
+            this.panel3.TabIndex = 0;
+            // 
+            // txtWorkingDirectory
+            // 
+            this.txtWorkingDirectory.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.txtWorkingDirectory.AnimateReadOnly = false;
+            this.txtWorkingDirectory.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.txtWorkingDirectory.Depth = 0;
+            this.txtWorkingDirectory.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.txtWorkingDirectory.Hint = "Working Directory";
+            this.txtWorkingDirectory.LeadingIcon = null;
+            this.txtWorkingDirectory.Location = new System.Drawing.Point(3, 3);
+            this.txtWorkingDirectory.MaxLength = 50;
+            this.txtWorkingDirectory.MouseState = MaterialSkin.MouseState.OUT;
+            this.txtWorkingDirectory.Multiline = false;
+            this.txtWorkingDirectory.Name = "txtWorkingDirectory";
+            this.txtWorkingDirectory.Size = new System.Drawing.Size(884, 50);
+            this.txtWorkingDirectory.TabIndex = 27;
+            this.txtWorkingDirectory.Text = "Current Directory";
+            this.txtWorkingDirectory.TrailingIcon = null;
             // 
             // dgvExplorer
             // 
@@ -1088,7 +1158,7 @@ namespace OpenpilotToolkit
             this.dgvExplorer.EnableHeadersVisualStyles = false;
             this.dgvExplorer.Font = new System.Drawing.Font("Microsoft Sans Serif", 16F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel);
             this.dgvExplorer.GridColor = System.Drawing.Color.FromArgb(((int)(((byte)(225)))), ((int)(((byte)(225)))), ((int)(((byte)(225)))));
-            this.dgvExplorer.Location = new System.Drawing.Point(3, 60);
+            this.dgvExplorer.Location = new System.Drawing.Point(3, 59);
             this.dgvExplorer.MouseState = MaterialSkin.MouseState.HOVER;
             this.dgvExplorer.Name = "dgvExplorer";
             this.dgvExplorer.ReadOnly = true;
@@ -1096,7 +1166,7 @@ namespace OpenpilotToolkit
             this.dgvExplorer.RowTemplate.Height = 25;
             this.dgvExplorer.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
             this.dgvExplorer.ShowCellToolTips = false;
-            this.dgvExplorer.Size = new System.Drawing.Size(1090, 433);
+            this.dgvExplorer.Size = new System.Drawing.Size(884, 428);
             this.dgvExplorer.TabIndex = 32;
             this.dgvExplorer.CellDoubleClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dgvExplorer_CellDoubleClick);
             this.dgvExplorer.CellFormatting += new System.Windows.Forms.DataGridViewCellFormattingEventHandler(this.dgvExplorer_CellFormatting);
@@ -1148,35 +1218,16 @@ namespace OpenpilotToolkit
             this.txtSearch.Font = new System.Drawing.Font("Roboto", 16F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel);
             this.txtSearch.Hint = "Search";
             this.txtSearch.LeadingIcon = null;
-            this.txtSearch.Location = new System.Drawing.Point(839, 4);
+            this.txtSearch.Location = new System.Drawing.Point(678, 3);
             this.txtSearch.MaxLength = 50;
             this.txtSearch.MouseState = MaterialSkin.MouseState.OUT;
             this.txtSearch.Multiline = false;
             this.txtSearch.Name = "txtSearch";
-            this.txtSearch.Size = new System.Drawing.Size(254, 50);
+            this.txtSearch.Size = new System.Drawing.Size(209, 50);
             this.txtSearch.TabIndex = 28;
             this.txtSearch.Text = "";
             this.txtSearch.TrailingIcon = null;
-            // 
-            // txtWorkingDirectory
-            // 
-            this.txtWorkingDirectory.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.txtWorkingDirectory.AnimateReadOnly = false;
-            this.txtWorkingDirectory.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            this.txtWorkingDirectory.Depth = 0;
-            this.txtWorkingDirectory.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.txtWorkingDirectory.Hint = "Working Directory";
-            this.txtWorkingDirectory.LeadingIcon = null;
-            this.txtWorkingDirectory.Location = new System.Drawing.Point(3, 4);
-            this.txtWorkingDirectory.MaxLength = 50;
-            this.txtWorkingDirectory.MouseState = MaterialSkin.MouseState.OUT;
-            this.txtWorkingDirectory.Multiline = false;
-            this.txtWorkingDirectory.Name = "txtWorkingDirectory";
-            this.txtWorkingDirectory.Size = new System.Drawing.Size(830, 50);
-            this.txtWorkingDirectory.TabIndex = 27;
-            this.txtWorkingDirectory.Text = "Current Directory";
-            this.txtWorkingDirectory.TrailingIcon = null;
+            this.txtSearch.Visible = false;
             // 
             // tpFingerprint
             // 
@@ -1326,9 +1377,10 @@ namespace OpenpilotToolkit
             // 
             // tableLayoutPanel1
             // 
-            this.tableLayoutPanel1.ColumnCount = 1;
+            this.tableLayoutPanel1.ColumnCount = 2;
             this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
-            this.tableLayoutPanel1.Controls.Add(this.txtSshCommand, 0, 1);
+            this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 204F));
+            this.tableLayoutPanel1.Controls.Add(this.panel4, 1, 0);
             this.tableLayoutPanel1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tableLayoutPanel1.Location = new System.Drawing.Point(3, 3);
             this.tableLayoutPanel1.Name = "tableLayoutPanel1";
@@ -1338,27 +1390,63 @@ namespace OpenpilotToolkit
             this.tableLayoutPanel1.Size = new System.Drawing.Size(1096, 496);
             this.tableLayoutPanel1.TabIndex = 31;
             // 
-            // txtSshCommand
+            // panel4
             // 
-            this.txtSshCommand.AnimateReadOnly = false;
-            this.txtSshCommand.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            this.txtSshCommand.Depth = 0;
-            this.txtSshCommand.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.txtSshCommand.Font = new System.Drawing.Font("Roboto", 16F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel);
-            this.txtSshCommand.LeadingIcon = null;
-            this.txtSshCommand.Location = new System.Drawing.Point(3, 443);
-            this.txtSshCommand.MaxLength = 2000;
-            this.txtSshCommand.MouseState = MaterialSkin.MouseState.OUT;
-            this.txtSshCommand.Multiline = false;
-            this.txtSshCommand.Name = "txtSshCommand";
-            this.txtSshCommand.ReadOnly = true;
-            this.txtSshCommand.Size = new System.Drawing.Size(1090, 50);
-            this.txtSshCommand.TabIndex = 29;
-            this.txtSshCommand.Text = "";
-            this.txtSshCommand.TrailingIcon = null;
-            this.txtSshCommand.KeyDown += new System.Windows.Forms.KeyEventHandler(this.txtSshCommand_KeyDown);
-            this.txtSshCommand.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.txtSshCommand_KeyPress);
-            this.txtSshCommand.PreviewKeyDown += new System.Windows.Forms.PreviewKeyDownEventHandler(this.txtSshCommand_PreviewKeyDown);
+            this.panel4.Controls.Add(this.btnTmux);
+            this.panel4.Controls.Add(this.btnExitTmux);
+            this.panel4.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.panel4.Location = new System.Drawing.Point(895, 3);
+            this.panel4.Name = "panel4";
+            this.panel4.Size = new System.Drawing.Size(198, 490);
+            this.panel4.TabIndex = 0;
+            // 
+            // btnTmux
+            // 
+            this.btnTmux.AccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(64)))), ((int)(((byte)(129)))));
+            this.btnTmux.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnTmux.AutoSize = false;
+            this.btnTmux.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.btnTmux.Density = MaterialSkin.Controls.MaterialButton.MaterialButtonDensity.Default;
+            this.btnTmux.Depth = 0;
+            this.btnTmux.HighEmphasis = true;
+            this.btnTmux.Icon = null;
+            this.btnTmux.Location = new System.Drawing.Point(1, 6);
+            this.btnTmux.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+            this.btnTmux.MouseState = MaterialSkin.MouseState.HOVER;
+            this.btnTmux.Name = "btnTmux";
+            this.btnTmux.NoAccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(81)))), ((int)(((byte)(181)))));
+            this.btnTmux.Size = new System.Drawing.Size(196, 36);
+            this.btnTmux.TabIndex = 25;
+            this.btnTmux.Text = "Start TMUX";
+            this.btnTmux.Type = MaterialSkin.Controls.MaterialButton.MaterialButtonType.Contained;
+            this.btnTmux.UseAccentColor = true;
+            this.btnTmux.UseVisualStyleBackColor = true;
+            this.btnTmux.Click += new System.EventHandler(this.btnTmux_Click);
+            // 
+            // btnExitTmux
+            // 
+            this.btnExitTmux.AccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(64)))), ((int)(((byte)(129)))));
+            this.btnExitTmux.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnExitTmux.AutoSize = false;
+            this.btnExitTmux.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.btnExitTmux.Density = MaterialSkin.Controls.MaterialButton.MaterialButtonDensity.Default;
+            this.btnExitTmux.Depth = 0;
+            this.btnExitTmux.HighEmphasis = true;
+            this.btnExitTmux.Icon = null;
+            this.btnExitTmux.Location = new System.Drawing.Point(1, 54);
+            this.btnExitTmux.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+            this.btnExitTmux.MouseState = MaterialSkin.MouseState.HOVER;
+            this.btnExitTmux.Name = "btnExitTmux";
+            this.btnExitTmux.NoAccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(81)))), ((int)(((byte)(181)))));
+            this.btnExitTmux.Size = new System.Drawing.Size(194, 36);
+            this.btnExitTmux.TabIndex = 26;
+            this.btnExitTmux.Text = "Exit Tmux";
+            this.btnExitTmux.Type = MaterialSkin.Controls.MaterialButton.MaterialButtonType.Contained;
+            this.btnExitTmux.UseAccentColor = true;
+            this.btnExitTmux.UseVisualStyleBackColor = true;
+            this.btnExitTmux.Click += new System.EventHandler(this.btnExitTmux_Click);
             // 
             // tpDonate
             // 
@@ -1573,7 +1661,6 @@ namespace OpenpilotToolkit
             this.DrawerShowIconsWhenHidden = true;
             this.DrawerTabControl = this.tcSettings;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
-            this.KeyPreview = true;
             this.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.MinimumSize = new System.Drawing.Size(1116, 604);
             this.Name = "OpenpilotToolkitForm";
@@ -1599,12 +1686,15 @@ namespace OpenpilotToolkit
             this.tpLogFile.ResumeLayout(false);
             this.tpExplore.ResumeLayout(false);
             this.panel1.ResumeLayout(false);
+            this.tableLayoutPanel2.ResumeLayout(false);
+            this.panel3.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.dgvExplorer)).EndInit();
             this.tpFingerprint.ResumeLayout(false);
             this.tpSSH.ResumeLayout(false);
             this.tpFork.ResumeLayout(false);
             this.tpShell.ResumeLayout(false);
             this.tableLayoutPanel1.ResumeLayout(false);
+            this.panel4.ResumeLayout(false);
             this.tpDonate.ResumeLayout(false);
             this.tpDonate.PerformLayout();
             this.tabPage1.ResumeLayout(false);
@@ -1668,7 +1758,6 @@ namespace OpenpilotToolkit
         private MaterialButton btnInstallFork;
         private System.Windows.Forms.TabPage tpShell;
         private System.Windows.Forms.TableLayoutPanel tableLayoutPanel1;
-        private MaterialTextBox txtSshCommand;
         private System.Windows.Forms.TabPage tpRemote;
         private MaterialButton btnFlashPanda;
         private MaterialButton btnCloseSettings;
@@ -1694,6 +1783,12 @@ namespace OpenpilotToolkit
         private MaterialTextBox2 txtOsmUsername;
         private MaterialButton btnOsmUpload;
         private MaterialButton btnOsmTest;
+        private System.Windows.Forms.TableLayoutPanel tableLayoutPanel2;
+        private System.Windows.Forms.Panel panel3;
+        private System.Windows.Forms.TableLayoutPanel tlpExplorerTasks;
+        private System.Windows.Forms.Panel panel4;
+        private MaterialButton btnTmux;
+        private MaterialButton btnExitTmux;
     }
 }
 

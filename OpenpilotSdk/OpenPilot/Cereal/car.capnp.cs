@@ -240,7 +240,6 @@ namespace Cereal
             preLaneChangeLeft,
             preLaneChangeRight,
             laneChange,
-            communityFeatureDisallowed,
             lowMemory,
             stockAeb,
             ldw,
@@ -255,7 +254,6 @@ namespace Cereal
             startupNoCar,
             startupNoControl,
             startupMaster,
-            startupFuzzyFingerprint,
             startupNoFw,
             fcw,
             steerSaturated,
@@ -275,7 +273,9 @@ namespace Cereal
             driverCameraError,
             wideRoadCameraError,
             localizerMalfunction,
-            driverMonitorLowAccDEPRECATED,
+            highCpuUsage,
+            cruiseMismatch,
+            lkasDisabled,
             manualSteeringRequired,
             manualLongitudinalRequired,
             silentPedalPressed,
@@ -283,7 +283,9 @@ namespace Cereal
             silentBrakeHold,
             silentWrongGear,
             radarCanErrorDEPRECATED,
+            communityFeatureDisallowedDEPRECATED,
             radarCommIssueDEPRECATED,
+            driverMonitorLowAccDEPRECATED,
             gasUnavailableDEPRECATED,
             dataNeededDEPRECATED,
             modelCommIssueDEPRECATED,
@@ -300,7 +302,8 @@ namespace Cereal
             focusRecoverActiveDEPRECATED,
             neosUpdateRequiredDEPRECATED,
             modelLagWarningDEPRECATED,
-            startupOneplusDEPRECATED
+            startupOneplusDEPRECATED,
+            startupFuzzyFingerprintDEPRECATED
         }
     }
 
@@ -348,6 +351,8 @@ namespace Cereal
             RightBlindspot = reader.RightBlindspot;
             SteerWarning = reader.SteerWarning;
             SteerError = reader.SteerError;
+            SteeringAngleOffsetDeg = reader.SteeringAngleOffsetDeg;
+            BrakeHoldActive = reader.BrakeHoldActive;
             LkasEnabled = reader.LkasEnabled;
             LeftBlinkerOn = reader.LeftBlinkerOn;
             RightBlinkerOn = reader.RightBlinkerOn;
@@ -397,6 +402,8 @@ namespace Cereal
             writer.RightBlindspot = RightBlindspot;
             writer.SteerWarning = SteerWarning;
             writer.SteerError = SteerError;
+            writer.SteeringAngleOffsetDeg = SteeringAngleOffsetDeg;
+            writer.BrakeHoldActive = BrakeHoldActive;
             writer.LkasEnabled = LkasEnabled;
             writer.LeftBlinkerOn = LeftBlinkerOn;
             writer.RightBlinkerOn = RightBlinkerOn;
@@ -637,6 +644,18 @@ namespace Cereal
             set;
         }
 
+        public float SteeringAngleOffsetDeg
+        {
+            get;
+            set;
+        }
+
+        public bool BrakeHoldActive
+        {
+            get;
+            set;
+        }
+
         public bool LkasEnabled
         {
             get;
@@ -727,20 +746,22 @@ namespace Cereal
             public bool RightBlindspot => ctx.ReadDataBool(353UL, false);
             public bool SteerWarning => ctx.ReadDataBool(354UL, false);
             public bool SteerError => ctx.ReadDataBool(355UL, false);
-            public bool LkasEnabled => ctx.ReadDataBool(356UL, false);
-            public bool LeftBlinkerOn => ctx.ReadDataBool(357UL, false);
-            public bool RightBlinkerOn => ctx.ReadDataBool(358UL, false);
-            public bool DisengageByBrake => ctx.ReadDataBool(359UL, false);
-            public bool AutomaticLaneChange => ctx.ReadDataBool(360UL, false);
-            public bool BelowLaneChangeSpeed => ctx.ReadDataBool(361UL, false);
-            public bool AccEnabled => ctx.ReadDataBool(362UL, false);
+            public float SteeringAngleOffsetDeg => ctx.ReadDataFloat(384UL, 0F);
+            public bool BrakeHoldActive => ctx.ReadDataBool(356UL, false);
+            public bool LkasEnabled => ctx.ReadDataBool(357UL, false);
+            public bool LeftBlinkerOn => ctx.ReadDataBool(358UL, false);
+            public bool RightBlinkerOn => ctx.ReadDataBool(359UL, false);
+            public bool DisengageByBrake => ctx.ReadDataBool(360UL, false);
+            public bool AutomaticLaneChange => ctx.ReadDataBool(361UL, false);
+            public bool BelowLaneChangeSpeed => ctx.ReadDataBool(362UL, false);
+            public bool AccEnabled => ctx.ReadDataBool(363UL, false);
         }
 
         public class WRITER : SerializerState
         {
             public WRITER()
             {
-                this.SetStruct(6, 6);
+                this.SetStruct(7, 6);
             }
 
             public ListOfPrimitivesSerializer<Cereal.CarEvent.EventName> ErrorsDEPRECATED
@@ -965,46 +986,58 @@ namespace Cereal
                 set => this.WriteData(355UL, value, false);
             }
 
-            public bool LkasEnabled
+            public float SteeringAngleOffsetDeg
+            {
+                get => this.ReadDataFloat(384UL, 0F);
+                set => this.WriteData(384UL, value, 0F);
+            }
+
+            public bool BrakeHoldActive
             {
                 get => this.ReadDataBool(356UL, false);
                 set => this.WriteData(356UL, value, false);
             }
 
-            public bool LeftBlinkerOn
+            public bool LkasEnabled
             {
                 get => this.ReadDataBool(357UL, false);
                 set => this.WriteData(357UL, value, false);
             }
 
-            public bool RightBlinkerOn
+            public bool LeftBlinkerOn
             {
                 get => this.ReadDataBool(358UL, false);
                 set => this.WriteData(358UL, value, false);
             }
 
-            public bool DisengageByBrake
+            public bool RightBlinkerOn
             {
                 get => this.ReadDataBool(359UL, false);
                 set => this.WriteData(359UL, value, false);
             }
 
-            public bool AutomaticLaneChange
+            public bool DisengageByBrake
             {
                 get => this.ReadDataBool(360UL, false);
                 set => this.WriteData(360UL, value, false);
             }
 
-            public bool BelowLaneChangeSpeed
+            public bool AutomaticLaneChange
             {
                 get => this.ReadDataBool(361UL, false);
                 set => this.WriteData(361UL, value, false);
             }
 
-            public bool AccEnabled
+            public bool BelowLaneChangeSpeed
             {
                 get => this.ReadDataBool(362UL, false);
                 set => this.WriteData(362UL, value, false);
+            }
+
+            public bool AccEnabled
+            {
+                get => this.ReadDataBool(363UL, false);
+                set => this.WriteData(363UL, value, false);
             }
         }
 
@@ -1619,6 +1652,9 @@ namespace Cereal
             HudControl = CapnpSerializable.Create<Cereal.CarControl.HUDControl>(reader.HudControl);
             TheActuators = CapnpSerializable.Create<Cereal.CarControl.Actuators>(reader.TheActuators);
             Active = reader.Active;
+            Roll = reader.Roll;
+            Pitch = reader.Pitch;
+            ActuatorsOutput = CapnpSerializable.Create<Cereal.CarControl.Actuators>(reader.ActuatorsOutput);
             applyDefaults();
         }
 
@@ -1632,6 +1668,9 @@ namespace Cereal
             HudControl?.serialize(writer.HudControl);
             TheActuators?.serialize(writer.TheActuators);
             writer.Active = Active;
+            writer.Roll = Roll;
+            writer.Pitch = Pitch;
+            ActuatorsOutput?.serialize(writer.ActuatorsOutput);
         }
 
         void ICapnpSerializable.Serialize(SerializerState arg_)
@@ -1691,6 +1730,24 @@ namespace Cereal
             set;
         }
 
+        public float Roll
+        {
+            get;
+            set;
+        }
+
+        public float Pitch
+        {
+            get;
+            set;
+        }
+
+        public Cereal.CarControl.Actuators ActuatorsOutput
+        {
+            get;
+            set;
+        }
+
         public struct READER
         {
             readonly DeserializerState ctx;
@@ -1710,13 +1767,16 @@ namespace Cereal
             public Cereal.CarControl.HUDControl.READER HudControl => ctx.ReadStruct(1, Cereal.CarControl.HUDControl.READER.create);
             public Cereal.CarControl.Actuators.READER TheActuators => ctx.ReadStruct(2, Cereal.CarControl.Actuators.READER.create);
             public bool Active => ctx.ReadDataBool(1UL, false);
+            public float Roll => ctx.ReadDataFloat(128UL, 0F);
+            public float Pitch => ctx.ReadDataFloat(160UL, 0F);
+            public Cereal.CarControl.Actuators.READER ActuatorsOutput => ctx.ReadStruct(3, Cereal.CarControl.Actuators.READER.create);
         }
 
         public class WRITER : SerializerState
         {
             public WRITER()
             {
-                this.SetStruct(2, 3);
+                this.SetStruct(3, 4);
             }
 
             public bool Enabled
@@ -1766,6 +1826,24 @@ namespace Cereal
                 get => this.ReadDataBool(1UL, false);
                 set => this.WriteData(1UL, value, false);
             }
+
+            public float Roll
+            {
+                get => this.ReadDataFloat(128UL, 0F);
+                set => this.WriteData(128UL, value, 0F);
+            }
+
+            public float Pitch
+            {
+                get => this.ReadDataFloat(160UL, 0F);
+                set => this.WriteData(160UL, value, 0F);
+            }
+
+            public Cereal.CarControl.Actuators.WRITER ActuatorsOutput
+            {
+                get => BuildPointer<Cereal.CarControl.Actuators.WRITER>(3);
+                set => Link(3, value);
+            }
         }
 
         [System.CodeDom.Compiler.GeneratedCode("capnpc-csharp", "1.3.0.0"), TypeId(0xe97275a919432828UL)]
@@ -1779,6 +1857,9 @@ namespace Cereal
                 Brake = reader.Brake;
                 Steer = reader.Steer;
                 SteeringAngleDeg = reader.SteeringAngleDeg;
+                Accel = reader.Accel;
+                TheLongControlState = reader.TheLongControlState;
+                Speed = reader.Speed;
                 applyDefaults();
             }
 
@@ -1788,6 +1869,9 @@ namespace Cereal
                 writer.Brake = Brake;
                 writer.Steer = Steer;
                 writer.SteeringAngleDeg = SteeringAngleDeg;
+                writer.Accel = Accel;
+                writer.TheLongControlState = TheLongControlState;
+                writer.Speed = Speed;
             }
 
             void ICapnpSerializable.Serialize(SerializerState arg_)
@@ -1823,6 +1907,24 @@ namespace Cereal
                 set;
             }
 
+            public float Accel
+            {
+                get;
+                set;
+            }
+
+            public Cereal.CarControl.Actuators.LongControlState TheLongControlState
+            {
+                get;
+                set;
+            }
+
+            public float Speed
+            {
+                get;
+                set;
+            }
+
             public struct READER
             {
                 readonly DeserializerState ctx;
@@ -1838,13 +1940,16 @@ namespace Cereal
                 public float Brake => ctx.ReadDataFloat(32UL, 0F);
                 public float Steer => ctx.ReadDataFloat(64UL, 0F);
                 public float SteeringAngleDeg => ctx.ReadDataFloat(96UL, 0F);
+                public float Accel => ctx.ReadDataFloat(128UL, 0F);
+                public Cereal.CarControl.Actuators.LongControlState TheLongControlState => (Cereal.CarControl.Actuators.LongControlState)ctx.ReadDataUShort(160UL, (ushort)0);
+                public float Speed => ctx.ReadDataFloat(192UL, 0F);
             }
 
             public class WRITER : SerializerState
             {
                 public WRITER()
                 {
-                    this.SetStruct(2, 0);
+                    this.SetStruct(4, 0);
                 }
 
                 public float Gas
@@ -1870,6 +1975,33 @@ namespace Cereal
                     get => this.ReadDataFloat(96UL, 0F);
                     set => this.WriteData(96UL, value, 0F);
                 }
+
+                public float Accel
+                {
+                    get => this.ReadDataFloat(128UL, 0F);
+                    set => this.WriteData(128UL, value, 0F);
+                }
+
+                public Cereal.CarControl.Actuators.LongControlState TheLongControlState
+                {
+                    get => (Cereal.CarControl.Actuators.LongControlState)this.ReadDataUShort(160UL, (ushort)0);
+                    set => this.WriteData(160UL, (ushort)value, (ushort)0);
+                }
+
+                public float Speed
+                {
+                    get => this.ReadDataFloat(192UL, 0F);
+                    set => this.WriteData(192UL, value, 0F);
+                }
+            }
+
+            [System.CodeDom.Compiler.GeneratedCode("capnpc-csharp", "1.3.0.0"), TypeId(0xe40f3a917d908282UL)]
+            public enum LongControlState : ushort
+            {
+                off,
+                pid,
+                stopping,
+                startingDEPRECATED
             }
         }
 
@@ -2189,14 +2321,14 @@ namespace Cereal
             public enum AudibleAlert : ushort
             {
                 none,
-                chimeEngage,
-                chimeDisengage,
-                chimeError,
-                chimeWarning1,
-                chimeWarning2,
-                chimeWarningRepeat,
-                chimePrompt,
-                chimeWarning2Repeat
+                engage,
+                disengage,
+                refuse,
+                warningSoft,
+                warningImmediate,
+                prompt,
+                promptRepeat,
+                promptDistracted
             }
         }
     }
@@ -2217,14 +2349,14 @@ namespace Cereal
             EnableApgs = reader.EnableApgs;
             MinEnableSpeed = reader.MinEnableSpeed;
             MinSteerSpeed = reader.MinSteerSpeed;
-            TheSafetyModel = reader.TheSafetyModel;
-            SafetyParam = reader.SafetyParam;
+            SafetyModelDEPRECATED = reader.SafetyModelDEPRECATED;
+            SafetyParamDEPRECATED = reader.SafetyParamDEPRECATED;
             SteerMaxBP = reader.SteerMaxBP;
             SteerMaxV = reader.SteerMaxV;
-            GasMaxBP = reader.GasMaxBP;
-            GasMaxV = reader.GasMaxV;
-            BrakeMaxBP = reader.BrakeMaxBP;
-            BrakeMaxV = reader.BrakeMaxV;
+            GasMaxBPDEPRECATED = reader.GasMaxBPDEPRECATED;
+            GasMaxVDEPRECATED = reader.GasMaxVDEPRECATED;
+            BrakeMaxBPDEPRECATED = reader.BrakeMaxBPDEPRECATED;
+            BrakeMaxVDEPRECATED = reader.BrakeMaxVDEPRECATED;
             Mass = reader.Mass;
             Wheelbase = reader.Wheelbase;
             CenterToFront = reader.CenterToFront;
@@ -2239,7 +2371,7 @@ namespace Cereal
             VEgoStopping = reader.VEgoStopping;
             DirectAccelControl = reader.DirectAccelControl;
             StoppingControl = reader.StoppingControl;
-            StartAccel = reader.StartAccel;
+            StartAccelDEPRECATED = reader.StartAccelDEPRECATED;
             SteerRateCost = reader.SteerRateCost;
             TheSteerControlType = reader.TheSteerControlType;
             RadarOffCan = reader.RadarOffCan;
@@ -2248,22 +2380,30 @@ namespace Cereal
             CarVin = reader.CarVin;
             IsPandaBlackDEPRECATED = reader.IsPandaBlackDEPRECATED;
             DashcamOnly = reader.DashcamOnly;
-            SafetyModelPassive = reader.SafetyModelPassive;
+            SafetyModelPassiveDEPRECATED = reader.SafetyModelPassiveDEPRECATED;
             TheTransmissionType = reader.TheTransmissionType;
             TheCarFw = reader.TheCarFw?.ToReadOnlyList(_ => CapnpSerializable.Create<Cereal.CarParams.CarFw>(_));
             RadarTimeStep = reader.RadarTimeStep;
-            CommunityFeature = reader.CommunityFeature;
+            CommunityFeatureDEPRECATED = reader.CommunityFeatureDEPRECATED;
             SteerLimitTimer = reader.SteerLimitTimer;
             TheLateralParams = CapnpSerializable.Create<Cereal.CarParams.LateralParams>(reader.TheLateralParams);
             TheFingerprintSource = reader.TheFingerprintSource;
             TheNetworkLocation = reader.TheNetworkLocation;
-            MinSpeedCan = reader.MinSpeedCan;
-            StoppingBrakeRate = reader.StoppingBrakeRate;
-            StartingBrakeRate = reader.StartingBrakeRate;
+            MinSpeedCanDEPRECATED = reader.MinSpeedCanDEPRECATED;
+            StoppingDecelRate = reader.StoppingDecelRate;
+            StartingAccelRateDEPRECATED = reader.StartingAccelRateDEPRECATED;
             MaxSteeringAngleDeg = reader.MaxSteeringAngleDeg;
             FuzzyFingerprint = reader.FuzzyFingerprint;
             EnableBsm = reader.EnableBsm;
-            HasStockCamera = reader.HasStockCamera;
+            HasStockCameraDEPRECATED = reader.HasStockCameraDEPRECATED;
+            LongitudinalActuatorDelayUpperBound = reader.LongitudinalActuatorDelayUpperBound;
+            VEgoStarting = reader.VEgoStarting;
+            StopAccel = reader.StopAccel;
+            LongitudinalActuatorDelayLowerBound = reader.LongitudinalActuatorDelayLowerBound;
+            SafetyConfigs = reader.SafetyConfigs?.ToReadOnlyList(_ => CapnpSerializable.Create<Cereal.CarParams.SafetyConfig>(_));
+            WheelSpeedFactor = reader.WheelSpeedFactor;
+            Flags = reader.Flags;
+            UnsafeMode = reader.UnsafeMode;
             applyDefaults();
         }
 
@@ -2278,14 +2418,14 @@ namespace Cereal
             writer.EnableApgs = EnableApgs;
             writer.MinEnableSpeed = MinEnableSpeed;
             writer.MinSteerSpeed = MinSteerSpeed;
-            writer.TheSafetyModel = TheSafetyModel;
-            writer.SafetyParam = SafetyParam;
+            writer.SafetyModelDEPRECATED = SafetyModelDEPRECATED;
+            writer.SafetyParamDEPRECATED = SafetyParamDEPRECATED;
             writer.SteerMaxBP.Init(SteerMaxBP);
             writer.SteerMaxV.Init(SteerMaxV);
-            writer.GasMaxBP.Init(GasMaxBP);
-            writer.GasMaxV.Init(GasMaxV);
-            writer.BrakeMaxBP.Init(BrakeMaxBP);
-            writer.BrakeMaxV.Init(BrakeMaxV);
+            writer.GasMaxBPDEPRECATED.Init(GasMaxBPDEPRECATED);
+            writer.GasMaxVDEPRECATED.Init(GasMaxVDEPRECATED);
+            writer.BrakeMaxBPDEPRECATED.Init(BrakeMaxBPDEPRECATED);
+            writer.BrakeMaxVDEPRECATED.Init(BrakeMaxVDEPRECATED);
             writer.Mass = Mass;
             writer.Wheelbase = Wheelbase;
             writer.CenterToFront = CenterToFront;
@@ -2300,7 +2440,7 @@ namespace Cereal
             writer.VEgoStopping = VEgoStopping;
             writer.DirectAccelControl = DirectAccelControl;
             writer.StoppingControl = StoppingControl;
-            writer.StartAccel = StartAccel;
+            writer.StartAccelDEPRECATED = StartAccelDEPRECATED;
             writer.SteerRateCost = SteerRateCost;
             writer.TheSteerControlType = TheSteerControlType;
             writer.RadarOffCan = RadarOffCan;
@@ -2309,22 +2449,30 @@ namespace Cereal
             writer.CarVin = CarVin;
             writer.IsPandaBlackDEPRECATED = IsPandaBlackDEPRECATED;
             writer.DashcamOnly = DashcamOnly;
-            writer.SafetyModelPassive = SafetyModelPassive;
+            writer.SafetyModelPassiveDEPRECATED = SafetyModelPassiveDEPRECATED;
             writer.TheTransmissionType = TheTransmissionType;
             writer.TheCarFw.Init(TheCarFw, (_s1, _v1) => _v1?.serialize(_s1));
             writer.RadarTimeStep = RadarTimeStep;
-            writer.CommunityFeature = CommunityFeature;
+            writer.CommunityFeatureDEPRECATED = CommunityFeatureDEPRECATED;
             writer.SteerLimitTimer = SteerLimitTimer;
             TheLateralParams?.serialize(writer.TheLateralParams);
             writer.TheFingerprintSource = TheFingerprintSource;
             writer.TheNetworkLocation = TheNetworkLocation;
-            writer.MinSpeedCan = MinSpeedCan;
-            writer.StoppingBrakeRate = StoppingBrakeRate;
-            writer.StartingBrakeRate = StartingBrakeRate;
+            writer.MinSpeedCanDEPRECATED = MinSpeedCanDEPRECATED;
+            writer.StoppingDecelRate = StoppingDecelRate;
+            writer.StartingAccelRateDEPRECATED = StartingAccelRateDEPRECATED;
             writer.MaxSteeringAngleDeg = MaxSteeringAngleDeg;
             writer.FuzzyFingerprint = FuzzyFingerprint;
             writer.EnableBsm = EnableBsm;
-            writer.HasStockCamera = HasStockCamera;
+            writer.HasStockCameraDEPRECATED = HasStockCameraDEPRECATED;
+            writer.LongitudinalActuatorDelayUpperBound = LongitudinalActuatorDelayUpperBound;
+            writer.VEgoStarting = VEgoStarting;
+            writer.StopAccel = StopAccel;
+            writer.LongitudinalActuatorDelayLowerBound = LongitudinalActuatorDelayLowerBound;
+            writer.SafetyConfigs.Init(SafetyConfigs, (_s1, _v1) => _v1?.serialize(_s1));
+            writer.WheelSpeedFactor = WheelSpeedFactor;
+            writer.Flags = Flags;
+            writer.UnsafeMode = UnsafeMode;
         }
 
         void ICapnpSerializable.Serialize(SerializerState arg_)
@@ -2390,13 +2538,13 @@ namespace Cereal
             set;
         }
 
-        public Cereal.CarParams.SafetyModel TheSafetyModel
+        public Cereal.CarParams.SafetyModel SafetyModelDEPRECATED
         {
             get;
             set;
         }
 
-        public short SafetyParam
+        public short SafetyParamDEPRECATED
         {
             get;
             set;
@@ -2414,25 +2562,25 @@ namespace Cereal
             set;
         }
 
-        public IReadOnlyList<float> GasMaxBP
+        public IReadOnlyList<float> GasMaxBPDEPRECATED
         {
             get;
             set;
         }
 
-        public IReadOnlyList<float> GasMaxV
+        public IReadOnlyList<float> GasMaxVDEPRECATED
         {
             get;
             set;
         }
 
-        public IReadOnlyList<float> BrakeMaxBP
+        public IReadOnlyList<float> BrakeMaxBPDEPRECATED
         {
             get;
             set;
         }
 
-        public IReadOnlyList<float> BrakeMaxV
+        public IReadOnlyList<float> BrakeMaxVDEPRECATED
         {
             get;
             set;
@@ -2522,7 +2670,7 @@ namespace Cereal
             set;
         }
 
-        public float StartAccel
+        public float StartAccelDEPRECATED
         {
             get;
             set;
@@ -2576,7 +2724,7 @@ namespace Cereal
             set;
         }
 
-        public Cereal.CarParams.SafetyModel SafetyModelPassive
+        public Cereal.CarParams.SafetyModel SafetyModelPassiveDEPRECATED
         {
             get;
             set;
@@ -2602,7 +2750,7 @@ namespace Cereal
         }
 
         = 0.05F;
-        public bool CommunityFeature
+        public bool CommunityFeatureDEPRECATED
         {
             get;
             set;
@@ -2632,19 +2780,19 @@ namespace Cereal
             set;
         }
 
-        public float MinSpeedCan
+        public float MinSpeedCanDEPRECATED
         {
             get;
             set;
         }
 
-        public float StoppingBrakeRate
+        public float StoppingDecelRate
         {
             get;
             set;
         }
 
-        public float StartingBrakeRate
+        public float StartingAccelRateDEPRECATED
         {
             get;
             set;
@@ -2668,7 +2816,55 @@ namespace Cereal
             set;
         }
 
-        public bool HasStockCamera
+        public bool HasStockCameraDEPRECATED
+        {
+            get;
+            set;
+        }
+
+        public float LongitudinalActuatorDelayUpperBound
+        {
+            get;
+            set;
+        }
+
+        public float VEgoStarting
+        {
+            get;
+            set;
+        }
+
+        public float StopAccel
+        {
+            get;
+            set;
+        }
+
+        public float LongitudinalActuatorDelayLowerBound
+        {
+            get;
+            set;
+        }
+
+        public IReadOnlyList<Cereal.CarParams.SafetyConfig> SafetyConfigs
+        {
+            get;
+            set;
+        }
+
+        public float WheelSpeedFactor
+        {
+            get;
+            set;
+        }
+
+        public uint Flags
+        {
+            get;
+            set;
+        }
+
+        public short UnsafeMode
         {
             get;
             set;
@@ -2694,14 +2890,14 @@ namespace Cereal
             public bool EnableApgs => ctx.ReadDataBool(4UL, false);
             public float MinEnableSpeed => ctx.ReadDataFloat(32UL, 0F);
             public float MinSteerSpeed => ctx.ReadDataFloat(64UL, 0F);
-            public Cereal.CarParams.SafetyModel TheSafetyModel => (Cereal.CarParams.SafetyModel)ctx.ReadDataUShort(16UL, (ushort)0);
-            public short SafetyParam => ctx.ReadDataShort(96UL, (short)0);
+            public Cereal.CarParams.SafetyModel SafetyModelDEPRECATED => (Cereal.CarParams.SafetyModel)ctx.ReadDataUShort(16UL, (ushort)0);
+            public short SafetyParamDEPRECATED => ctx.ReadDataShort(96UL, (short)0);
             public IReadOnlyList<float> SteerMaxBP => ctx.ReadList(2).CastFloat();
             public IReadOnlyList<float> SteerMaxV => ctx.ReadList(3).CastFloat();
-            public IReadOnlyList<float> GasMaxBP => ctx.ReadList(4).CastFloat();
-            public IReadOnlyList<float> GasMaxV => ctx.ReadList(5).CastFloat();
-            public IReadOnlyList<float> BrakeMaxBP => ctx.ReadList(6).CastFloat();
-            public IReadOnlyList<float> BrakeMaxV => ctx.ReadList(7).CastFloat();
+            public IReadOnlyList<float> GasMaxBPDEPRECATED => ctx.ReadList(4).CastFloat();
+            public IReadOnlyList<float> GasMaxVDEPRECATED => ctx.ReadList(5).CastFloat();
+            public IReadOnlyList<float> BrakeMaxBPDEPRECATED => ctx.ReadList(6).CastFloat();
+            public IReadOnlyList<float> BrakeMaxVDEPRECATED => ctx.ReadList(7).CastFloat();
             public float Mass => ctx.ReadDataFloat(128UL, 0F);
             public float Wheelbase => ctx.ReadDataFloat(160UL, 0F);
             public float CenterToFront => ctx.ReadDataFloat(192UL, 0F);
@@ -2716,7 +2912,7 @@ namespace Cereal
             public float VEgoStopping => ctx.ReadDataFloat(384UL, 0F);
             public bool DirectAccelControl => ctx.ReadDataBool(6UL, false);
             public bool StoppingControl => ctx.ReadDataBool(7UL, false);
-            public float StartAccel => ctx.ReadDataFloat(416UL, 0F);
+            public float StartAccelDEPRECATED => ctx.ReadDataFloat(416UL, 0F);
             public float SteerRateCost => ctx.ReadDataFloat(448UL, 0F);
             public Cereal.CarParams.SteerControlType TheSteerControlType => (Cereal.CarParams.SteerControlType)ctx.ReadDataUShort(480UL, (ushort)0);
             public bool RadarOffCan => ctx.ReadDataBool(8UL, false);
@@ -2725,29 +2921,37 @@ namespace Cereal
             public string CarVin => ctx.ReadText(10, null);
             public bool IsPandaBlackDEPRECATED => ctx.ReadDataBool(10UL, false);
             public bool DashcamOnly => ctx.ReadDataBool(11UL, false);
-            public Cereal.CarParams.SafetyModel SafetyModelPassive => (Cereal.CarParams.SafetyModel)ctx.ReadDataUShort(496UL, (ushort)0);
+            public Cereal.CarParams.SafetyModel SafetyModelPassiveDEPRECATED => (Cereal.CarParams.SafetyModel)ctx.ReadDataUShort(496UL, (ushort)0);
             public Cereal.CarParams.TransmissionType TheTransmissionType => (Cereal.CarParams.TransmissionType)ctx.ReadDataUShort(544UL, (ushort)0);
             public IReadOnlyList<Cereal.CarParams.CarFw.READER> TheCarFw => ctx.ReadList(11).Cast(Cereal.CarParams.CarFw.READER.create);
             public float RadarTimeStep => ctx.ReadDataFloat(576UL, 0.05F);
-            public bool CommunityFeature => ctx.ReadDataBool(12UL, false);
+            public bool CommunityFeatureDEPRECATED => ctx.ReadDataBool(12UL, false);
             public float SteerLimitTimer => ctx.ReadDataFloat(608UL, 0F);
             public Cereal.CarParams.LateralParams.READER TheLateralParams => ctx.ReadStruct(12, Cereal.CarParams.LateralParams.READER.create);
             public Cereal.CarParams.FingerprintSource TheFingerprintSource => (Cereal.CarParams.FingerprintSource)ctx.ReadDataUShort(560UL, (ushort)0);
             public Cereal.CarParams.NetworkLocation TheNetworkLocation => (Cereal.CarParams.NetworkLocation)ctx.ReadDataUShort(640UL, (ushort)0);
-            public float MinSpeedCan => ctx.ReadDataFloat(672UL, 0F);
-            public float StoppingBrakeRate => ctx.ReadDataFloat(704UL, 0F);
-            public float StartingBrakeRate => ctx.ReadDataFloat(736UL, 0F);
+            public float MinSpeedCanDEPRECATED => ctx.ReadDataFloat(672UL, 0F);
+            public float StoppingDecelRate => ctx.ReadDataFloat(704UL, 0F);
+            public float StartingAccelRateDEPRECATED => ctx.ReadDataFloat(736UL, 0F);
             public float MaxSteeringAngleDeg => ctx.ReadDataFloat(768UL, 0F);
             public bool FuzzyFingerprint => ctx.ReadDataBool(13UL, false);
             public bool EnableBsm => ctx.ReadDataBool(14UL, false);
-            public bool HasStockCamera => ctx.ReadDataBool(15UL, false);
+            public bool HasStockCameraDEPRECATED => ctx.ReadDataBool(15UL, false);
+            public float LongitudinalActuatorDelayUpperBound => ctx.ReadDataFloat(800UL, 0F);
+            public float VEgoStarting => ctx.ReadDataFloat(832UL, 0F);
+            public float StopAccel => ctx.ReadDataFloat(864UL, 0F);
+            public float LongitudinalActuatorDelayLowerBound => ctx.ReadDataFloat(896UL, 0F);
+            public IReadOnlyList<Cereal.CarParams.SafetyConfig.READER> SafetyConfigs => ctx.ReadList(13).Cast(Cereal.CarParams.SafetyConfig.READER.create);
+            public float WheelSpeedFactor => ctx.ReadDataFloat(928UL, 0F);
+            public uint Flags => ctx.ReadDataUInt(960UL, 0U);
+            public short UnsafeMode => ctx.ReadDataShort(656UL, (short)0);
         }
 
         public class WRITER : SerializerState
         {
             public WRITER()
             {
-                this.SetStruct(13, 13);
+                this.SetStruct(16, 14);
             }
 
             public string CarName
@@ -2804,13 +3008,13 @@ namespace Cereal
                 set => this.WriteData(64UL, value, 0F);
             }
 
-            public Cereal.CarParams.SafetyModel TheSafetyModel
+            public Cereal.CarParams.SafetyModel SafetyModelDEPRECATED
             {
                 get => (Cereal.CarParams.SafetyModel)this.ReadDataUShort(16UL, (ushort)0);
                 set => this.WriteData(16UL, (ushort)value, (ushort)0);
             }
 
-            public short SafetyParam
+            public short SafetyParamDEPRECATED
             {
                 get => this.ReadDataShort(96UL, (short)0);
                 set => this.WriteData(96UL, value, (short)0);
@@ -2828,25 +3032,25 @@ namespace Cereal
                 set => Link(3, value);
             }
 
-            public ListOfPrimitivesSerializer<float> GasMaxBP
+            public ListOfPrimitivesSerializer<float> GasMaxBPDEPRECATED
             {
                 get => BuildPointer<ListOfPrimitivesSerializer<float>>(4);
                 set => Link(4, value);
             }
 
-            public ListOfPrimitivesSerializer<float> GasMaxV
+            public ListOfPrimitivesSerializer<float> GasMaxVDEPRECATED
             {
                 get => BuildPointer<ListOfPrimitivesSerializer<float>>(5);
                 set => Link(5, value);
             }
 
-            public ListOfPrimitivesSerializer<float> BrakeMaxBP
+            public ListOfPrimitivesSerializer<float> BrakeMaxBPDEPRECATED
             {
                 get => BuildPointer<ListOfPrimitivesSerializer<float>>(6);
                 set => Link(6, value);
             }
 
-            public ListOfPrimitivesSerializer<float> BrakeMaxV
+            public ListOfPrimitivesSerializer<float> BrakeMaxVDEPRECATED
             {
                 get => BuildPointer<ListOfPrimitivesSerializer<float>>(7);
                 set => Link(7, value);
@@ -2935,7 +3139,7 @@ namespace Cereal
                 set => this.WriteData(7UL, value, false);
             }
 
-            public float StartAccel
+            public float StartAccelDEPRECATED
             {
                 get => this.ReadDataFloat(416UL, 0F);
                 set => this.WriteData(416UL, value, 0F);
@@ -2989,7 +3193,7 @@ namespace Cereal
                 set => this.WriteData(11UL, value, false);
             }
 
-            public Cereal.CarParams.SafetyModel SafetyModelPassive
+            public Cereal.CarParams.SafetyModel SafetyModelPassiveDEPRECATED
             {
                 get => (Cereal.CarParams.SafetyModel)this.ReadDataUShort(496UL, (ushort)0);
                 set => this.WriteData(496UL, (ushort)value, (ushort)0);
@@ -3013,7 +3217,7 @@ namespace Cereal
                 set => this.WriteData(576UL, value, 0.05F);
             }
 
-            public bool CommunityFeature
+            public bool CommunityFeatureDEPRECATED
             {
                 get => this.ReadDataBool(12UL, false);
                 set => this.WriteData(12UL, value, false);
@@ -3043,19 +3247,19 @@ namespace Cereal
                 set => this.WriteData(640UL, (ushort)value, (ushort)0);
             }
 
-            public float MinSpeedCan
+            public float MinSpeedCanDEPRECATED
             {
                 get => this.ReadDataFloat(672UL, 0F);
                 set => this.WriteData(672UL, value, 0F);
             }
 
-            public float StoppingBrakeRate
+            public float StoppingDecelRate
             {
                 get => this.ReadDataFloat(704UL, 0F);
                 set => this.WriteData(704UL, value, 0F);
             }
 
-            public float StartingBrakeRate
+            public float StartingAccelRateDEPRECATED
             {
                 get => this.ReadDataFloat(736UL, 0F);
                 set => this.WriteData(736UL, value, 0F);
@@ -3079,10 +3283,58 @@ namespace Cereal
                 set => this.WriteData(14UL, value, false);
             }
 
-            public bool HasStockCamera
+            public bool HasStockCameraDEPRECATED
             {
                 get => this.ReadDataBool(15UL, false);
                 set => this.WriteData(15UL, value, false);
+            }
+
+            public float LongitudinalActuatorDelayUpperBound
+            {
+                get => this.ReadDataFloat(800UL, 0F);
+                set => this.WriteData(800UL, value, 0F);
+            }
+
+            public float VEgoStarting
+            {
+                get => this.ReadDataFloat(832UL, 0F);
+                set => this.WriteData(832UL, value, 0F);
+            }
+
+            public float StopAccel
+            {
+                get => this.ReadDataFloat(864UL, 0F);
+                set => this.WriteData(864UL, value, 0F);
+            }
+
+            public float LongitudinalActuatorDelayLowerBound
+            {
+                get => this.ReadDataFloat(896UL, 0F);
+                set => this.WriteData(896UL, value, 0F);
+            }
+
+            public ListOfStructsSerializer<Cereal.CarParams.SafetyConfig.WRITER> SafetyConfigs
+            {
+                get => BuildPointer<ListOfStructsSerializer<Cereal.CarParams.SafetyConfig.WRITER>>(13);
+                set => Link(13, value);
+            }
+
+            public float WheelSpeedFactor
+            {
+                get => this.ReadDataFloat(928UL, 0F);
+                set => this.WriteData(928UL, value, 0F);
+            }
+
+            public uint Flags
+            {
+                get => this.ReadDataUInt(960UL, 0U);
+                set => this.WriteData(960UL, value, 0U);
+            }
+
+            public short UnsafeMode
+            {
+                get => this.ReadDataShort(656UL, (short)0);
+                set => this.WriteData(656UL, value, (short)0);
             }
         }
 
@@ -3243,6 +3495,81 @@ namespace Cereal
                 {
                     get => which == WHICH.Lqr ? BuildPointer<Cereal.CarParams.LateralLQRTuning.WRITER>(9) : default;
                     set => Link(9, value);
+                }
+            }
+        }
+
+        [System.CodeDom.Compiler.GeneratedCode("capnpc-csharp", "1.3.0.0"), TypeId(0xe836349c6056b0c9UL)]
+        public class SafetyConfig : ICapnpSerializable
+        {
+            public const UInt64 typeId = 0xe836349c6056b0c9UL;
+            void ICapnpSerializable.Deserialize(DeserializerState arg_)
+            {
+                var reader = READER.create(arg_);
+                SafetyModel = reader.SafetyModel;
+                SafetyParam = reader.SafetyParam;
+                applyDefaults();
+            }
+
+            public void serialize(WRITER writer)
+            {
+                writer.SafetyModel = SafetyModel;
+                writer.SafetyParam = SafetyParam;
+            }
+
+            void ICapnpSerializable.Serialize(SerializerState arg_)
+            {
+                serialize(arg_.Rewrap<WRITER>());
+            }
+
+            public void applyDefaults()
+            {
+            }
+
+            public Cereal.CarParams.SafetyModel SafetyModel
+            {
+                get;
+                set;
+            }
+
+            public short SafetyParam
+            {
+                get;
+                set;
+            }
+
+            public struct READER
+            {
+                readonly DeserializerState ctx;
+                public READER(DeserializerState ctx)
+                {
+                    this.ctx = ctx;
+                }
+
+                public static READER create(DeserializerState ctx) => new READER(ctx);
+                public static implicit operator DeserializerState(READER reader) => reader.ctx;
+                public static implicit operator READER(DeserializerState ctx) => new READER(ctx);
+                public Cereal.CarParams.SafetyModel SafetyModel => (Cereal.CarParams.SafetyModel)ctx.ReadDataUShort(0UL, (ushort)0);
+                public short SafetyParam => ctx.ReadDataShort(16UL, (short)0);
+            }
+
+            public class WRITER : SerializerState
+            {
+                public WRITER()
+                {
+                    this.SetStruct(1, 0);
+                }
+
+                public Cereal.CarParams.SafetyModel SafetyModel
+                {
+                    get => (Cereal.CarParams.SafetyModel)this.ReadDataUShort(0UL, (ushort)0);
+                    set => this.WriteData(0UL, (ushort)value, (ushort)0);
+                }
+
+                public short SafetyParam
+                {
+                    get => this.ReadDataShort(16UL, (short)0);
+                    set => this.WriteData(16UL, value, (short)0);
                 }
             }
         }
@@ -3990,11 +4317,12 @@ namespace Cereal
             allOutput,
             gmAscm,
             noOutput,
-            hondaBoschHarness,
+            hondaBosch,
             volkswagenPq,
             subaruLegacy,
             hyundaiLegacy,
-            hyundaiCommunity
+            hyundaiCommunity,
+            stellantis
         }
 
         [System.CodeDom.Compiler.GeneratedCode("capnpc-csharp", "1.3.0.0"), TypeId(0xd661512be2def77fUL)]
