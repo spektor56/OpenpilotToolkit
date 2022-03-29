@@ -24,7 +24,6 @@ using System.Management;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Reactive;
 using System.Reactive.Linq;
 using System.Reflection;
 using System.Text;
@@ -32,7 +31,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Exception = System.Exception;
-using Message = System.Windows.Forms.Message;
 using OpenpilotDevice = OpenpilotSdk.Hardware.OpenpilotDevice;
 
 namespace OpenpilotToolkit
@@ -107,14 +105,16 @@ namespace OpenpilotToolkit
             var terminalPath = Path.Combine(AppContext.BaseDirectory, @"Controls\Terminal\index.html");
             sshTerminal =
                 new ChromiumWebBrowser(terminalPath);
-            sshTerminal.KeyboardHandler = new TerminalKeyboardHandler();
+            
+            //Terminal messages from C# instead of webbrowser
+            //sshTerminal.KeyboardHandler = new TerminalKeyboardHandler();
+            //sshTerminal.PreviewKeyDown += txtSshCommand_PreviewKeyDown;
+            //sshTerminal.KeyPress += txtSshCommand_KeyPress;
+            //sshTerminal.KeyDown += txtSshCommand_KeyDown;
 
+            sshTerminal.JavascriptObjectRepository.Register("sshHost", this, BindingOptions.DefaultBinder);
             sshTerminal.Dock = DockStyle.Fill;
             sshTerminal.CreateControl();
-
-            sshTerminal.PreviewKeyDown += txtSshCommand_PreviewKeyDown;
-            sshTerminal.KeyPress += txtSshCommand_KeyPress;
-            sshTerminal.KeyDown += txtSshCommand_KeyDown;
             sshTerminal.JavascriptMessageReceived += SshTerminal_JavascriptMessageReceived;
 
             this.tableLayoutPanel1.Controls.Add(sshTerminal, 0, 0);
@@ -281,7 +281,29 @@ namespace OpenpilotToolkit
             }
         }
 
-        private void SshTerminal_JavascriptMessageReceived(object sender, JavascriptMessageReceivedEventArgs e)
+        public async void TerminalData(string data)
+        {
+            if (_shellStream != null && data != null)
+            {
+                await _shellStream.WriteAsync(new ReadOnlyMemory<byte>(Encoding.UTF8.GetBytes(data)));
+                await _shellStream.FlushAsync();
+                /*
+                var param = e.Message.ToString().Split(',');
+                _shellStream.SendWindowSizeChange(Convert.ToUInt32(param[1]), Convert.ToUInt32(param[0]), 0, 0);
+                */
+            }
+        }
+        /*
+        public async void ResizeTerminal(UInt32 rows, UInt32 columns)
+        {
+            if (_shellStream != null)
+            {
+                Task.Run(() => { _shellStream.SendWindowSizeChange(columns, rows, 0, 0); });
+                
+            }
+        }
+        */
+        private async void SshTerminal_JavascriptMessageReceived(object sender, JavascriptMessageReceivedEventArgs e)
         {
             if (_shellStream != null)
             {
@@ -1701,7 +1723,7 @@ namespace OpenpilotToolkit
                 }
             }
         }
-
+        /* Old terminal logic
         private void txtSshCommand_PreviewKeyDown(object sender, PreviewKeyDownEventArgs e)
         {
             if (e.KeyCode == Keys.Tab)
@@ -1719,24 +1741,103 @@ namespace OpenpilotToolkit
                 await _shellStream.FlushAsync();
             }
         }
-
+        
         private async void txtSshCommand_KeyDown(object sender, KeyEventArgs e)
         {
             if (_shellStream != null)
             {
-                if (e.KeyCode == Keys.Up)
+                
+                switch (e.KeyCode)
                 {
-                    await _shellStream.WriteAsync(new ReadOnlyMemory<byte>(new[] { (byte)27, (byte)91, (byte)65 }));
-                    await _shellStream.FlushAsync();
+                    case Keys.Delete:
+                        await _shellStream.WriteAsync(new ReadOnlyMemory<byte>(new[] { (byte)27, (byte)91, (byte)51, (byte)126 }));
+                        await _shellStream.FlushAsync();
+                        break;
+                    case Keys.Up:
+                        await _shellStream.WriteAsync(new ReadOnlyMemory<byte>(new[] { (byte)27, (byte)91, (byte)65 }));
+                        await _shellStream.FlushAsync();
+                        break;
+                    case Keys.Down:
+                        await _shellStream.WriteAsync(new ReadOnlyMemory<byte>(new[] { (byte)27, (byte)91, (byte)66 }));
+                        await _shellStream.FlushAsync();
+                        break;
+                    case Keys.Right:
+                        await _shellStream.WriteAsync(new ReadOnlyMemory<byte>(new[] { (byte)27, (byte)91, (byte)67 }));
+                        await _shellStream.FlushAsync();
+                        break;
+                    case Keys.Left:
+                        await _shellStream.WriteAsync(new ReadOnlyMemory<byte>(new[] { (byte)27, (byte)91, (byte)68 }));
+                        await _shellStream.FlushAsync();
+                        break;
+                    case Keys.Home:
+                        await _shellStream.WriteAsync(new ReadOnlyMemory<byte>(new[] { (byte)27, (byte)91, (byte)72 }));
+                        await _shellStream.FlushAsync();
+                        break;
+                    case Keys.End:
+                        await _shellStream.WriteAsync(new ReadOnlyMemory<byte>(new[] { (byte)27, (byte)91, (byte)70 }));
+                        await _shellStream.FlushAsync();
+                        break;
+                    case Keys.PageDown:
+                        await _shellStream.WriteAsync(new ReadOnlyMemory<byte>(new[] { (byte)27, (byte)91, (byte)54, (byte)126 }));
+                        await _shellStream.FlushAsync();
+                        break;
+                    case Keys.PageUp:
+                        await _shellStream.WriteAsync(new ReadOnlyMemory<byte>(new[] { (byte)27, (byte)91, (byte)53, (byte)126 }));
+                        await _shellStream.FlushAsync();
+                        break;
+                    case Keys.F1:
+                        await _shellStream.WriteAsync(new ReadOnlyMemory<byte>(new[] { (byte)27, (byte)79, (byte)80 }));
+                        await _shellStream.FlushAsync();
+                        break;
+                    case Keys.F2:
+                        await _shellStream.WriteAsync(new ReadOnlyMemory<byte>(new[] { (byte)27, (byte)79, (byte)81 }));
+                        await _shellStream.FlushAsync();
+                        break;
+                    case Keys.F3:
+                        await _shellStream.WriteAsync(new ReadOnlyMemory<byte>(new[] { (byte)27, (byte)79, (byte)82 }));
+                        await _shellStream.FlushAsync();
+                        break;
+                    case Keys.F4:
+                        await _shellStream.WriteAsync(new ReadOnlyMemory<byte>(new[] { (byte)27, (byte)79, (byte)83 }));
+                        await _shellStream.FlushAsync();
+                        break;
+                    case Keys.F5:
+                        await _shellStream.WriteAsync(new ReadOnlyMemory<byte>(new[] { (byte)27, (byte)91, (byte)49, (byte)53, (byte)126 }));
+                        await _shellStream.FlushAsync();
+                        break;
+                    case Keys.F6:
+                        await _shellStream.WriteAsync(new ReadOnlyMemory<byte>(new[] { (byte)27, (byte)91, (byte)49, (byte)55, (byte)126 }));
+                        await _shellStream.FlushAsync();
+                        break;
+                    case Keys.F7:
+                        await _shellStream.WriteAsync(new ReadOnlyMemory<byte>(new[] { (byte)27, (byte)91, (byte)49, (byte)56, (byte)126 }));
+                        await _shellStream.FlushAsync();
+                        break;
+                    case Keys.F8:
+                        await _shellStream.WriteAsync(new ReadOnlyMemory<byte>(new[] { (byte)27, (byte)91, (byte)50, (byte)57, (byte)126 }));
+                        await _shellStream.FlushAsync();
+                        break;
+                    case Keys.F9:
+                        await _shellStream.WriteAsync(new ReadOnlyMemory<byte>(new[] { (byte)27, (byte)91, (byte)50, (byte)48, (byte)126 }));
+                        await _shellStream.FlushAsync();
+                        break;
+                    case Keys.F10:
+                        await _shellStream.WriteAsync(new ReadOnlyMemory<byte>(new[] { (byte)27, (byte)91, (byte)50, (byte)49, (byte)126 }));
+                        await _shellStream.FlushAsync();
+                        break;
+                    case Keys.F11:
+                        await _shellStream.WriteAsync(new ReadOnlyMemory<byte>(new[] { (byte)27, (byte)91, (byte)50, (byte)51, (byte)126 }));
+                        await _shellStream.FlushAsync();
+                        break;
+                    case Keys.F12:
+                        await _shellStream.WriteAsync(new ReadOnlyMemory<byte>(new[] { (byte)27, (byte)91, (byte)50, (byte)52, (byte)126 }));
+                        await _shellStream.FlushAsync();
+                        break;
                 }
-                else if (e.KeyCode == Keys.Down)
-                {
-                    await _shellStream.WriteAsync(new ReadOnlyMemory<byte>(new[] { (byte)27, (byte)91, (byte)66 }));
-                    await _shellStream.FlushAsync();
-                }
+                
             }
         }
-
+        */
         private async void btnOsmUpload_Click(object sender, EventArgs e)
         {
             var osmUsername = txtOsmUsername.Text;
@@ -1943,6 +2044,26 @@ namespace OpenpilotToolkit
             catch(Exception ex)
             {
                 ToolkitMessageDialog.ShowDialog(ex.Message);
+            }
+        }
+
+        private async void btnTmuxScroll_Click(object sender, EventArgs e)
+        {
+            sshTerminal.Focus();
+            if (_shellStream != null)
+            {
+                await _shellStream.WriteAsync(new ReadOnlyMemory<byte>(Encoding.UTF8.GetBytes("`[")));
+                await _shellStream.FlushAsync();
+            }
+        }
+
+        private async void btnTmuxEndScroll_Click(object sender, EventArgs e)
+        {
+            sshTerminal.Focus();
+            if (_shellStream != null)
+            {
+                await _shellStream.WriteAsync(new ReadOnlyMemory<byte>(Encoding.UTF8.GetBytes("q")));
+                await _shellStream.FlushAsync();
             }
         }
     }

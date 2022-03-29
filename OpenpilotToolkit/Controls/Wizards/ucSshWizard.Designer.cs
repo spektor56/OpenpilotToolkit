@@ -86,6 +86,7 @@ namespace OpenpilotToolkit.Controls.Wizards
             this.mtcSSHWizard.SelectedIndex = 0;
             this.mtcSSHWizard.Size = new System.Drawing.Size(550, 305);
             this.mtcSSHWizard.TabIndex = 0;
+            this.mtcSSHWizard.TabStop = false;
             this.mtcSSHWizard.Selected += new System.Windows.Forms.TabControlEventHandler(this.mtcSSHWizard_Selected);
             this.mtcSSHWizard.TabIndexChanged += new System.EventHandler(this.materialTabControl1_TabIndexChanged);
             // 
@@ -116,7 +117,7 @@ namespace OpenpilotToolkit.Controls.Wizards
             this.txtUsername.Multiline = false;
             this.txtUsername.Name = "txtUsername";
             this.txtUsername.Size = new System.Drawing.Size(341, 50);
-            this.txtUsername.TabIndex = 30;
+            this.txtUsername.TabIndex = 0;
             this.txtUsername.Text = "";
             this.txtUsername.TrailingIcon = null;
             this.txtUsername.TextChanged += new System.EventHandler(this.txtUsername_TextChanged);
@@ -138,7 +139,7 @@ namespace OpenpilotToolkit.Controls.Wizards
             this.btnLogin.Name = "btnLogin";
             this.btnLogin.NoAccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(81)))), ((int)(((byte)(181)))));
             this.btnLogin.Size = new System.Drawing.Size(341, 36);
-            this.btnLogin.TabIndex = 29;
+            this.btnLogin.TabIndex = 1;
             this.btnLogin.Text = "Login";
             this.btnLogin.Type = MaterialSkin.Controls.MaterialButton.MaterialButtonType.Contained;
             this.btnLogin.UseAccentColor = true;
@@ -172,7 +173,7 @@ namespace OpenpilotToolkit.Controls.Wizards
             this.btnGenerateSSHKey.Name = "btnGenerateSSHKey";
             this.btnGenerateSSHKey.NoAccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(81)))), ((int)(((byte)(181)))));
             this.btnGenerateSSHKey.Size = new System.Drawing.Size(341, 36);
-            this.btnGenerateSSHKey.TabIndex = 30;
+            this.btnGenerateSSHKey.TabIndex = 0;
             this.btnGenerateSSHKey.Text = "Generate new SSH Key";
             this.btnGenerateSSHKey.Type = MaterialSkin.Controls.MaterialButton.MaterialButtonType.Contained;
             this.btnGenerateSSHKey.UseAccentColor = true;
@@ -245,7 +246,7 @@ namespace OpenpilotToolkit.Controls.Wizards
             this.flowLayoutPanel1.Location = new System.Drawing.Point(0, 0);
             this.flowLayoutPanel1.Name = "flowLayoutPanel1";
             this.flowLayoutPanel1.Size = new System.Drawing.Size(550, 50);
-            this.flowLayoutPanel1.TabIndex = 2;
+            this.flowLayoutPanel1.TabIndex = 0;
             // 
             // btnNext
             // 
@@ -262,7 +263,7 @@ namespace OpenpilotToolkit.Controls.Wizards
             this.btnNext.Name = "btnNext";
             this.btnNext.NoAccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(81)))), ((int)(((byte)(181)))));
             this.btnNext.Size = new System.Drawing.Size(68, 36);
-            this.btnNext.TabIndex = 0;
+            this.btnNext.TabIndex = 1;
             this.btnNext.Text = "&Next";
             this.btnNext.Type = MaterialSkin.Controls.MaterialButton.MaterialButtonType.Contained;
             this.btnNext.UseAccentColor = true;
@@ -285,7 +286,7 @@ namespace OpenpilotToolkit.Controls.Wizards
             this.btnPrevious.Name = "btnPrevious";
             this.btnPrevious.NoAccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(81)))), ((int)(((byte)(181)))));
             this.btnPrevious.Size = new System.Drawing.Size(100, 36);
-            this.btnPrevious.TabIndex = 1;
+            this.btnPrevious.TabIndex = 0;
             this.btnPrevious.Text = "&Previous";
             this.btnPrevious.Type = MaterialSkin.Controls.MaterialButton.MaterialButtonType.Contained;
             this.btnPrevious.UseAccentColor = true;

@@ -111,6 +111,8 @@ namespace OpenpilotToolkit
             this.tpShell = new System.Windows.Forms.TabPage();
             this.tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
             this.panel4 = new System.Windows.Forms.Panel();
+            this.btnTmuxEndScroll = new MaterialSkin.Controls.MaterialButton();
+            this.btnTmuxScroll = new MaterialSkin.Controls.MaterialButton();
             this.btnTmux = new MaterialSkin.Controls.MaterialButton();
             this.btnExitTmux = new MaterialSkin.Controls.MaterialButton();
             this.tpDonate = new System.Windows.Forms.TabPage();
@@ -164,7 +166,7 @@ namespace OpenpilotToolkit
             this.lbDrives.Name = "lbDrives";
             this.lbDrives.SelectionMode = System.Windows.Forms.SelectionMode.MultiExtended;
             this.lbDrives.Size = new System.Drawing.Size(143, 364);
-            this.lbDrives.TabIndex = 0;
+            this.lbDrives.TabIndex = 4;
             this.lbDrives.SelectedIndexChanged += new System.EventHandler(this.lbDrives_SelectedIndexChanged);
             this.lbDrives.PreviewKeyDown += new System.Windows.Forms.PreviewKeyDownEventHandler(this.lbDrives_PreviewKeyDown);
             // 
@@ -196,7 +198,7 @@ namespace OpenpilotToolkit
             this.btnBrowse.Name = "btnBrowse";
             this.btnBrowse.NoAccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(81)))), ((int)(((byte)(181)))));
             this.btnBrowse.Size = new System.Drawing.Size(89, 36);
-            this.btnBrowse.TabIndex = 20;
+            this.btnBrowse.TabIndex = 1;
             this.btnBrowse.Text = "&Browse";
             this.btnBrowse.Type = MaterialSkin.Controls.MaterialButton.MaterialButtonType.Contained;
             this.btnBrowse.UseAccentColor = true;
@@ -220,7 +222,7 @@ namespace OpenpilotToolkit
             this.btnRefreshVideos.Name = "btnRefreshVideos";
             this.btnRefreshVideos.NoAccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(81)))), ((int)(((byte)(181)))));
             this.btnRefreshVideos.Size = new System.Drawing.Size(196, 36);
-            this.btnRefreshVideos.TabIndex = 21;
+            this.btnRefreshVideos.TabIndex = 0;
             this.btnRefreshVideos.Text = "&Refresh Drive List";
             this.btnRefreshVideos.Type = MaterialSkin.Controls.MaterialButton.MaterialButtonType.Contained;
             this.btnRefreshVideos.UseAccentColor = true;
@@ -245,7 +247,7 @@ namespace OpenpilotToolkit
             this.btnExportMapillary.Name = "btnExportMapillary";
             this.btnExportMapillary.NoAccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(81)))), ((int)(((byte)(181)))));
             this.btnExportMapillary.Size = new System.Drawing.Size(194, 36);
-            this.btnExportMapillary.TabIndex = 22;
+            this.btnExportMapillary.TabIndex = 5;
             this.btnExportMapillary.Text = "&Mapillary Export";
             this.btnExportMapillary.Type = MaterialSkin.Controls.MaterialButton.MaterialButtonType.Contained;
             this.btnExportMapillary.UseAccentColor = true;
@@ -269,7 +271,7 @@ namespace OpenpilotToolkit
             this.btnExportGpx.Name = "btnExportGpx";
             this.btnExportGpx.NoAccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(81)))), ((int)(((byte)(181)))));
             this.btnExportGpx.Size = new System.Drawing.Size(194, 36);
-            this.btnExportGpx.TabIndex = 23;
+            this.btnExportGpx.TabIndex = 3;
             this.btnExportGpx.Text = "&GPX Export";
             this.btnExportGpx.Type = MaterialSkin.Controls.MaterialButton.MaterialButtonType.Contained;
             this.btnExportGpx.UseAccentColor = true;
@@ -293,7 +295,7 @@ namespace OpenpilotToolkit
             this.btnExport.Name = "btnExport";
             this.btnExport.NoAccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(81)))), ((int)(((byte)(181)))));
             this.btnExport.Size = new System.Drawing.Size(194, 36);
-            this.btnExport.TabIndex = 24;
+            this.btnExport.TabIndex = 1;
             this.btnExport.Text = "&Export Selected Drive(s)";
             this.btnExport.Type = MaterialSkin.Controls.MaterialButton.MaterialButtonType.Contained;
             this.btnExport.UseAccentColor = true;
@@ -338,7 +340,7 @@ namespace OpenpilotToolkit
             this.txtExportFolder.Multiline = false;
             this.txtExportFolder.Name = "txtExportFolder";
             this.txtExportFolder.Size = new System.Drawing.Size(1002, 50);
-            this.txtExportFolder.TabIndex = 26;
+            this.txtExportFolder.TabIndex = 0;
             this.txtExportFolder.Text = "C:\\Openpilot";
             this.txtExportFolder.TrailingIcon = null;
             this.txtExportFolder.DoubleClick += new System.EventHandler(this.txtExportFolder_DoubleClick);
@@ -433,7 +435,7 @@ namespace OpenpilotToolkit
             this.tcSettings.Name = "tcSettings";
             this.tcSettings.SelectedIndex = 0;
             this.tcSettings.Size = new System.Drawing.Size(1110, 537);
-            this.tcSettings.TabIndex = 33;
+            this.tcSettings.TabIndex = 1;
             this.tcSettings.Selected += new System.Windows.Forms.TabControlEventHandler(this.tcSettings_Selected);
             // 
             // tpExport
@@ -479,7 +481,7 @@ namespace OpenpilotToolkit
             this.groupBox3.Location = new System.Drawing.Point(908, 123);
             this.groupBox3.Name = "groupBox3";
             this.groupBox3.Size = new System.Drawing.Size(187, 110);
-            this.groupBox3.TabIndex = 0;
+            this.groupBox3.TabIndex = 6;
             this.groupBox3.TabStop = false;
             this.groupBox3.Text = "Drive Info";
             // 
@@ -530,7 +532,7 @@ namespace OpenpilotToolkit
             this.dgvDriveInfo.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
             this.dgvDriveInfo.ShowCellToolTips = false;
             this.dgvDriveInfo.Size = new System.Drawing.Size(175, 78);
-            this.dgvDriveInfo.TabIndex = 33;
+            this.dgvDriveInfo.TabIndex = 0;
             // 
             // colProperty
             // 
@@ -561,7 +563,7 @@ namespace OpenpilotToolkit
             this.groupBox2.Location = new System.Drawing.Point(217, 62);
             this.groupBox2.Name = "groupBox2";
             this.groupBox2.Size = new System.Drawing.Size(878, 55);
-            this.groupBox2.TabIndex = 34;
+            this.groupBox2.TabIndex = 3;
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "Export Camera";
             // 
@@ -579,7 +581,7 @@ namespace OpenpilotToolkit
             this.cbFrontCamera.ReadOnly = false;
             this.cbFrontCamera.Ripple = true;
             this.cbFrontCamera.Size = new System.Drawing.Size(72, 37);
-            this.cbFrontCamera.TabIndex = 31;
+            this.cbFrontCamera.TabIndex = 0;
             this.cbFrontCamera.Text = "Front";
             this.cbFrontCamera.UseVisualStyleBackColor = true;
             // 
@@ -595,7 +597,7 @@ namespace OpenpilotToolkit
             this.cbDriverCamera.ReadOnly = false;
             this.cbDriverCamera.Ripple = true;
             this.cbDriverCamera.Size = new System.Drawing.Size(76, 37);
-            this.cbDriverCamera.TabIndex = 32;
+            this.cbDriverCamera.TabIndex = 2;
             this.cbDriverCamera.Text = "Driver";
             this.cbDriverCamera.UseVisualStyleBackColor = true;
             // 
@@ -611,7 +613,7 @@ namespace OpenpilotToolkit
             this.cbWideCamera.ReadOnly = false;
             this.cbWideCamera.Ripple = true;
             this.cbWideCamera.Size = new System.Drawing.Size(70, 37);
-            this.cbWideCamera.TabIndex = 33;
+            this.cbWideCamera.TabIndex = 1;
             this.cbWideCamera.Text = "Wide";
             this.cbWideCamera.UseVisualStyleBackColor = true;
             // 
@@ -626,7 +628,7 @@ namespace OpenpilotToolkit
             this.panel2.Location = new System.Drawing.Point(6, 62);
             this.panel2.Name = "panel2";
             this.panel2.Size = new System.Drawing.Size(204, 434);
-            this.panel2.TabIndex = 30;
+            this.panel2.TabIndex = 2;
             // 
             // btnOsmUpload
             // 
@@ -645,7 +647,7 @@ namespace OpenpilotToolkit
             this.btnOsmUpload.Name = "btnOsmUpload";
             this.btnOsmUpload.NoAccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(81)))), ((int)(((byte)(181)))));
             this.btnOsmUpload.Size = new System.Drawing.Size(194, 36);
-            this.btnOsmUpload.TabIndex = 26;
+            this.btnOsmUpload.TabIndex = 4;
             this.btnOsmUpload.Text = "Upload GPS to &OSM";
             this.btnOsmUpload.Type = MaterialSkin.Controls.MaterialButton.MaterialButtonType.Contained;
             this.btnOsmUpload.UseAccentColor = true;
@@ -669,7 +671,7 @@ namespace OpenpilotToolkit
             this.btnDeleteDrives.Name = "btnDeleteDrives";
             this.btnDeleteDrives.NoAccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(81)))), ((int)(((byte)(181)))));
             this.btnDeleteDrives.Size = new System.Drawing.Size(194, 36);
-            this.btnDeleteDrives.TabIndex = 25;
+            this.btnDeleteDrives.TabIndex = 2;
             this.btnDeleteDrives.Text = "&Delete Selected Drive(s)";
             this.btnDeleteDrives.Type = MaterialSkin.Controls.MaterialButton.MaterialButtonType.Contained;
             this.btnDeleteDrives.UseAccentColor = true;
@@ -684,7 +686,7 @@ namespace OpenpilotToolkit
             this.vlcVideoPlayer.Location = new System.Drawing.Point(367, 123);
             this.vlcVideoPlayer.Name = "vlcVideoPlayer";
             this.vlcVideoPlayer.Size = new System.Drawing.Size(533, 373);
-            this.vlcVideoPlayer.TabIndex = 29;
+            this.vlcVideoPlayer.TabIndex = 5;
             // 
             // tpRemote
             // 
@@ -916,7 +918,7 @@ namespace OpenpilotToolkit
             this.btnOsmTest.Name = "btnOsmTest";
             this.btnOsmTest.NoAccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(81)))), ((int)(((byte)(181)))));
             this.btnOsmTest.Size = new System.Drawing.Size(453, 36);
-            this.btnOsmTest.TabIndex = 36;
+            this.btnOsmTest.TabIndex = 2;
             this.btnOsmTest.Text = "&Test";
             this.btnOsmTest.Type = MaterialSkin.Controls.MaterialButton.MaterialButtonType.Contained;
             this.btnOsmTest.UseAccentColor = true;
@@ -949,7 +951,7 @@ namespace OpenpilotToolkit
             this.txtOsmPassword.SelectionStart = 0;
             this.txtOsmPassword.ShortcutsEnabled = true;
             this.txtOsmPassword.Size = new System.Drawing.Size(455, 48);
-            this.txtOsmPassword.TabIndex = 35;
+            this.txtOsmPassword.TabIndex = 1;
             this.txtOsmPassword.TabStop = false;
             this.txtOsmPassword.TextAlign = System.Windows.Forms.HorizontalAlignment.Left;
             this.txtOsmPassword.TrailingIcon = null;
@@ -981,7 +983,7 @@ namespace OpenpilotToolkit
             this.txtOsmUsername.SelectionStart = 0;
             this.txtOsmUsername.ShortcutsEnabled = true;
             this.txtOsmUsername.Size = new System.Drawing.Size(455, 48);
-            this.txtOsmUsername.TabIndex = 34;
+            this.txtOsmUsername.TabIndex = 0;
             this.txtOsmUsername.TabStop = false;
             this.txtOsmUsername.TextAlign = System.Windows.Forms.HorizontalAlignment.Left;
             this.txtOsmUsername.TrailingIcon = null;
@@ -1113,7 +1115,7 @@ namespace OpenpilotToolkit
             this.txtWorkingDirectory.Multiline = false;
             this.txtWorkingDirectory.Name = "txtWorkingDirectory";
             this.txtWorkingDirectory.Size = new System.Drawing.Size(884, 50);
-            this.txtWorkingDirectory.TabIndex = 27;
+            this.txtWorkingDirectory.TabIndex = 0;
             this.txtWorkingDirectory.Text = "Current Directory";
             this.txtWorkingDirectory.TrailingIcon = null;
             // 
@@ -1167,7 +1169,7 @@ namespace OpenpilotToolkit
             this.dgvExplorer.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
             this.dgvExplorer.ShowCellToolTips = false;
             this.dgvExplorer.Size = new System.Drawing.Size(884, 428);
-            this.dgvExplorer.TabIndex = 32;
+            this.dgvExplorer.TabIndex = 1;
             this.dgvExplorer.CellDoubleClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dgvExplorer_CellDoubleClick);
             this.dgvExplorer.CellFormatting += new System.Windows.Forms.DataGridViewCellFormattingEventHandler(this.dgvExplorer_CellFormatting);
             this.dgvExplorer.DragDrop += new System.Windows.Forms.DragEventHandler(this.dgvExplorer_DragDrop);
@@ -1345,7 +1347,7 @@ namespace OpenpilotToolkit
             this.btnInstallFork.Name = "btnInstallFork";
             this.btnInstallFork.NoAccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(81)))), ((int)(((byte)(181)))));
             this.btnInstallFork.Size = new System.Drawing.Size(341, 36);
-            this.btnInstallFork.TabIndex = 31;
+            this.btnInstallFork.TabIndex = 34;
             this.btnInstallFork.Text = "&Install";
             this.btnInstallFork.Type = MaterialSkin.Controls.MaterialButton.MaterialButtonType.Contained;
             this.btnInstallFork.UseAccentColor = true;
@@ -1392,6 +1394,8 @@ namespace OpenpilotToolkit
             // 
             // panel4
             // 
+            this.panel4.Controls.Add(this.btnTmuxEndScroll);
+            this.panel4.Controls.Add(this.btnTmuxScroll);
             this.panel4.Controls.Add(this.btnTmux);
             this.panel4.Controls.Add(this.btnExitTmux);
             this.panel4.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -1399,6 +1403,54 @@ namespace OpenpilotToolkit
             this.panel4.Name = "panel4";
             this.panel4.Size = new System.Drawing.Size(198, 490);
             this.panel4.TabIndex = 0;
+            // 
+            // btnTmuxEndScroll
+            // 
+            this.btnTmuxEndScroll.AccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(64)))), ((int)(((byte)(129)))));
+            this.btnTmuxEndScroll.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnTmuxEndScroll.AutoSize = false;
+            this.btnTmuxEndScroll.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.btnTmuxEndScroll.Density = MaterialSkin.Controls.MaterialButton.MaterialButtonDensity.Default;
+            this.btnTmuxEndScroll.Depth = 0;
+            this.btnTmuxEndScroll.HighEmphasis = true;
+            this.btnTmuxEndScroll.Icon = null;
+            this.btnTmuxEndScroll.Location = new System.Drawing.Point(0, 150);
+            this.btnTmuxEndScroll.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+            this.btnTmuxEndScroll.MouseState = MaterialSkin.MouseState.HOVER;
+            this.btnTmuxEndScroll.Name = "btnTmuxEndScroll";
+            this.btnTmuxEndScroll.NoAccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(81)))), ((int)(((byte)(181)))));
+            this.btnTmuxEndScroll.Size = new System.Drawing.Size(194, 36);
+            this.btnTmuxEndScroll.TabIndex = 28;
+            this.btnTmuxEndScroll.Text = "TMUX End SCROLL";
+            this.btnTmuxEndScroll.Type = MaterialSkin.Controls.MaterialButton.MaterialButtonType.Contained;
+            this.btnTmuxEndScroll.UseAccentColor = true;
+            this.btnTmuxEndScroll.UseVisualStyleBackColor = true;
+            this.btnTmuxEndScroll.Click += new System.EventHandler(this.btnTmuxEndScroll_Click);
+            // 
+            // btnTmuxScroll
+            // 
+            this.btnTmuxScroll.AccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(64)))), ((int)(((byte)(129)))));
+            this.btnTmuxScroll.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnTmuxScroll.AutoSize = false;
+            this.btnTmuxScroll.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.btnTmuxScroll.Density = MaterialSkin.Controls.MaterialButton.MaterialButtonDensity.Default;
+            this.btnTmuxScroll.Depth = 0;
+            this.btnTmuxScroll.HighEmphasis = true;
+            this.btnTmuxScroll.Icon = null;
+            this.btnTmuxScroll.Location = new System.Drawing.Point(0, 102);
+            this.btnTmuxScroll.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+            this.btnTmuxScroll.MouseState = MaterialSkin.MouseState.HOVER;
+            this.btnTmuxScroll.Name = "btnTmuxScroll";
+            this.btnTmuxScroll.NoAccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(81)))), ((int)(((byte)(181)))));
+            this.btnTmuxScroll.Size = new System.Drawing.Size(194, 36);
+            this.btnTmuxScroll.TabIndex = 27;
+            this.btnTmuxScroll.Text = "TMUX Start SCROLL";
+            this.btnTmuxScroll.Type = MaterialSkin.Controls.MaterialButton.MaterialButtonType.Contained;
+            this.btnTmuxScroll.UseAccentColor = true;
+            this.btnTmuxScroll.UseVisualStyleBackColor = true;
+            this.btnTmuxScroll.Click += new System.EventHandler(this.btnTmuxScroll_Click);
             // 
             // btnTmux
             // 
@@ -1586,7 +1638,7 @@ namespace OpenpilotToolkit
             this.themePanel.Location = new System.Drawing.Point(244, 24);
             this.themePanel.Name = "themePanel";
             this.themePanel.Size = new System.Drawing.Size(869, 40);
-            this.themePanel.TabIndex = 34;
+            this.themePanel.TabIndex = 0;
             // 
             // wifiConnected
             // 
@@ -1789,6 +1841,8 @@ namespace OpenpilotToolkit
         private System.Windows.Forms.Panel panel4;
         private MaterialButton btnTmux;
         private MaterialButton btnExitTmux;
+        private MaterialButton btnTmuxScroll;
+        private MaterialButton btnTmuxEndScroll;
     }
 }
 

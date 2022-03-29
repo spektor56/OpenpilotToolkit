@@ -122,16 +122,11 @@ namespace OpenpilotToolkit.Controls.Wizards
         {
             if (keyData == Keys.Enter)
             {
-                if (mtcSSHWizard.SelectedTab == tpGithubLogin)
+                if (mtcSSHWizard.SelectedTab == tpGithubLogin && txtUsername.Focused)
                 {
                     btnLogin.PerformClick();
+                    return true;
                 }
-                else
-                {
-                    btnNext.PerformClick();
-                }
-                
-                return true;
             }
             return base.ProcessCmdKey(ref msg, keyData);
         }
