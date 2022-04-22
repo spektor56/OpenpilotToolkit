@@ -1343,7 +1343,7 @@ namespace OpenpilotToolkit
                     {
                         await Task.Run(async () =>
                         {
-                            var result = await openpilotDevice.FlashPandaAsync();
+                            result = await openpilotDevice.FlashPandaAsync();
                         });
                     }
                     

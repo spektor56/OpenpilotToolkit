@@ -47,7 +47,7 @@ namespace OpenpilotSdk.Hardware
         public virtual string StorageDirectory { get; protected set; } = @"/data/media/0/realdata/";
         public virtual string RebootCommand { get; protected set; } = @"am start -a android.intent.action.REBOOT";
         public virtual string ShutdownCommand { get; protected set; } = @"am start -n android/com.android.internal.app.ShutdownActivity";
-        public virtual string FlashCommand { get; protected set; } = @"cd /data/openpilot/panda/board && ./recover.sh";
+        public virtual string FlashCommand { get; protected set; } = @"pkill -f openpilot & cd /data/openpilot/panda/board && ./recover.sh";
         public virtual string InstallEmuCommand { get; protected set; } = @"cd /data/openpilot && echo 'y' | bash <(curl -fsSL install.emu.sh) && source /data/community/.bashrc";
         public virtual string GitCloneCommand { get; protected set; } = @"cd /data && rm -rf openpilot; git clone -b {1} --depth 1 --single-branch --progress --recurse-submodules --shallow-submodules {0} openpilot";
 
@@ -1043,6 +1043,13 @@ namespace OpenpilotSdk.Hardware
             {
                 var result = await Task.Factory.FromAsync(command.BeginExecute(), command.EndExecute).ConfigureAwait(false);
                 var success = command.ExitStatus == 0;
+                if (success)
+                {
+                    using (var rebootCommand = SshClient.CreateCommand(RebootCommand))
+                    {
+                        rebootCommand.BeginExecute();
+                    }
+                }
                 return success;
             }
         }
@@ -1159,7 +1166,7 @@ namespace OpenpilotSdk.Hardware
 
                 if (success)
                 {
-                    using (var rebootCommand = SshClient.CreateCommand("reboot"))
+                    using (var rebootCommand = SshClient.CreateCommand(RebootCommand))
                     {
                         rebootCommand.BeginExecute();
                     }
