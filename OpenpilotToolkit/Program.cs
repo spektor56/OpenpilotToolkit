@@ -50,10 +50,13 @@ namespace OpenpilotToolkit
             CefSharp.Cef.Initialize(settings);
 
             GlobalFFOptions.Configure(options => options.BinaryFolder = "./");
+
+            var logPath = Path.Combine(AppContext.BaseDirectory, @"logs\log.txt");
+
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
                 .WriteTo.Console()
-                .WriteTo.File("logs/log.txt", rollingInterval: RollingInterval.Day, shared: true)
+                .WriteTo.File(logPath, rollingInterval: RollingInterval.Day, shared: true)
                 .CreateLogger();
 
             Application.ApplicationExit += (_, _) =>

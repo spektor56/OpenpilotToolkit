@@ -11,6 +11,7 @@
 	<StartupObject>OpenpilotToolkit.Program</StartupObject>
 	<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
 	<ApplicationManifest>app.manifest</ApplicationManifest>
+	<SupportedOSPlatformVersion>7.0</SupportedOSPlatformVersion>
   </PropertyGroup>
 
 	<PropertyGroup Condition="'$(PlatformTarget)' == 'x86'">

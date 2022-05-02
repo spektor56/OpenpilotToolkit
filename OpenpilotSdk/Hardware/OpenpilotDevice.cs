@@ -27,6 +27,7 @@ using Renci.SshNet.Common;
 using Serilog;
 using System.Globalization;
 using System.Runtime.CompilerServices;
+using OpenpilotSdk.OpenPilot.Segment;
 
 namespace OpenpilotSdk.Hardware
 {
@@ -131,9 +132,31 @@ namespace OpenpilotSdk.Hardware
             await Task.WhenAll(deleteTasks);
         }
 
-        public async Task ExportDriveAsync(string exportPath, Drive drive, Camera camera, bool combineSegments = false, IProgress<int> progress = null)
+        public async Task ExportDriveAsync(string exportPath, Drive drive, Camera camera, bool combineSegments = false, IProgress<OpenPilot.Camera.Progress> progress = null)
         {
             await ConnectAsync();
+
+            var cameraProgress = new OpenPilot.Camera.Progress(camera);
+            Progress<Progress> segmentProgress = null;
+            if (progress != null)
+            {
+                segmentProgress = new Progress<Progress>();
+                var segmentProgressDictionary = drive.Segments.ToDictionary(segment => segment.Index, _ => 0);
+                int previousProgress = 0;
+                segmentProgress.ProgressChanged += async (sender, segmentProgressResult) =>
+                {
+                    segmentProgressDictionary[segmentProgressResult.Segment] = segmentProgressResult.Percent;
+
+                    cameraProgress.Percent = (segmentProgressDictionary.Sum(segment => segment.Value) * 100) /
+                                             (segmentProgressDictionary.Count * 100);
+
+                    if (cameraProgress.Percent > previousProgress)
+                    {
+                        previousProgress = cameraProgress.Percent;
+                        progress.Report(cameraProgress);
+                    }
+                };
+            }
 
             if (!Directory.Exists(exportPath))
             {
@@ -143,7 +166,7 @@ namespace OpenpilotSdk.Hardware
             if (combineSegments)
             {
                 var exportTasks =
-                    drive.Segments.Select((segment) => ExportSegmentAsync(exportPath, segment, camera, false)).ToArray();
+                    drive.Segments.Select((segment) => ExportSegmentAsync(exportPath, segment, camera, false, segmentProgress)).ToArray();
 
                 if (exportTasks.Length > 0)
                 {
@@ -166,11 +189,6 @@ namespace OpenpilotSdk.Hardware
                                 }
                                 File.Delete(tempFilePath);
                             }
-
-                            if (progress != null)
-                            {
-                                progress.Report(i);
-                            }
                         }
 
                         fileWritten = outputFile.Length > 0;
@@ -191,7 +209,8 @@ namespace OpenpilotSdk.Hardware
                 var m3uFileName = drive.ToString() + (char)camera.Type + ".m3u";
 
                 var exportTasks =
-                    drive.Segments.Select((segment) => ExportSegmentAsync(exportPath, segment, camera, true, progress));
+                    drive.Segments.Select((segment) => ExportSegmentAsync(exportPath, segment, camera, true, segmentProgress)).ToArray();
+
                 var exportedSegments = (await Task.WhenAll(exportTasks)).Where(file => !string.IsNullOrWhiteSpace(file)).ToArray();
 
                 if (exportedSegments.Length > 1)
@@ -228,8 +247,10 @@ namespace OpenpilotSdk.Hardware
         }
 
         public async Task<string> ExportSegmentAsync(string path, DriveSegment driveSegment, Camera camera, bool containerize,
-            IProgress<int> progress = null)
+            IProgress<Progress> progress = null)
         {
+            var segmentProgress = new Progress(driveSegment.Index);
+
             Video video = null;
             switch (camera.Type)
             {
@@ -284,7 +305,28 @@ namespace OpenpilotSdk.Hardware
                                     await using (var stream = await sftpClient.OpenAsync(videoPath, FileMode.Open,
                                                      FileAccess.Read, CancellationToken.None))
                                     {
-                                        await stream.CopyToAsync(outputFile);
+                                        var buffer = new byte[81920];
+                                        int bytesRead = 0;
+                                        var sourceLength = stream.Length;
+                                        int totalBytesRead = 0;
+                                        int previousProgress = 0;
+
+                                        while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length).ConfigureAwait(false)) > 0)
+                                        {
+                                            await outputFile.WriteAsync(buffer, 0, bytesRead).ConfigureAwait(false);
+
+                                            if (progress != null)
+                                            {
+                                                totalBytesRead += bytesRead;
+
+                                                segmentProgress.Percent = (int)(((double)totalBytesRead / (double)sourceLength) * 100);
+                                                if (segmentProgress.Percent > previousProgress)
+                                                {
+                                                    previousProgress = segmentProgress.Percent;
+                                                    progress.Report(segmentProgress);
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -304,7 +346,8 @@ namespace OpenpilotSdk.Hardware
 
             if (progress != null)
             {
-                progress.Report(driveSegment.Index);
+                segmentProgress.Percent = 100;
+                progress.Report(segmentProgress);
             }
 
             return fileName;

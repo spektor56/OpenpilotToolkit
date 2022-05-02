@@ -425,21 +425,34 @@ namespace OpenpilotToolkit
                             continue;
                         }
 
-                        var ucDrive = new ucTaskProgress(drive.ToString(), drive.Segments.Count*cameras.Count)
+                        var ucDrive = new ucTaskProgress(drive.ToString(), cameras.Count * 100)
                         {
                             Anchor = (AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top)
                         };
-
+                        
                         tlpTasks.Controls.Add(ucDrive);
 
-                        var segmentsProcessed = 0;
-
-                        var progress = new Progress<int>((segmentIndex) =>
+                        var progressDictionary = cameras.ToDictionary(cam => cam, cam => 0);
+                        var progressLock = new SemaphoreSlim(1, 1);
+                        var progress = new Progress<OpenpilotSdk.OpenPilot.Camera.Progress>(async (cameraProgress) =>
                         {
                             if (!IsDisposed)
                             {
-                                Interlocked.Increment(ref segmentsProcessed);
-                                ucDrive.Progress = segmentsProcessed;
+                                progressDictionary[cameraProgress.Camera] = cameraProgress.Percent;
+                                try
+                                {
+                                    await progressLock.WaitAsync();
+
+                                    var currentProgress = progressDictionary.Sum(progress => progress.Value);
+                                    if (currentProgress > ucDrive.Progress)
+                                    {
+                                        ucDrive.Progress = currentProgress;
+                                    }
+                                }
+                                finally
+                                {
+                                    progressLock.Release();
+                                }
                             }
                         });
 
@@ -1552,6 +1565,7 @@ namespace OpenpilotToolkit
                     var sourceLength = sourceFile.Length;
                     int totalBytesRead = 0;
                     int previousProgress = 0;
+                    
                     while ((bytesRead = await sourceFile.ReadAsync(buffer, 0, buffer.Length)) > 0)
                     {
                         await destinationFile.WriteAsync(buffer, 0, bytesRead);
@@ -1929,7 +1943,7 @@ namespace OpenpilotToolkit
                             {
                                 content.Add(new ByteArrayContent(binaryFile), "file", drive.ToString());
                                 content.Add(new StringContent(drive.ToString() + " openpilot drive"), @"description");
-                                content.Add(new StringContent("openpilot,commai,comma2"), @"tags");
+                                content.Add(new StringContent("openpilottoolkit,optk,openpilot,commai,comma2,comma3"), @"tags");
                                 content.Add(new StringContent("1"), @"public");
                                 content.Add(new StringContent("identifiable"), @"visibility");
 

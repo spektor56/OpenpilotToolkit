@@ -25,9 +25,11 @@
 	<ItemGroup>
 		<Content Include="ffmpeg.exe">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+			<ExcludeFromSingleFile>true</ExcludeFromSingleFile>
 		</Content>
 		<Content Include="ffprobe.exe">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+			<ExcludeFromSingleFile>true</ExcludeFromSingleFile>
 		</Content>
 	</ItemGroup>
 
