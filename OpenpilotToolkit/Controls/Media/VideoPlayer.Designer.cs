@@ -105,6 +105,7 @@ namespace OpenpilotToolkit.Controls.Media
             this.vlcVideoView2.Size = new System.Drawing.Size(457, 299);
             this.vlcVideoView2.TabIndex = 1;
             this.vlcVideoView2.Text = "videoView1";
+            this.vlcVideoView2.Click += new System.EventHandler(this.vlcVideoView_Click);
             // 
             // tableLayoutPanel2
             // 
