@@ -380,7 +380,8 @@ namespace OpenpilotSdk.Hardware
             await ConnectAsync();
 
             Bitmap thumbnail = null;
-            var drive = new DirectoryInfo(Path.GetDirectoryName(driveSegment.FrontVideo.File.FullName)).Name;
+            var videoFile = driveSegment.FrontVideoQuick ?? driveSegment.FrontVideo;
+            var drive = new DirectoryInfo(Path.GetDirectoryName(videoFile.File.FullName)).Name;
             var cachedThumbnail = Path.Combine(TempDirectory, drive + ".jpg");
 
 
@@ -389,7 +390,6 @@ namespace OpenpilotSdk.Hardware
                 bool quickVideo = driveSegment.FrontVideoQuick != null;
                 var offset = 0;
 
-                var videoFile = driveSegment.FrontVideoQuick ?? driveSegment.FrontVideo;
                 var imageBuffer = quickVideo ? new byte[10000] : new byte[200000];
 
                 await using (var sftpFileStream = SftpClient.OpenRead(videoFile.File.FullName))
@@ -407,7 +407,7 @@ namespace OpenpilotSdk.Hardware
                     try
                     {
                         await FFMpegArguments
-                            .FromPipeInput(new StreamPipeSource(msInput), options => options.WithFramerate(20).ForceFormat(quickVideo ? "mpegts" : "rawvideo"))
+                            .FromPipeInput(new StreamPipeSource(msInput), options => options.WithFramerate(20))
                             .OutputToPipe(new StreamPipeSink(msOutput), options =>
                                 options.WithVideoCodec(VideoCodec.Png)
                                     .WithFrameOutputCount(1)
@@ -591,9 +591,7 @@ namespace OpenpilotSdk.Hardware
 
             var firmwares = new List<Firmware>();
 
-            var drives = GetDrives();
-
-            foreach (var drive in drives)
+            await foreach (var drive in GetDrivesAsync())
             {
                 foreach (var driveSegment in drive.Segments.OrderBy(segment => segment.Index))
                 {
@@ -668,7 +666,7 @@ namespace OpenpilotSdk.Hardware
 
         public async IAsyncEnumerable<Drive> GetDrivesAsync([EnumeratorCancellation]CancellationToken cancellationToken = default(CancellationToken))
         {
-            await ConnectAsync();
+            await ConnectAsync(cancellationToken);
 
             IOrderedEnumerable<IGrouping<DateTime, SftpFile>> directoryListing;
 
@@ -680,7 +678,7 @@ namespace OpenpilotSdk.Hardware
                     {
                         return DateTime.ParseExact(dir.Name.AsSpan().Slice(0, 20), "yyyy-MM-dd--HH-mm-ss", CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal).ToUniversalTime(); 
                     })
-                    .OrderBy(dir =>
+                    .OrderByDescending(dir =>
                     {
                         var date = dir.Key;
                         return date;

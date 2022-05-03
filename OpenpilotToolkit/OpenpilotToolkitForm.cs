@@ -30,6 +30,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Renci.SshNet.Sftp;
 using Exception = System.Exception;
 using OpenpilotDevice = OpenpilotSdk.Hardware.OpenpilotDevice;
 
@@ -121,7 +122,7 @@ namespace OpenpilotToolkit
 
             _libVlc = new LibVLC();
             vlcVideoPlayer.Initialize(_libVlc);
-            vlcVideoPlayer.vlcVideoView.MediaPlayer.TimeChanged += MediaPlayerOnTimeChanged; 
+            vlcVideoPlayer.vlcVideoView1.MediaPlayer.TimeChanged += MediaPlayerOnTimeChanged; 
   
             cbCombineSegments.Checked = Properties.Settings.Default.CombineSegments;
 
@@ -324,7 +325,11 @@ namespace OpenpilotToolkit
         {
             _devices.Clear();
             lbDrives.Items.Clear();
-            Task.Run(() => { vlcVideoPlayer.vlcVideoView.MediaPlayer.Stop(); });
+            Task.Run(() =>
+            {
+                vlcVideoPlayer.vlcVideoView1.MediaPlayer.Stop();
+                vlcVideoPlayer.vlcVideoView2.MediaPlayer.Stop();
+            });
             dgvDriveInfo.DataSource = null;
             pbPreview.Image = null;
             pbPreview.BringToFront();
@@ -522,7 +527,11 @@ namespace OpenpilotToolkit
             cmbDevices.Enabled = false;
             
             dgvDriveInfo.DataSource = null;
-            Task.Run(() => { vlcVideoPlayer.vlcVideoView.MediaPlayer.Stop(); });
+            Task.Run(() =>
+            {
+                vlcVideoPlayer.vlcVideoView1.MediaPlayer.Stop();
+                vlcVideoPlayer.vlcVideoView2.MediaPlayer.Stop();
+            });
             pbPreview.Image = null;
             pbPreview.BringToFront();
 
@@ -550,37 +559,25 @@ namespace OpenpilotToolkit
                                 {
                                     await Task.Run(async () =>
                                     {
-                                        
                                         var thumbnailTask = openpilotDevice.GetThumbnailAsync(drive);
 
                                         Task<Renci.SshNet.Sftp.SftpFileStream> videoStreamTask = null;
-
-                                        if (firstSegment.FrontVideoQuick != null && videoFile == firstSegment.FrontVideoQuick)
+                                        List<SftpFileStream> videoStreams;
+                                        if (firstSegment.FrontVideoQuick != null)
                                         {
-                                            videoStreamTask = openpilotDevice.OpenReadAsync(videoFile.File.FullName);
+                                            videoStreams = drive.Segments.Select(async (segment) =>
+                                                await openpilotDevice.OpenReadAsync(segment.FrontVideoQuick.File
+                                                    .FullName)).Select(t => t.Result).ToList();
                                         }
                                         else
                                         {
-                                            videoStreamTask = openpilotDevice.OpenReadAsync(videoFile.File.FullName);
+                                            videoStreams = drive.Segments.Select(async (segment) =>
+                                                await openpilotDevice.OpenReadAsync(segment.FrontVideo.File
+                                                    .FullName)).Select(t => t.Result).ToList();
                                         }
-
-                                        var tasks = new List<Task> { thumbnailTask, videoStreamTask };
-
-                                        while (tasks.Any())
-                                        {
-                                            var completedTask = await Task.WhenAny(tasks);
-                                            tasks.Remove(completedTask);
-                                            if (completedTask is Task<Renci.SshNet.Sftp.SftpFileStream> videoStreamResult)
-                                            {
-                                                vlcVideoPlayer.Play(await videoStreamResult);
-                                                
-                                            }
-                                            else if(completedTask is Task<System.Drawing.Bitmap> thumbnailTaskResult)
-                                            {
-                                                System.Drawing.Bitmap thumbnail = await thumbnailTaskResult;
-                                                BeginInvoke(new MethodInvoker(() => { pbPreview.Image = thumbnail; }));
-                                            }
-                                        }
+                                        vlcVideoPlayer.Play(videoStreams);
+                                        System.Drawing.Bitmap thumbnail = await thumbnailTask;
+                                        BeginInvoke(new MethodInvoker(() => { pbPreview.Image = thumbnail; }));
                                     });
                                 }
                             }
