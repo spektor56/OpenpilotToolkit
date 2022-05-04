@@ -37,11 +37,11 @@ namespace OpenpilotToolkit
         {
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(OpenpilotToolkitForm));
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle3 = new System.Windows.Forms.DataGridViewCellStyle();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle4 = new System.Windows.Forms.DataGridViewCellStyle();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle5 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle11 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle13 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle12 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle14 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle15 = new System.Windows.Forms.DataGridViewCellStyle();
             this.lbDrives = new System.Windows.Forms.ListBox();
             this.pbPreview = new System.Windows.Forms.PictureBox();
             this.fbdExportFolder = new System.Windows.Forms.FolderBrowserDialog();
@@ -104,8 +104,8 @@ namespace OpenpilotToolkit
             this.tpSSH = new System.Windows.Forms.TabPage();
             this.ucSshWizard = new OpenpilotToolkit.Controls.Wizards.ucSshWizard();
             this.tpFork = new System.Windows.Forms.TabPage();
-            this.txtForkBranch = new MaterialSkin.Controls.MaterialTextBox();
-            this.txtForkUsername = new MaterialSkin.Controls.MaterialTextBox();
+            this.txtForkBranch = new MaterialSkin.Controls.MaterialTextBox2();
+            this.txtForkUsername = new MaterialSkin.Controls.MaterialTextBox2();
             this.btnInstallFork = new MaterialSkin.Controls.MaterialButton();
             this.tpFlash = new System.Windows.Forms.TabPage();
             this.tpShell = new System.Windows.Forms.TabPage();
@@ -498,27 +498,27 @@ namespace OpenpilotToolkit
             this.dgvDriveInfo.BorderStyle = System.Windows.Forms.BorderStyle.None;
             this.dgvDriveInfo.CellBorderStyle = System.Windows.Forms.DataGridViewCellBorderStyle.SingleHorizontal;
             this.dgvDriveInfo.ColumnHeadersBorderStyle = System.Windows.Forms.DataGridViewHeaderBorderStyle.Custom;
-            dataGridViewCellStyle1.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(255)))), ((int)(((byte)(255)))));
-            dataGridViewCellStyle1.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            dataGridViewCellStyle1.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(222)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
-            dataGridViewCellStyle1.SelectionBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
-            dataGridViewCellStyle1.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-            dataGridViewCellStyle1.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
-            this.dgvDriveInfo.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle1;
+            dataGridViewCellStyle11.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle11.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(255)))), ((int)(((byte)(255)))));
+            dataGridViewCellStyle11.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            dataGridViewCellStyle11.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(222)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
+            dataGridViewCellStyle11.SelectionBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
+            dataGridViewCellStyle11.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle11.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+            this.dgvDriveInfo.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle11;
             this.dgvDriveInfo.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.dgvDriveInfo.ColumnHeadersVisible = false;
             this.dgvDriveInfo.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
             this.colProperty,
             this.colValue});
-            dataGridViewCellStyle3.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle3.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(255)))), ((int)(((byte)(255)))));
-            dataGridViewCellStyle3.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            dataGridViewCellStyle3.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(153)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
-            dataGridViewCellStyle3.SelectionBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
-            dataGridViewCellStyle3.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-            dataGridViewCellStyle3.WrapMode = System.Windows.Forms.DataGridViewTriState.False;
-            this.dgvDriveInfo.DefaultCellStyle = dataGridViewCellStyle3;
+            dataGridViewCellStyle13.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle13.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(255)))), ((int)(((byte)(255)))));
+            dataGridViewCellStyle13.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            dataGridViewCellStyle13.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(153)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
+            dataGridViewCellStyle13.SelectionBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
+            dataGridViewCellStyle13.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle13.WrapMode = System.Windows.Forms.DataGridViewTriState.False;
+            this.dgvDriveInfo.DefaultCellStyle = dataGridViewCellStyle13;
             this.dgvDriveInfo.Depth = 0;
             this.dgvDriveInfo.EnableHeadersVisualStyles = false;
             this.dgvDriveInfo.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
@@ -547,8 +547,8 @@ namespace OpenpilotToolkit
             // 
             this.colValue.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
             this.colValue.DataPropertyName = "Value";
-            dataGridViewCellStyle2.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleRight;
-            this.colValue.DefaultCellStyle = dataGridViewCellStyle2;
+            dataGridViewCellStyle12.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleRight;
+            this.colValue.DefaultCellStyle = dataGridViewCellStyle12;
             this.colValue.HeaderText = "Value";
             this.colValue.Name = "colValue";
             this.colValue.ReadOnly = true;
@@ -1129,33 +1129,32 @@ namespace OpenpilotToolkit
             this.dgvExplorer.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.dgvExplorer.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill;
             this.dgvExplorer.BackgroundColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(255)))), ((int)(((byte)(255)))));
             this.dgvExplorer.BorderStyle = System.Windows.Forms.BorderStyle.None;
             this.dgvExplorer.CellBorderStyle = System.Windows.Forms.DataGridViewCellBorderStyle.SingleHorizontal;
             this.dgvExplorer.ColumnHeadersBorderStyle = System.Windows.Forms.DataGridViewHeaderBorderStyle.Custom;
-            dataGridViewCellStyle4.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle4.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(255)))), ((int)(((byte)(255)))));
-            dataGridViewCellStyle4.Font = new System.Drawing.Font("Microsoft Sans Serif", 16F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel);
-            dataGridViewCellStyle4.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(222)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
-            dataGridViewCellStyle4.SelectionBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
-            dataGridViewCellStyle4.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-            dataGridViewCellStyle4.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
-            this.dgvExplorer.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle4;
+            dataGridViewCellStyle14.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle14.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(255)))), ((int)(((byte)(255)))));
+            dataGridViewCellStyle14.Font = new System.Drawing.Font("Microsoft Sans Serif", 16F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel);
+            dataGridViewCellStyle14.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(222)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
+            dataGridViewCellStyle14.SelectionBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
+            dataGridViewCellStyle14.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle14.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+            this.dgvExplorer.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle14;
             this.dgvExplorer.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.dgvExplorer.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
             this.colName,
             this.colSize,
             this.colType,
             this.colChanged});
-            dataGridViewCellStyle5.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle5.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(255)))), ((int)(((byte)(255)))));
-            dataGridViewCellStyle5.Font = new System.Drawing.Font("Microsoft Sans Serif", 16F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel);
-            dataGridViewCellStyle5.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(153)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
-            dataGridViewCellStyle5.SelectionBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
-            dataGridViewCellStyle5.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-            dataGridViewCellStyle5.WrapMode = System.Windows.Forms.DataGridViewTriState.False;
-            this.dgvExplorer.DefaultCellStyle = dataGridViewCellStyle5;
+            dataGridViewCellStyle15.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle15.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(255)))), ((int)(((byte)(255)))));
+            dataGridViewCellStyle15.Font = new System.Drawing.Font("Microsoft Sans Serif", 16F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel);
+            dataGridViewCellStyle15.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(153)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
+            dataGridViewCellStyle15.SelectionBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
+            dataGridViewCellStyle15.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle15.WrapMode = System.Windows.Forms.DataGridViewTriState.False;
+            this.dgvExplorer.DefaultCellStyle = dataGridViewCellStyle15;
             this.dgvExplorer.Depth = 0;
             this.dgvExplorer.EnableHeadersVisualStyles = false;
             this.dgvExplorer.Font = new System.Drawing.Font("Microsoft Sans Serif", 16F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel);
@@ -1174,6 +1173,8 @@ namespace OpenpilotToolkit
             this.dgvExplorer.CellFormatting += new System.Windows.Forms.DataGridViewCellFormattingEventHandler(this.dgvExplorer_CellFormatting);
             this.dgvExplorer.DragDrop += new System.Windows.Forms.DragEventHandler(this.dgvExplorer_DragDrop);
             this.dgvExplorer.DragEnter += new System.Windows.Forms.DragEventHandler(this.dgvExplorer_DragEnter);
+            this.dgvExplorer.KeyDown += new System.Windows.Forms.KeyEventHandler(this.dgvExplorer_KeyDown);
+            this.dgvExplorer.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.dgvExplorer_KeyPress);
             this.dgvExplorer.PreviewKeyDown += new System.Windows.Forms.PreviewKeyDownEventHandler(this.dgvExplorer_PreviewKeyDown);
             // 
             // colName
@@ -1186,30 +1187,29 @@ namespace OpenpilotToolkit
             // 
             // colSize
             // 
-            this.colSize.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.AllCells;
+            this.colSize.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.None;
             this.colSize.DataPropertyName = "Attributes.Size";
             this.colSize.HeaderText = "Size";
             this.colSize.Name = "colSize";
             this.colSize.ReadOnly = true;
-            this.colSize.Width = 63;
             // 
             // colType
             // 
-            this.colType.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.AllCells;
+            this.colType.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.None;
             this.colType.DataPropertyName = "Attributes.IsDirectory";
             this.colType.HeaderText = "Type";
             this.colType.Name = "colType";
             this.colType.ReadOnly = true;
-            this.colType.Width = 66;
+            this.colType.Width = 123;
             // 
             // colChanged
             // 
-            this.colChanged.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.AllCells;
+            this.colChanged.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.None;
             this.colChanged.DataPropertyName = "LastWriteTimeUTC";
             this.colChanged.HeaderText = "Changed";
             this.colChanged.Name = "colChanged";
             this.colChanged.ReadOnly = true;
-            this.colChanged.Width = 97;
+            this.colChanged.Width = 163;
             // 
             // txtSearch
             // 
@@ -1297,39 +1297,66 @@ namespace OpenpilotToolkit
             // 
             this.txtForkBranch.Anchor = System.Windows.Forms.AnchorStyles.None;
             this.txtForkBranch.AnimateReadOnly = false;
-            this.txtForkBranch.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.txtForkBranch.AutoCompleteMode = System.Windows.Forms.AutoCompleteMode.SuggestAppend;
+            this.txtForkBranch.AutoCompleteSource = System.Windows.Forms.AutoCompleteSource.CustomSource;
+            this.txtForkBranch.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
+            this.txtForkBranch.CharacterCasing = System.Windows.Forms.CharacterCasing.Normal;
             this.txtForkBranch.Depth = 0;
-            this.txtForkBranch.Font = new System.Drawing.Font("Roboto", 16F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel);
+            this.txtForkBranch.Font = new System.Drawing.Font("Microsoft Sans Serif", 16F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel);
+            this.txtForkBranch.HideSelection = true;
             this.txtForkBranch.Hint = "Branch Name";
             this.txtForkBranch.LeadingIcon = null;
             this.txtForkBranch.Location = new System.Drawing.Point(375, 232);
             this.txtForkBranch.MaxLength = 50;
             this.txtForkBranch.MouseState = MaterialSkin.MouseState.OUT;
-            this.txtForkBranch.Multiline = false;
             this.txtForkBranch.Name = "txtForkBranch";
-            this.txtForkBranch.Size = new System.Drawing.Size(341, 50);
+            this.txtForkBranch.PasswordChar = '\0';
+            this.txtForkBranch.PrefixSuffixText = null;
+            this.txtForkBranch.ReadOnly = false;
+            this.txtForkBranch.RightToLeft = System.Windows.Forms.RightToLeft.No;
+            this.txtForkBranch.SelectedText = "";
+            this.txtForkBranch.SelectionLength = 0;
+            this.txtForkBranch.SelectionStart = 0;
+            this.txtForkBranch.ShortcutsEnabled = true;
+            this.txtForkBranch.Size = new System.Drawing.Size(341, 48);
             this.txtForkBranch.TabIndex = 33;
-            this.txtForkBranch.Text = "";
+            this.txtForkBranch.TabStop = false;
+            this.txtForkBranch.TextAlign = System.Windows.Forms.HorizontalAlignment.Left;
             this.txtForkBranch.TrailingIcon = null;
+            this.txtForkBranch.UseSystemPasswordChar = false;
             // 
             // txtForkUsername
             // 
             this.txtForkUsername.Anchor = System.Windows.Forms.AnchorStyles.None;
             this.txtForkUsername.AnimateReadOnly = false;
-            this.txtForkUsername.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.txtForkUsername.AutoCompleteMode = System.Windows.Forms.AutoCompleteMode.None;
+            this.txtForkUsername.AutoCompleteSource = System.Windows.Forms.AutoCompleteSource.None;
+            this.txtForkUsername.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
+            this.txtForkUsername.CharacterCasing = System.Windows.Forms.CharacterCasing.Normal;
             this.txtForkUsername.Depth = 0;
-            this.txtForkUsername.Font = new System.Drawing.Font("Roboto", 16F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel);
+            this.txtForkUsername.Font = new System.Drawing.Font("Microsoft Sans Serif", 16F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel);
+            this.txtForkUsername.HideSelection = true;
             this.txtForkUsername.Hint = "Fork Username";
             this.txtForkUsername.LeadingIcon = null;
             this.txtForkUsername.Location = new System.Drawing.Point(375, 176);
             this.txtForkUsername.MaxLength = 50;
             this.txtForkUsername.MouseState = MaterialSkin.MouseState.OUT;
-            this.txtForkUsername.Multiline = false;
             this.txtForkUsername.Name = "txtForkUsername";
-            this.txtForkUsername.Size = new System.Drawing.Size(341, 50);
+            this.txtForkUsername.PasswordChar = '\0';
+            this.txtForkUsername.PrefixSuffixText = null;
+            this.txtForkUsername.ReadOnly = false;
+            this.txtForkUsername.RightToLeft = System.Windows.Forms.RightToLeft.No;
+            this.txtForkUsername.SelectedText = "";
+            this.txtForkUsername.SelectionLength = 0;
+            this.txtForkUsername.SelectionStart = 0;
+            this.txtForkUsername.ShortcutsEnabled = true;
+            this.txtForkUsername.Size = new System.Drawing.Size(341, 48);
             this.txtForkUsername.TabIndex = 32;
-            this.txtForkUsername.Text = "";
+            this.txtForkUsername.TabStop = false;
+            this.txtForkUsername.TextAlign = System.Windows.Forms.HorizontalAlignment.Left;
             this.txtForkUsername.TrailingIcon = null;
+            this.txtForkUsername.UseSystemPasswordChar = false;
+            this.txtForkUsername.Leave += new System.EventHandler(this.txtForkUsername_Leave);
             // 
             // btnInstallFork
             // 
@@ -1791,10 +1818,6 @@ namespace OpenpilotToolkit
         private System.Windows.Forms.TabPage tabPage1;
         private System.Windows.Forms.FlowLayoutPanel flpColours;
         private Controls.MaterialSkinDataGridView dgvExplorer;
-        private System.Windows.Forms.DataGridViewTextBoxColumn colName;
-        private System.Windows.Forms.DataGridViewTextBoxColumn colSize;
-        private System.Windows.Forms.DataGridViewTextBoxColumn colType;
-        private System.Windows.Forms.DataGridViewTextBoxColumn colChanged;
         private System.Windows.Forms.GroupBox groupBox1;
         private MaterialCheckbox cbCombineSegments;
         private System.Windows.Forms.TabPage tpDonate;
@@ -1805,8 +1828,8 @@ namespace OpenpilotToolkit
         private Controls.Media.VideoPlayer vlcVideoPlayer;
         private MaterialMultiLineTextBox txtFingerprint;
         private System.Windows.Forms.TabPage tpFork;
-        private MaterialTextBox txtForkBranch;
-        private MaterialTextBox txtForkUsername;
+        private MaterialTextBox2 txtForkBranch;
+        private MaterialTextBox2 txtForkUsername;
         private MaterialButton btnInstallFork;
         private System.Windows.Forms.TabPage tpShell;
         private System.Windows.Forms.TableLayoutPanel tableLayoutPanel1;
@@ -1843,6 +1866,10 @@ namespace OpenpilotToolkit
         private MaterialButton btnExitTmux;
         private MaterialButton btnTmuxScroll;
         private MaterialButton btnTmuxEndScroll;
+        private System.Windows.Forms.DataGridViewTextBoxColumn colName;
+        private System.Windows.Forms.DataGridViewTextBoxColumn colSize;
+        private System.Windows.Forms.DataGridViewTextBoxColumn colType;
+        private System.Windows.Forms.DataGridViewTextBoxColumn colChanged;
     }
 }
 

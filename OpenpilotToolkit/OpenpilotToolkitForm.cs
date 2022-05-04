@@ -24,14 +24,15 @@ using System.Management;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Reactive.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Octokit;
 using Renci.SshNet.Sftp;
 using Exception = System.Exception;
+using FileMode = System.IO.FileMode;
 using OpenpilotDevice = OpenpilotSdk.Hardware.OpenpilotDevice;
 
 namespace OpenpilotToolkit
@@ -867,100 +868,114 @@ namespace OpenpilotToolkit
             SetTheme(MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT);
         }
 
+        private OpenpilotDevice _lastExplorerDevice = null;
         private async void tcSettings_Selected(object sender, TabControlEventArgs e)
         {
-            if (e.TabPage != null && e.TabPage == tpLogFile)
+            if (e.TabPage != null)
             {
-                var directoryInfo = new DirectoryInfo(Path.Combine(AppContext.BaseDirectory, "logs"));
-                var logFile = directoryInfo.GetFiles("*.txt", SearchOption.TopDirectoryOnly)
-                    .OrderByDescending(file => file.LastWriteTime).FirstOrDefault();
-                if (logFile != null)
+                if (e.TabPage == tpLogFile)
                 {
-                    using (var fileStream = new FileStream(logFile.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                    using (var streamReader = new StreamReader(fileStream))
+                    var directoryInfo = new DirectoryInfo(Path.Combine(AppContext.BaseDirectory, "logs"));
+                    var logFile = directoryInfo.GetFiles("*.txt", SearchOption.TopDirectoryOnly)
+                        .OrderByDescending(file => file.LastWriteTime).FirstOrDefault();
+                    if (logFile != null)
                     {
-                        txtLog.Text = streamReader.ReadToEnd();
-                    }
-
-                }
-            }
-            else if (e.TabPage != null && e.TabPage == tpExplore)
-            {
-                _workingDirectory.Clear();
-                if (cmbDevices.SelectedItem is OpenpilotDevice openpilotDevice)
-                {
-                    //TODO: _fileList = comma2.EnumerateFileSystemEntries
-                    txtWorkingDirectory.Text = openpilotDevice.WorkingDirectory;
-                    IEnumerable<Renci.SshNet.Sftp.ISftpFile> files = null;
-
-                    var directories = openpilotDevice.WorkingDirectory.Split("/");
-                    foreach (var directory in directories)
-                    {
-                        _workingDirectory.Push(directory);
-                    }
-
-                    await Task.Run(async () =>
-                    {
-                        var currentWorkingDirectory = string.Join("/", _workingDirectory.Reverse());
-                        files = await openpilotDevice.EnumerateFilesAsync(currentWorkingDirectory);
-                    });
-                    dgvExplorer.DataSource = files.OrderBy(file => file.Name).ToArray();
-                }
-                
-            }
-            else if (e.TabPage != null && e.TabPage == tpFingerprint)
-            {
-                txtFingerprint.Clear();
-                if (cmbDevices.SelectedItem is OpenpilotDevice openpilotDevice)
-                {
-                    if (openpilotDevice.IsAuthenticated)
-                    {
-                        IEnumerable<Firmware> firmwares = null;
-                        txtFingerprint.Text = "Loading...";
-                        await Task.Run(async () =>
+                        using (var fileStream = new FileStream(logFile.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                        using (var streamReader = new StreamReader(fileStream))
                         {
-                            firmwares = await openpilotDevice.GetFirmwareVersions();
-                        });
-                        var sb = new StringBuilder();
-                        foreach (var firmware in firmwares)
-                        {
-                            sb.AppendLine(string.Format("ecu = {0}", firmware.Ecu));
-                            sb.AppendLine(string.Format("fwVersion = {0}", firmware.Version));
-                            sb.AppendLine(string.Format("address = {0}", firmware.Address));
-                            sb.AppendLine(string.Format("subAddress = {0}", firmware.SubAddress));
-                            sb.AppendLine("");
-                        }
-                        
-                        txtFingerprint.Text = sb.ToString();
-                    }
-                }
-                
-            }
-            else if (e.TabPage != null && e.TabPage == tpShell)
-            {
-                if (cmbDevices.SelectedItem is OpenpilotDevice openpilotDevice)
-                {
-                    try
-                    {
-                        if (_shellStream != null)
-                        {
-                            _shellStream.DataReceived -= ShellStreamOnDataReceived;
-                            await _shellStream.DisposeAsync();
+                            txtLog.Text = streamReader.ReadToEnd();
                         }
 
-                        await sshTerminal.EvaluateScriptAsync("ClearTerminal()");
-
-                        await Task.Run(async () =>
-                        {
-                            _shellStream = await openpilotDevice.GetShellStreamAsync();
-                            _streamReader = new StreamReader(_shellStream);
-                        });
-                        await sshTerminal.EvaluateScriptAsync("resizeTerminal()");
-                        _shellStream.DataReceived += ShellStreamOnDataReceived;
                     }
-                    catch (Exception ex)
+                }
+                else if (e.TabPage == tpExplore)
+                {
+                    
+                    if (cmbDevices.SelectedItem is OpenpilotDevice openpilotDevice)
                     {
-                        Serilog.Log.Error(ex, "Failed to create shell stream.");
+                        if (_lastExplorerDevice == null || openpilotDevice != _lastExplorerDevice)
+                        {
+                            _workingDirectory.Clear();
+                            //TODO: _fileList = comma2.EnumerateFileSystemEntries
+                            txtWorkingDirectory.Text = openpilotDevice.WorkingDirectory;
+                            IEnumerable<Renci.SshNet.Sftp.ISftpFile> files = null;
+
+                            var directories = openpilotDevice.WorkingDirectory.Split("/");
+                            foreach (var directory in directories)
+                            {
+                                _workingDirectory.Push(directory);
+                            }
+
+                            await Task.Run(async () =>
+                            {
+                                var currentWorkingDirectory = string.Join("/", _workingDirectory.Reverse());
+                                files = await openpilotDevice.EnumerateFilesAsync(currentWorkingDirectory);
+                            });
+                            dgvExplorer.DataSource = files.OrderBy(file => file.Name).ToArray();
+                        }
+
+                        _lastExplorerDevice = openpilotDevice;
+                    }
+                    else
+                    {
+                        _workingDirectory.Clear();
+                    }
+
+                }
+                else if (e.TabPage == tpFingerprint)
+                {
+                    txtFingerprint.Clear();
+                    if (cmbDevices.SelectedItem is OpenpilotDevice openpilotDevice)
+                    {
+                        if (openpilotDevice.IsAuthenticated)
+                        {
+                            IEnumerable<Firmware> firmwares = null;
+                            txtFingerprint.Text = "Loading...";
+                            await Task.Run(async () =>
+                            {
+                                firmwares = await openpilotDevice.GetFirmwareVersions();
+                            });
+                            var sb = new StringBuilder();
+                            foreach (var firmware in firmwares)
+                            {
+                                sb.AppendLine(string.Format("ecu = {0}", firmware.Ecu));
+                                sb.AppendLine(string.Format("fwVersion = {0}", firmware.Version));
+                                sb.AppendLine(string.Format("address = {0}", firmware.Address));
+                                sb.AppendLine(string.Format("subAddress = {0}", firmware.SubAddress));
+                                sb.AppendLine("");
+                            }
+
+                            txtFingerprint.Text = sb.ToString();
+                        }
+                    }
+
+                }
+                else if (e.TabPage == tpShell)
+                {
+                    if (cmbDevices.SelectedItem is OpenpilotDevice openpilotDevice)
+                    {
+                        try
+                        {
+                            if (_shellStream != null)
+                            {
+                                _shellStream.DataReceived -= ShellStreamOnDataReceived;
+                                await _shellStream.DisposeAsync();
+                            }
+
+                            await sshTerminal.EvaluateScriptAsync("ClearTerminal()");
+
+                            await Task.Run(async () =>
+                            {
+                                _shellStream = await openpilotDevice.GetShellStreamAsync();
+                                _streamReader = new StreamReader(_shellStream);
+                            });
+                            await sshTerminal.EvaluateScriptAsync("resizeTerminal()");
+                            _shellStream.DataReceived += ShellStreamOnDataReceived;
+                        }
+                        catch (Exception ex)
+                        {
+                            Serilog.Log.Error(ex, "Failed to create shell stream.");
+                        }
                     }
                 }
             }
@@ -1039,6 +1054,11 @@ namespace OpenpilotToolkit
 
         private async void dgvExplorer_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
         {
+            await ExplorerCellAction();
+        }
+
+        private async Task ExplorerCellAction()
+        {
             if (dgvExplorer.SelectedRows.Count < 1)
             {
                 return;
@@ -1048,7 +1068,7 @@ namespace OpenpilotToolkit
             {
                 var selectedRow = dgvExplorer.SelectedRows[0];
                 var selectedItem = ((Renci.SshNet.Sftp.SftpFile)selectedRow.DataBoundItem);
-                if(!(selectedItem.IsDirectory && !selectedItem.IsRegularFile))
+                if (!(selectedItem.IsDirectory && !selectedItem.IsRegularFile))
                 {
                     var normalizedPath = selectedItem.FullName.Replace('/', Path.DirectorySeparatorChar);
                     normalizedPath = normalizedPath.StartsWith(Path.DirectorySeparatorChar)
@@ -1060,7 +1080,7 @@ namespace OpenpilotToolkit
                     {
                         DateTime? modifiedDate = null;
                         _watchedFiles.TryGetValue(outputFilePath, out modifiedDate);
-                        if(modifiedDate == null)
+                        if (modifiedDate == null)
                         {
                             return;
                         }
@@ -1069,7 +1089,7 @@ namespace OpenpilotToolkit
                     }
 
                     Directory.CreateDirectory(Path.GetDirectoryName(outputFilePath));
-                    
+
                     await using (var outputFile = File.Create(outputFilePath))
                     {
                         await using (var stream = await openpilotDevice.OpenReadAsync(selectedItem.FullName))
@@ -1079,7 +1099,7 @@ namespace OpenpilotToolkit
                                 Anchor = (AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top)
                             };
 
-                            tlpExplorerTasks.Controls.Add(ucDownloadProgress);                         
+                            tlpExplorerTasks.Controls.Add(ucDownloadProgress);
 
                             var buffer = new byte[81920];
                             int bytesRead = 0;
@@ -1089,7 +1109,7 @@ namespace OpenpilotToolkit
 
                             while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length).ConfigureAwait(false)) > 0)
                             {
-                                
+
                                 await outputFile.WriteAsync(buffer, 0, bytesRead).ConfigureAwait(false);
                                 totalBytesRead += bytesRead;
 
@@ -1114,37 +1134,44 @@ namespace OpenpilotToolkit
                         };
                         process.Start();
                     }
-                    
+
                     return;
                 }
-                var path = selectedItem.Name;
-                if (path == "..")
+                else
                 {
-                    if (_workingDirectory.Count > 1)
-                    {
-                        _workingDirectory.Pop();
-                    }
-                    else
-                    {
-                        return;
-                    }
-                }
-                else if (path != ".")
-                {
-                    _workingDirectory.Push(path);
-                }
-                var newPath = string.Join("/", _workingDirectory.Reverse());
-                newPath = newPath.Length < 1 ? "/" : newPath;
+                    _explorerSearchString.Clear();
 
-                IEnumerable<Renci.SshNet.Sftp.ISftpFile> files = null;
-                await Task.Run(async () =>
-                {
+                    var path = selectedItem.Name;
+                    var workingDirectory = new Stack<string>(_workingDirectory.Reverse());
+                    if (path == "..")
+                    {
+                        if (workingDirectory.Count > 1)
+                        {
+                            workingDirectory.Pop();
+                        }
+                        else
+                        {
+                            return;
+                        }
+                    }
+                    else if (path != ".")
+                    {
+                        workingDirectory.Push(path);
+                    }
+                    var newPath = string.Join("/", workingDirectory.Reverse());
+                    newPath = newPath.Length < 1 ? "/" : newPath;
+
+                    IEnumerable<Renci.SshNet.Sftp.ISftpFile> files = null;
+
                     var currentWorkingDirectory = string.Join("/", newPath);
-                    files = await openpilotDevice.EnumerateFilesAsync(currentWorkingDirectory);
-                });
-                dgvExplorer.DataSource = files.OrderBy(file => file.Name).ToArray();
-                txtWorkingDirectory.Text = newPath;
+                    files = (await openpilotDevice.EnumerateFilesAsync(currentWorkingDirectory)).OrderBy(file => file.Name).ToArray();
+                    _workingDirectory = workingDirectory;
 
+                    
+                    dgvExplorer.DataSource = files;
+
+                    txtWorkingDirectory.Text = newPath;
+                }
             }
         }
 
@@ -1171,8 +1198,6 @@ namespace OpenpilotToolkit
         private void OpenpilotToolkitForm_FormClosed(object sender, FormClosedEventArgs e)
         {
             Cef.Shutdown();
-            
-            //_libVlc.Dispose();
         }
 
         private async void btnInstallFork_Click(object sender, EventArgs e)
@@ -1642,6 +1667,10 @@ namespace OpenpilotToolkit
                     }
                 }
             }
+            else if (e.KeyCode == Keys.Enter)
+            {
+                await ExplorerCellAction();
+            }
         }
 
         private async void btnDeleteDrives_Click(object sender, EventArgs e)
@@ -2075,6 +2104,77 @@ namespace OpenpilotToolkit
             {
                 await _shellStream.WriteAsync(new ReadOnlyMemory<byte>(Encoding.UTF8.GetBytes("q")));
                 await _shellStream.FlushAsync();
+            }
+        }
+
+        private void dgvExplorer_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+            {
+                e.Handled = true;
+            }
+        }
+
+        private DateTime _explorerLastKeyPressed;
+        private readonly StringBuilder _explorerSearchString = new StringBuilder();
+
+        private void dgvExplorer_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            DateTime keyPressedTime = DateTime.UtcNow;
+            if ((keyPressedTime - _explorerLastKeyPressed).TotalSeconds > 0.75)
+            {
+                _explorerSearchString.Clear();
+            }
+
+            _explorerLastKeyPressed = keyPressedTime;
+
+            _explorerSearchString.Append(e.KeyChar);
+            int i = 0;
+            if (dgvExplorer.SelectedRows.Count > 0)
+            {
+                if (_explorerSearchString.Length < 2)
+                {
+                    if (dgvExplorer.SelectedRows[0].Index + 1 < dgvExplorer.Rows.Count)
+                    {
+                        i = dgvExplorer.SelectedRows[0].Index + 1;
+                    }
+                }
+                else
+                {
+                    i = dgvExplorer.SelectedRows[0].Index;
+                }
+            }
+
+            foreach (DataGridViewRow _ in dgvExplorer.Rows)
+            {
+                if (dgvExplorer.Rows[i].Cells["colName"].Value.ToString()
+                    .StartsWith(_explorerSearchString.ToString(), StringComparison.OrdinalIgnoreCase))
+                {
+                    dgvExplorer.CurrentCell = dgvExplorer.Rows[i].Cells[0];
+                    dgvExplorer.FirstDisplayedScrollingRowIndex = dgvExplorer.Rows[i].Index;
+                    break;
+                }
+
+                i++;
+                if (i >= dgvExplorer.Rows.Count)
+                {
+                    i = 0;
+                }
+            }
+        }
+        readonly GitHubClient _githubClient = new GitHubClient(new Octokit.ProductHeaderValue("OpenpilotToolkit", "2.1.0"));
+        private async void txtForkUsername_Leave(object sender, EventArgs e)
+        {
+            try
+            {
+                var branches = await _githubClient.Repository.Branch.GetAll(txtForkUsername.Text, "openpilot");
+                var source = new AutoCompleteStringCollection();
+                source.AddRange(branches.Select(branch => branch.Name).OrderByDescending(branch => branch).ToArray());
+                txtForkBranch.AutoCompleteCustomSource = source;
+            }
+            catch (Exception exception)
+            {
+                Console.WriteLine(exception);
             }
         }
     }
