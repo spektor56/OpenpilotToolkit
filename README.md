@@ -27,17 +27,17 @@ Android app:
 Screenshots
 ------
 
-![Exporter](https://i.imgur.com/GAG527Q.png)
-![Remote](https://i.imgur.com/eog5Bhp.png)
-![Explorer](https://i.imgur.com/DkBxWfU.png)
-![Fingerprint](https://i.imgur.com/Nq1dW2k.png)
-![SSH Wizard](https://i.imgur.com/9nQLkxy.png)
-![Fork Installer](https://i.imgur.com/Qp5pQlK.png)
-![Terminal](https://i.imgur.com/3MVi4b9.png)
+![openpilot Toolkit Exporter](https://i.imgur.com/GAG527Q.png)
+![openpilot Toolkit Remote](https://i.imgur.com/eog5Bhp.png)
+![openpilot Toolkit Explorer](https://i.imgur.com/DkBxWfU.png)
+![openpilot Toolkit Fingerprint Wizard](https://i.imgur.com/Nq1dW2k.png)
+![openpilot Toolkit SSH Wizard](https://i.imgur.com/9nQLkxy.png)
+![openpilot Toolkit Fork Installer](https://i.imgur.com/Qp5pQlK.png)
+![openpilot Toolkit Terminal](https://i.imgur.com/3MVi4b9.png)
 
 Support / Donate
 ------
 
-<a href='https://ko-fi.com/M4M55991G' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://cdn.ko-fi.com/cdn/kofi1.png?v=2' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a> - Ko-fi
+<a href='https://ko-fi.com/M4M55991G' target='_blank'><img alt="Ko-Fi donation link" height='36' style='border:0px;height:36px;' src='https://cdn.ko-fi.com/cdn/kofi1.png?v=2' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a> - Ko-fi
 
-<a href="https://www.buymeacoffee.com/spektor56"><img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=&slug=spektor56&button_colour=5F7FFF&font_colour=ffffff&font_family=Cookie&outline_colour=000000&coffee_colour=FFDD00"></a> - Buy Me a Coffee
+<a href="https://www.buymeacoffee.com/spektor56"><img alt="buy me a coffee donation link" src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=&slug=spektor56&button_colour=5F7FFF&font_colour=ffffff&font_family=Cookie&outline_colour=000000&coffee_colour=FFDD00"></a> - Buy Me a Coffee
