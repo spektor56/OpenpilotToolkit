@@ -83,14 +83,10 @@ export function evaluateKeyboardEvent(
       break;
     case 8:
       // backspace
-      if (ev.shiftKey) {
-        result.key = C0.BS; // ^H
-        break;
-      } else if (ev.altKey) {
-        result.key = C0.ESC + C0.DEL; // \e ^?
-        break;
+      result.key = ev.ctrlKey ? '\b' : C0.DEL; // ^H or ^?
+      if (ev.altKey) {
+        result.key = C0.ESC + result.key;
       }
-      result.key = C0.DEL; // ^?
       break;
     case 9:
       // tab
@@ -230,6 +226,8 @@ export function evaluateKeyboardEvent(
       // page up
       if (ev.shiftKey) {
         result.type = KeyboardResultType.PAGE_UP;
+      } else if (ev.ctrlKey) {
+        result.key = C0.ESC + '[5;' + (modifiers + 1) + '~';
       } else {
         result.key = C0.ESC + '[5~';
       }
@@ -238,6 +236,8 @@ export function evaluateKeyboardEvent(
       // page down
       if (ev.shiftKey) {
         result.type = KeyboardResultType.PAGE_DOWN;
+      } else if (ev.ctrlKey) {
+        result.key = C0.ESC + '[6;' + (modifiers + 1) + '~';
       } else {
         result.key = C0.ESC + '[6~';
       }
@@ -349,23 +349,45 @@ export function evaluateKeyboardEvent(
       } else if ((!isMac || macOptionIsMeta) && ev.altKey && !ev.metaKey) {
         // On macOS this is a third level shift when !macOptionIsMeta. Use <Esc> instead.
         const keyMapping = KEYCODE_KEY_MAPPINGS[ev.keyCode];
-        const key = keyMapping && keyMapping[!ev.shiftKey ? 0 : 1];
+        const key = keyMapping?.[!ev.shiftKey ? 0 : 1];
         if (key) {
           result.key = C0.ESC + key;
         } else if (ev.keyCode >= 65 && ev.keyCode <= 90) {
           const keyCode = ev.ctrlKey ? ev.keyCode - 64 : ev.keyCode + 32;
-          result.key = C0.ESC + String.fromCharCode(keyCode);
+          let keyString = String.fromCharCode(keyCode);
+          if (ev.shiftKey) {
+            keyString = keyString.toUpperCase();
+          }
+          result.key = C0.ESC + keyString;
+        } else if (ev.keyCode === 32) {
+          result.key = C0.ESC + (ev.ctrlKey ? C0.NUL : ' ');
+        } else if (ev.key === 'Dead' && ev.code.startsWith('Key')) {
+          // Reference: https://github.com/xtermjs/xterm.js/issues/3725
+          // Alt will produce a "dead key" (initate composition) with some
+          // of the letters in US layout (e.g. N/E/U).
+          // It's safe to match against Key* since no other `code` values begin with "Key".
+          // https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/code/code_values#code_values_on_mac
+          let keyString = ev.code.slice(3, 4);
+          if (!ev.shiftKey) {
+            keyString = keyString.toLowerCase();
+          }
+          result.key = C0.ESC + keyString;
+          result.cancel = true;
         }
       } else if (isMac && !ev.altKey && !ev.ctrlKey && !ev.shiftKey && ev.metaKey) {
         if (ev.keyCode === 65) { // cmd + a
           result.type = KeyboardResultType.SELECT_ALL;
         }
       } else if (ev.key && !ev.ctrlKey && !ev.altKey && !ev.metaKey && ev.keyCode >= 48 && ev.key.length === 1) {
-        // Include only keys that that result in a _single_ character; don't include num lock, volume up, etc.
+        // Include only keys that that result in a _single_ character; don't include num lock,
+        // volume up, etc.
         result.key = ev.key;
       } else if (ev.key && ev.ctrlKey) {
         if (ev.key === '_') { // ^_
           result.key = C0.US;
+        }
+        if (ev.key === '@') { // ^ + shift + 2 = ^ + @
+          result.key = C0.NUL;
         }
       }
       break;

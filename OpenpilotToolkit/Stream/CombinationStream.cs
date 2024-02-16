@@ -1,6 +1,4 @@
-﻿using OpenpilotSdk.OpenPilot;
-
-namespace OpenpilotToolkit.Stream
+﻿namespace OpenpilotToolkit.Stream
 {
     using System;
     using System.Collections.Generic;

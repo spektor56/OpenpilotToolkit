@@ -1,6 +1,6 @@
 ﻿namespace OpenpilotSdk.OpenPilot.FileTypes
 {
-    public class VideoProperties
+    public sealed class VideoProperties
     {
         public int FrameRate { get; }
         public VideoProperties(int frameRate = 20)

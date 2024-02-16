@@ -1,9 +1,8 @@
-﻿using System;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 
 namespace OpenpilotSdk.OpenPilot.Cereal.Json
 {
-    public partial class GpsLocationExternal
+    public sealed partial class GpsLocationExternal
     {
         [JsonProperty("Flags", NullValueHandling = NullValueHandling.Ignore)]
         public UInt16? Flags { get; set; }

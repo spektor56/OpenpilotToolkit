@@ -1,0 +1,6 @@
+[submodule "MaterialSkin"]
+	path = MaterialSkin
+	url = https://github.com/spektor56/MaterialSkin.git
+[submodule "SSH.NET"]
+	path = SSH.NET
+	url = https://github.com/spektor56/SSH.NET.git

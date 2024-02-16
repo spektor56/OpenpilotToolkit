@@ -1,17 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-using Android.App;
-using Android.Content;
+﻿using Android.Content;
 using Android.Content.PM;
-using Android.OS;
 using Android.Runtime;
 using Android.Text;
 using Android.Views;
-using Android.Widget;
 using AndroidX.AppCompat.App;
 using AndroidX.Core.View;
 using AndroidX.DrawerLayout.Widget;
@@ -21,13 +12,13 @@ using Google.Android.Material.Snackbar;
 using Java.Interop;
 using OpenpilotSdk.Hardware;
 using OpenpilotSdk.Git;
-using OpenpilotSdk.Hardware;
 using OpenpilotSdk.OpenPilot.Fork;
 using Serilog;
 using Serilog.Core;
 using Xamarin.Essentials;
 using Environment = System.Environment;
 using Toolbar = AndroidX.AppCompat.Widget.Toolbar;
+using System.Net.NetworkInformation;
 
 namespace OpenpilotToolkitAndroid
 {
@@ -36,7 +27,7 @@ namespace OpenpilotToolkitAndroid
     public class MainActivity : AppCompatActivity, NavigationView.IOnNavigationItemSelectedListener
     {
         private readonly Dictionary<string,OpenpilotDevice> _devices = new();
-        private AutoCompleteTextView _cmbOpenpilotDevice;
+        private AutoCompleteTextView? _cmbOpenpilotDevice;
         private bool _settingsEnabled;
 
         public bool OnNavigationItemSelected(IMenuItem item)
@@ -62,7 +53,7 @@ namespace OpenpilotToolkitAndroid
 
 
             var drawer = FindViewById<DrawerLayout>(Resource.Id.drawer_layout);
-            drawer.CloseDrawer(GravityCompat.Start);
+            drawer?.CloseDrawer(GravityCompat.Start);
             return true;
         }
 
@@ -72,17 +63,22 @@ namespace OpenpilotToolkitAndroid
             {
                 if (_devices.TryGetValue(e.Text.ToString(), out var device))
                 {
-                    await Task.Run(() => { device.Connect(); });
+                    await device.ConnectAsync();
 
                 }
             }
         }
 
-        protected override async void OnCreate(Bundle savedInstanceState)
+        protected override async void OnCreate(Bundle? savedInstanceState)
         {
             base.OnCreate(savedInstanceState);
-
-            var logPath = Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.Personal), "log.txt");
+            var personalFolder = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
+            if (!Directory.Exists(personalFolder))
+            {
+                Directory.CreateDirectory(personalFolder);
+            }
+            
+            var logPath = Path.Combine(personalFolder, "log.txt");
 
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
@@ -99,8 +95,11 @@ namespace OpenpilotToolkitAndroid
 
             _cmbOpenpilotDevice = FindViewById<AutoCompleteTextView>(Resource.Id.autocomplete_comma);
             var adapter = new ArrayAdapter(this, Resource.Layout.list_item);
-            _cmbOpenpilotDevice.Adapter = adapter;
-            _cmbOpenpilotDevice.TextChanged += CmbOpenpilotDeviceOnTextChanged;
+            if (_cmbOpenpilotDevice != null)
+            {
+                _cmbOpenpilotDevice.Adapter = adapter;
+                _cmbOpenpilotDevice.TextChanged += CmbOpenpilotDeviceOnTextChanged;
+            }
 
             var toolbar = FindViewById<Toolbar>(Resource.Id.toolbar);
             SetSupportActionBar(toolbar);
@@ -115,25 +114,27 @@ namespace OpenpilotToolkitAndroid
             navigationView.SetNavigationItemSelectedListener(this);
 
             //var status = await Permissions.RequestAsync<Permissions.NetworkState>();
+            //var status2 = await Permissions.RequestAsync<Permissions.StorageRead>();
+            //var status3 = await Permissions.RequestAsync<Permissions.StorageWrite>();
 
-            var sshKeyPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "opensshkey");
+            var sshKeyPath = Path.Combine(personalFolder, "opensshkey");
             if (!File.Exists(sshKeyPath))
             {
-                using (var fs = File.Create(sshKeyPath))
+                await using (var fs = File.Create(sshKeyPath))
                 {
-                    using (var stream = Assets.Open("opensshkey"))
+                    await using (var stream = Assets.Open("opensshkey"))
                     {
                         await stream.CopyToAsync(fs);
                     }
                 }
             }
-
+            
             ShowProgress("Scanning");
             await Task.Run(async () =>
             {
                 try
                 {
-                    await GetDevices();
+                    await GetDevicesAsync();
                 }
                 catch (Exception e)
                 {
@@ -146,13 +147,16 @@ namespace OpenpilotToolkitAndroid
             });
         }
 
-        private async Task GetDevices()
+        private async Task GetDevicesAsync()
         {
             _devices.Clear();
             await MainThread.InvokeOnMainThreadAsync(() =>
             {
-                ((ArrayAdapter)_cmbOpenpilotDevice.Adapter).Clear();
-                _cmbOpenpilotDevice.SetText("", false);
+                if (_cmbOpenpilotDevice != null)
+                {
+                    ((ArrayAdapter)_cmbOpenpilotDevice.Adapter)?.Clear();
+                    _cmbOpenpilotDevice.SetText("", false);
+                }
             });
 
             try
@@ -355,13 +359,13 @@ namespace OpenpilotToolkitAndroid
             }
         }
 
-        public override bool OnCreateOptionsMenu(IMenu menu)
+        public override bool OnCreateOptionsMenu(IMenu? menu)
         {
             MenuInflater.Inflate(Resource.Menu.menu_main, menu);
             return true;
         }
 
-        public override bool OnPrepareOptionsMenu(IMenu menu)
+        public override bool OnPrepareOptionsMenu(IMenu? menu)
         {
             var item = menu.FindItem(Resource.Id.action_settings);
             if (item != null)
@@ -384,7 +388,7 @@ namespace OpenpilotToolkitAndroid
                 {
                     try
                     {
-                        await GetDevices();
+                        await GetDevicesAsync();
                     }
                     catch (Exception e)
                     {

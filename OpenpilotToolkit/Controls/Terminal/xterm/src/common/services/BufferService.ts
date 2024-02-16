@@ -3,12 +3,12 @@
  * @license MIT
  */
 
-import { IBufferService, IOptionsService } from 'common/services/Services';
-import { BufferSet } from 'common/buffer/BufferSet';
-import { IBufferSet, IBuffer } from 'common/buffer/Types';
-import { EventEmitter, IEvent } from 'common/EventEmitter';
+import { EventEmitter } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';
 import { IAttributeData, IBufferLine, ScrollSource } from 'common/Types';
+import { BufferSet } from 'common/buffer/BufferSet';
+import { IBuffer, IBufferSet } from 'common/buffer/Types';
+import { IBufferService, IOptionsService } from 'common/services/Services';
 
 export const MINIMUM_COLS = 2; // Less than 2 can mess with wide chars
 export const MINIMUM_ROWS = 1;
@@ -22,35 +22,29 @@ export class BufferService extends Disposable implements IBufferService {
   /** Whether the user is scrolling (locks the scroll position) */
   public isUserScrolling: boolean = false;
 
-  private _onResize = new EventEmitter<{ cols: number, rows: number }>();
-  public get onResize(): IEvent<{ cols: number, rows: number }> { return this._onResize.event; }
-  private _onScroll = new EventEmitter<number>();
-  public get onScroll(): IEvent<number> { return this._onScroll.event; }
+  private readonly _onResize = this.register(new EventEmitter<{ cols: number, rows: number }>());
+  public readonly onResize = this._onResize.event;
+  private readonly _onScroll = this.register(new EventEmitter<number>());
+  public readonly onScroll = this._onScroll.event;
 
   public get buffer(): IBuffer { return this.buffers.active; }
 
   /** An IBufferline to clone/copy from for new blank lines */
   private _cachedBlankLine: IBufferLine | undefined;
 
-  constructor(
-    @IOptionsService private _optionsService: IOptionsService
-  ) {
+  constructor(@IOptionsService optionsService: IOptionsService) {
     super();
-    this.cols = Math.max(_optionsService.options.cols || 0, MINIMUM_COLS);
-    this.rows = Math.max(_optionsService.options.rows || 0, MINIMUM_ROWS);
-    this.buffers = new BufferSet(_optionsService, this);
-  }
-
-  public dispose(): void {
-    super.dispose();
-    this.buffers.dispose();
+    this.cols = Math.max(optionsService.rawOptions.cols || 0, MINIMUM_COLS);
+    this.rows = Math.max(optionsService.rawOptions.rows || 0, MINIMUM_ROWS);
+    this.buffers = this.register(new BufferSet(optionsService, this));
   }
 
   public resize(cols: number, rows: number): void {
     this.cols = cols;
     this.rows = rows;
     this.buffers.resize(cols, rows);
-    this.buffers.setupTabStops(this.cols);
+    // TODO: This doesn't fire when scrollback changes - add a resize event to BufferSet and forward
+    //       event
     this._onResize.fire({ cols, rows });
   }
 
@@ -61,6 +55,7 @@ export class BufferService extends Disposable implements IBufferService {
 
   /**
    * Scroll the terminal down 1 row, creating a blank line.
+   * @param eraseAttr The attribute data to use the for blank line.
    * @param isWrapped Whether the new line is wrapped from the previous line.
    */
   public scroll(eraseAttr: IAttributeData, isWrapped: boolean = false): void {
@@ -151,35 +146,6 @@ export class BufferService extends Disposable implements IBufferService {
 
     if (!suppressScrollEvent) {
       this._onScroll.fire(buffer.ydisp);
-    }
-  }
-
-  /**
-   * Scroll the display of the terminal by a number of pages.
-   * @param pageCount The number of pages to scroll (negative scrolls up).
-   */
-  public scrollPages(pageCount: number): void {
-    this.scrollLines(pageCount * (this.rows - 1));
-  }
-
-  /**
-   * Scrolls the display of the terminal to the top.
-   */
-  public scrollToTop(): void {
-    this.scrollLines(-this.buffer.ydisp);
-  }
-
-  /**
-   * Scrolls the display of the terminal to the bottom.
-   */
-  public scrollToBottom(): void {
-    this.scrollLines(this.buffer.ybase - this.buffer.ydisp);
-  }
-
-  public scrollToLine(line: number): void {
-    const scrollAmount = line - this.buffer.ydisp;
-    if (scrollAmount !== 0) {
-      this.scrollLines(scrollAmount);
     }
   }
 }

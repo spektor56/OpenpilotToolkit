@@ -3,18 +3,21 @@
  * @license MIT
  */
 
-import { IBuffer as IBufferApi, IBufferNamespace as IBufferNamespaceApi } from 'xterm';
+import { IBuffer as IBufferApi, IBufferNamespace as IBufferNamespaceApi } from '@xterm/xterm';
 import { BufferApiView } from 'common/public/BufferApiView';
-import { IEvent, EventEmitter } from 'common/EventEmitter';
+import { EventEmitter } from 'common/EventEmitter';
 import { ICoreTerminal } from 'common/Types';
+import { Disposable } from 'common/Lifecycle';
 
-export class BufferNamespaceApi implements IBufferNamespaceApi {
+export class BufferNamespaceApi extends Disposable implements IBufferNamespaceApi {
   private _normal: BufferApiView;
   private _alternate: BufferApiView;
-  private _onBufferChange = new EventEmitter<IBufferApi>();
-  public get onBufferChange(): IEvent<IBufferApi> { return this._onBufferChange.event; }
+
+  private readonly _onBufferChange = this.register(new EventEmitter<IBufferApi>());
+  public readonly onBufferChange = this._onBufferChange.event;
 
   constructor(private _core: ICoreTerminal) {
+    super();
     this._normal = new BufferApiView(this._core.buffers.normal, 'normal');
     this._alternate = new BufferApiView(this._core.buffers.alt, 'alternate');
     this._core.buffers.onBufferActivate(() => this._onBufferChange.fire(this.active));

@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { ITerminalAddon, IDisposable, Terminal } from 'xterm';
+import { ITerminalAddon, IDisposable, Terminal } from '@xterm/xterm';
 
 export interface ILoadedAddon {
   instance: ITerminalAddon;
@@ -13,9 +13,6 @@ export interface ILoadedAddon {
 
 export class AddonManager implements IDisposable {
   protected _addons: ILoadedAddon[] = [];
-
-  constructor() {
-  }
 
   public dispose(): void {
     for (let i = this._addons.length - 1; i >= 0; i--) {

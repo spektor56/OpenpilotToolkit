@@ -4,6 +4,9 @@
  * @license MIT
  */
 
+import { EventEmitter } from 'common/EventEmitter';
+import { Disposable } from 'common/Lifecycle';
+
 declare const setTimeout: (handler: () => void, timeout?: number) => void;
 
 /**
@@ -31,21 +34,25 @@ const WRITE_TIMEOUT_MS = 12;
  */
 const WRITE_BUFFER_LENGTH_THRESHOLD = 50;
 
-// queueMicrotask polyfill for nodejs < v11
-const qmt: (cb: () => void) => void = (typeof queueMicrotask === 'undefined')
-  ? (cb: () => void) => { Promise.resolve().then(cb); }
-  : queueMicrotask;
-
-
-export class WriteBuffer {
+export class WriteBuffer extends Disposable {
   private _writeBuffer: (string | Uint8Array)[] = [];
   private _callbacks: ((() => void) | undefined)[] = [];
   private _pendingData = 0;
   private _bufferOffset = 0;
   private _isSyncWriting = false;
   private _syncCalls = 0;
+  private _didUserInput = false;
 
-  constructor(private _action: (data: string | Uint8Array, promiseResult?: boolean) => void | Promise<boolean>) { }
+  private readonly _onWriteParsed = this.register(new EventEmitter<void>());
+  public readonly onWriteParsed = this._onWriteParsed.event;
+
+  constructor(private _action: (data: string | Uint8Array, promiseResult?: boolean) => void | Promise<boolean>) {
+    super();
+  }
+
+  public handleUserInput(): void {
+    this._didUserInput = true;
+  }
 
   /**
    * @deprecated Unreliable, to be removed soon.
@@ -101,6 +108,19 @@ export class WriteBuffer {
     // schedule chunk processing for next event loop run
     if (!this._writeBuffer.length) {
       this._bufferOffset = 0;
+
+      // If this is the first write call after the user has done some input,
+      // parse it immediately to minimize input latency,
+      // otherwise schedule for the next event
+      if (this._didUserInput) {
+        this._didUserInput = false;
+        this._pendingData += data.length;
+        this._writeBuffer.push(data);
+        this._callbacks.push(callback);
+        this._innerWrite();
+        return;
+      }
+
       setTimeout(() => this._innerWrite());
     }
 
@@ -161,9 +181,10 @@ export class WriteBuffer {
 
         /**
          * If a promise takes long to resolve, we should schedule continuation behind setTimeout.
-         * This might already be too late, if our .then enters really late (executor + prev thens took very long).
-         * This cannot be solved here for the handler itself (it is the handlers responsibility to slice hard work),
-         * but we can at least schedule a screen update as we gain control.
+         * This might already be too late, if our .then enters really late (executor + prev thens
+         * took very long). This cannot be solved here for the handler itself (it is the handlers
+         * responsibility to slice hard work), but we can at least schedule a screen update as we
+         * gain control.
          */
         const continuation: (r: boolean) => void = (r: boolean) => Date.now() - startTime >= WRITE_TIMEOUT_MS
           ? setTimeout(() => this._innerWrite(0, r))
@@ -190,7 +211,7 @@ export class WriteBuffer {
         // 2. spawn a promise immediately resolving to `true`
         // (executed on the same queue, thus properly aligned before continuation happens)
         result.catch(err => {
-          qmt(() => {throw err;});
+          queueMicrotask(() => {throw err;});
           return Promise.resolve(false);
         }).then(continuation);
         return;
@@ -220,5 +241,6 @@ export class WriteBuffer {
       this._pendingData = 0;
       this._bufferOffset = 0;
     }
+    this._onWriteParsed.fire();
   }
 }

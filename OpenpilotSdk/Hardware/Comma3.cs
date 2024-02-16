@@ -1,9 +1,8 @@
-﻿using System.Collections.Generic;
-using System.Net;
+﻿using System.Net;
 
 namespace OpenpilotSdk.Hardware
 {
-    public class Comma3 : OpenpilotDevice
+    public sealed class Comma3 : OpenpilotDevice
     {
         public override IReadOnlyDictionary<CameraType, Camera> Cameras => new Dictionary<CameraType, Camera>()
         {

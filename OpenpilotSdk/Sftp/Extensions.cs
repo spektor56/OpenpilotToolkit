@@ -1,16 +1,12 @@
 ﻿using Renci.SshNet.Sftp;
-using System.Collections.Generic;
-using System.Linq;
 using Renci.SshNet;
-using System.IO;
-using System.Threading;
 using System.Runtime.CompilerServices;
 
 namespace OpenpilotSdk.Sftp
 {
     public static class Extensions
     {
-        public static async IAsyncEnumerable<ISftpFile> GetFilesAsync(this SftpClient client, string directory, [EnumeratorCancellation] CancellationToken cancellationToken = default(CancellationToken))
+        public static async IAsyncEnumerable<ISftpFile> GetFilesAsync(this SftpClient? client, string directory, [EnumeratorCancellation] CancellationToken cancellationToken = default(CancellationToken))
         {
             var directoryListing = (await client.ListDirectoryAsync(directory, cancellationToken)).OrderBy(dir => dir.FullName);
             foreach (var directoryItem in directoryListing)
@@ -36,7 +32,7 @@ namespace OpenpilotSdk.Sftp
             }
         }
 
-        public static IEnumerable<ISftpFile> GetFiles(this SftpClient client, string directory)
+        public static IEnumerable<ISftpFile> GetFiles(this SftpClient? client, string directory)
         {
             var directoryListing = client.ListDirectory(directory).OrderBy(dir => dir.FullName);
             foreach (var directoryItem in directoryListing)
@@ -63,7 +59,7 @@ namespace OpenpilotSdk.Sftp
             }
         }
 
-        public static IEnumerable<ISftpFile> EnumerateFileSystemEntries(this SftpClient client, string directory)
+        public static IEnumerable<ISftpFile> EnumerateFileSystemEntries(this SftpClient? client, string directory)
         {
             var directoryListing = client.ListDirectory(directory).OrderBy(dir => dir.FullName);
             foreach (var directoryItem in directoryListing)

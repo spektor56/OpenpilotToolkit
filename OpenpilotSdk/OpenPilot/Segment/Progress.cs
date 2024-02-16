@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace OpenpilotSdk.OpenPilot.Segment
+﻿namespace OpenpilotSdk.OpenPilot.Segment
 {
-    public class Progress
+    public sealed class Progress
     {
         public int Segment { get; }
         public int Percent { get; set; }

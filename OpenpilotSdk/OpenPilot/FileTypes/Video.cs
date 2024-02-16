@@ -3,7 +3,7 @@ using Renci.SshNet.Sftp;
 
 namespace OpenpilotSdk.OpenPilot
 {
-    public class Video
+    public sealed class Video
     {
         public ISftpFile File { get; }
         public VideoProperties Properties { get; }

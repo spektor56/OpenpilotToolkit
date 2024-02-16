@@ -5,14 +5,12 @@
 
 import * as Strings from 'browser/LocalizableStrings';
 import { ITerminal, IRenderDebouncer } from 'browser/Types';
-import { IBuffer } from 'common/buffer/Types';
-import { isMac } from 'common/Platform';
 import { TimeBasedDebouncer } from 'browser/TimeBasedDebouncer';
+import { Disposable, toDisposable } from 'common/Lifecycle';
+import { ICoreBrowserService, IRenderService } from 'browser/services/Services';
+import { IBuffer } from 'common/buffer/Types';
+import { IInstantiationService } from 'common/services/Services';
 import { addDisposableDomListener } from 'browser/Lifecycle';
-import { Disposable } from 'common/Lifecycle';
-import { ScreenDprMonitor } from 'browser/ScreenDprMonitor';
-import { IRenderService } from 'browser/services/Services';
-import { removeElementFromParent } from 'browser/Dom';
 
 const MAX_ROWS_TO_READ = 20;
 
@@ -21,15 +19,21 @@ const enum BoundaryPosition {
   BOTTOM
 }
 
+// Turn this on to unhide the accessibility tree and display it under
+// (instead of overlapping with) the terminal.
+const DEBUG = false;
+
 export class AccessibilityManager extends Disposable {
-  private _accessibilityTreeRoot: HTMLElement;
+  private _debugRootContainer: HTMLElement | undefined;
+  private _accessibilityContainer: HTMLElement;
+
   private _rowContainer: HTMLElement;
   private _rowElements: HTMLElement[];
+  private _rowColumns: WeakMap<HTMLElement, number[]> = new WeakMap();
+
   private _liveRegion: HTMLElement;
   private _liveRegionLineCount: number = 0;
-
-  private _renderRowsDebouncer: IRenderDebouncer;
-  private _screenDprMonitor: ScreenDprMonitor;
+  private _liveRegionDebouncer: IRenderDebouncer;
 
   private _topBoundaryFocusListener: (e: FocusEvent) => void;
   private _bottomBoundaryFocusListener: (e: FocusEvent) => void;
@@ -49,14 +53,15 @@ export class AccessibilityManager extends Disposable {
 
   constructor(
     private readonly _terminal: ITerminal,
-    private readonly _renderService: IRenderService
+    @IInstantiationService instantiationService: IInstantiationService,
+    @ICoreBrowserService private readonly _coreBrowserService: ICoreBrowserService,
+    @IRenderService private readonly _renderService: IRenderService
   ) {
     super();
-    this._accessibilityTreeRoot = document.createElement('div');
-    this._accessibilityTreeRoot.setAttribute('role', 'document');
-    this._accessibilityTreeRoot.classList.add('xterm-accessibility');
+    this._accessibilityContainer = this._coreBrowserService.mainDocument.createElement('div');
+    this._accessibilityContainer.classList.add('xterm-accessibility');
 
-    this._rowContainer = document.createElement('div');
+    this._rowContainer = this._coreBrowserService.mainDocument.createElement('div');
     this._rowContainer.setAttribute('role', 'list');
     this._rowContainer.classList.add('xterm-accessibility-tree');
     this._rowElements = [];
@@ -65,54 +70,142 @@ export class AccessibilityManager extends Disposable {
       this._rowContainer.appendChild(this._rowElements[i]);
     }
 
-    this._topBoundaryFocusListener = e => this._onBoundaryFocus(e, BoundaryPosition.TOP);
-    this._bottomBoundaryFocusListener = e => this._onBoundaryFocus(e, BoundaryPosition.BOTTOM);
+    this._topBoundaryFocusListener = e => this._handleBoundaryFocus(e, BoundaryPosition.TOP);
+    this._bottomBoundaryFocusListener = e => this._handleBoundaryFocus(e, BoundaryPosition.BOTTOM);
     this._rowElements[0].addEventListener('focus', this._topBoundaryFocusListener);
     this._rowElements[this._rowElements.length - 1].addEventListener('focus', this._bottomBoundaryFocusListener);
 
     this._refreshRowsDimensions();
-    this._accessibilityTreeRoot.appendChild(this._rowContainer);
+    this._accessibilityContainer.appendChild(this._rowContainer);
 
-    this._renderRowsDebouncer = new TimeBasedDebouncer(this._renderRows.bind(this));
-    this._refreshRows();
-
-    this._liveRegion = document.createElement('div');
+    this._liveRegion = this._coreBrowserService.mainDocument.createElement('div');
     this._liveRegion.classList.add('live-region');
     this._liveRegion.setAttribute('aria-live', 'assertive');
-    this._accessibilityTreeRoot.appendChild(this._liveRegion);
+    this._accessibilityContainer.appendChild(this._liveRegion);
+    this._liveRegionDebouncer = this.register(new TimeBasedDebouncer(this._renderRows.bind(this)));
 
     if (!this._terminal.element) {
       throw new Error('Cannot enable accessibility before Terminal.open');
     }
-    this._terminal.element.insertAdjacentElement('afterbegin', this._accessibilityTreeRoot);
 
-    this.register(this._renderRowsDebouncer);
-    this.register(this._terminal.onResize(e => this._onResize(e.rows)));
+    if (DEBUG) {
+      this._accessibilityContainer.classList.add('debug');
+      this._rowContainer.classList.add('debug');
+
+      // Use a `<div class="xterm">` container so that the css will still apply.
+      this._debugRootContainer = document.createElement('div');
+      this._debugRootContainer.classList.add('xterm');
+
+      this._debugRootContainer.appendChild(document.createTextNode('------start a11y------'));
+      this._debugRootContainer.appendChild(this._accessibilityContainer);
+      this._debugRootContainer.appendChild(document.createTextNode('------end a11y------'));
+
+      this._terminal.element.insertAdjacentElement('afterend', this._debugRootContainer);
+    } else {
+      this._terminal.element.insertAdjacentElement('afterbegin', this._accessibilityContainer);
+    }
+
+    this.register(this._terminal.onResize(e => this._handleResize(e.rows)));
     this.register(this._terminal.onRender(e => this._refreshRows(e.start, e.end)));
     this.register(this._terminal.onScroll(() => this._refreshRows()));
     // Line feed is an issue as the prompt won't be read out after a command is run
-    this.register(this._terminal.onA11yChar(char => this._onChar(char)));
-    this.register(this._terminal.onLineFeed(() => this._onChar('\n')));
-    this.register(this._terminal.onA11yTab(spaceCount => this._onTab(spaceCount)));
-    this.register(this._terminal.onKey(e => this._onKey(e.key)));
+    this.register(this._terminal.onA11yChar(char => this._handleChar(char)));
+    this.register(this._terminal.onLineFeed(() => this._handleChar('\n')));
+    this.register(this._terminal.onA11yTab(spaceCount => this._handleTab(spaceCount)));
+    this.register(this._terminal.onKey(e => this._handleKey(e.key)));
     this.register(this._terminal.onBlur(() => this._clearLiveRegion()));
     this.register(this._renderService.onDimensionsChange(() => this._refreshRowsDimensions()));
+    this.register(addDisposableDomListener(document, 'selectionchange', () => this._handleSelectionChange()));
+    this.register(this._coreBrowserService.onDprChange(() => this._refreshRowsDimensions()));
 
-    this._screenDprMonitor = new ScreenDprMonitor();
-    this.register(this._screenDprMonitor);
-    this._screenDprMonitor.setListener(() => this._refreshRowsDimensions());
-    // This shouldn't be needed on modern browsers but is present in case the
-    // media query that drives the ScreenDprMonitor isn't supported
-    this.register(addDisposableDomListener(window, 'resize', () => this._refreshRowsDimensions()));
+    this._refreshRows();
+    this.register(toDisposable(() => {
+      if (DEBUG) {
+        this._debugRootContainer!.remove();
+      } else {
+        this._accessibilityContainer.remove();
+      }
+      this._rowElements.length = 0;
+    }));
   }
 
-  public dispose(): void {
-    super.dispose();
-    removeElementFromParent(this._accessibilityTreeRoot);
-    this._rowElements.length = 0;
+  private _handleTab(spaceCount: number): void {
+    for (let i = 0; i < spaceCount; i++) {
+      this._handleChar(' ');
+    }
   }
 
-  private _onBoundaryFocus(e: FocusEvent, position: BoundaryPosition): void {
+  private _handleChar(char: string): void {
+    if (this._liveRegionLineCount < MAX_ROWS_TO_READ + 1) {
+      if (this._charsToConsume.length > 0) {
+        // Have the screen reader ignore the char if it was just input
+        const shiftedChar = this._charsToConsume.shift();
+        if (shiftedChar !== char) {
+          this._charsToAnnounce += char;
+        }
+      } else {
+        this._charsToAnnounce += char;
+      }
+
+      if (char === '\n') {
+        this._liveRegionLineCount++;
+        if (this._liveRegionLineCount === MAX_ROWS_TO_READ + 1) {
+          this._liveRegion.textContent += Strings.tooMuchOutput;
+        }
+      }
+    }
+  }
+
+  private _clearLiveRegion(): void {
+    this._liveRegion.textContent = '';
+    this._liveRegionLineCount = 0;
+  }
+
+  private _handleKey(keyChar: string): void {
+    this._clearLiveRegion();
+    // Only add the char if there is no control character.
+    if (!/\p{Control}/u.test(keyChar)) {
+      this._charsToConsume.push(keyChar);
+    }
+  }
+
+  private _refreshRows(start?: number, end?: number): void {
+    this._liveRegionDebouncer.refresh(start, end, this._terminal.rows);
+  }
+
+  private _renderRows(start: number, end: number): void {
+    const buffer: IBuffer = this._terminal.buffer;
+    const setSize = buffer.lines.length.toString();
+    for (let i = start; i <= end; i++) {
+      const line = buffer.lines.get(buffer.ydisp + i);
+      const columns: number[] = [];
+      const lineData = line?.translateToString(true, undefined, undefined, columns) || '';
+      const posInSet = (buffer.ydisp + i + 1).toString();
+      const element = this._rowElements[i];
+      if (element) {
+        if (lineData.length === 0) {
+          element.innerText = '\u00a0';
+          this._rowColumns.set(element, [0, 1]);
+        } else {
+          element.textContent = lineData;
+          this._rowColumns.set(element, columns);
+        }
+        element.setAttribute('aria-posinset', posInSet);
+        element.setAttribute('aria-setsize', setSize);
+      }
+    }
+    this._announceCharacters();
+  }
+
+  private _announceCharacters(): void {
+    if (this._charsToAnnounce.length === 0) {
+      return;
+    }
+    this._liveRegion.textContent += this._charsToAnnounce;
+    this._charsToAnnounce = '';
+  }
+
+  private _handleBoundaryFocus(e: FocusEvent, position: BoundaryPosition): void {
     const boundaryElement = e.target as HTMLElement;
     const beforeBoundaryElement = this._rowElements[position === BoundaryPosition.TOP ? 1 : this._rowElements.length - 2];
 
@@ -172,7 +265,104 @@ export class AccessibilityManager extends Disposable {
     e.stopImmediatePropagation();
   }
 
-  private _onResize(rows: number): void {
+  private _handleSelectionChange(): void {
+    if (this._rowElements.length === 0) {
+      return;
+    }
+
+    const selection = document.getSelection();
+    if (!selection) {
+      return;
+    }
+
+    if (selection.isCollapsed) {
+      // Only do something when the anchorNode is inside the row container. This
+      // behavior mirrors what we do with mouse --- if the mouse clicks
+      // somewhere outside of the terminal, we don't clear the selection.
+      if (this._rowContainer.contains(selection.anchorNode)) {
+        this._terminal.clearSelection();
+      }
+      return;
+    }
+
+    if (!selection.anchorNode || !selection.focusNode) {
+      console.error('anchorNode and/or focusNode are null');
+      return;
+    }
+
+    // Sort the two selection points in document order.
+    let begin = { node: selection.anchorNode, offset: selection.anchorOffset };
+    let end = { node: selection.focusNode, offset: selection.focusOffset };
+    if ((begin.node.compareDocumentPosition(end.node) & Node.DOCUMENT_POSITION_PRECEDING) || (begin.node === end.node && begin.offset > end.offset) ) {
+      [begin, end] = [end, begin];
+    }
+
+    // Clamp begin/end to the inside of the row container.
+    if (begin.node.compareDocumentPosition(this._rowElements[0]) & (Node.DOCUMENT_POSITION_CONTAINED_BY | Node.DOCUMENT_POSITION_FOLLOWING)) {
+      begin = { node: this._rowElements[0].childNodes[0], offset: 0 };
+    }
+    if (!this._rowContainer.contains(begin.node)) {
+      // This happens when `begin` is below the last row.
+      return;
+    }
+    const lastRowElement = this._rowElements.slice(-1)[0];
+    if (end.node.compareDocumentPosition(lastRowElement) & (Node.DOCUMENT_POSITION_CONTAINED_BY | Node.DOCUMENT_POSITION_PRECEDING)) {
+      end = {
+        node: lastRowElement,
+        offset: lastRowElement.textContent?.length ?? 0
+      };
+    }
+    if (!this._rowContainer.contains(end.node)) {
+      // This happens when `end` is above the first row.
+      return;
+    }
+
+    const toRowColumn = ({ node, offset }: typeof begin): {row: number, column: number} | null => {
+      // `node` is either the row element or the Text node inside it.
+      const rowElement: any = node instanceof Text ? node.parentNode : node;
+      let row = parseInt(rowElement?.getAttribute('aria-posinset'), 10) - 1;
+      if (isNaN(row)) {
+        console.warn('row is invalid. Race condition?');
+        return null;
+      }
+
+      const columns = this._rowColumns.get(rowElement);
+      if (!columns) {
+        console.warn('columns is null. Race condition?');
+        return null;
+      }
+
+      let column = offset < columns.length ? columns[offset] : columns.slice(-1)[0] + 1;
+      if (column >= this._terminal.cols) {
+        ++row;
+        column = 0;
+      }
+      return {
+        row,
+        column
+      };
+    };
+
+    const beginRowColumn = toRowColumn(begin);
+    const endRowColumn = toRowColumn(end);
+
+    if (!beginRowColumn || !endRowColumn) {
+      return;
+    }
+
+    if (beginRowColumn.row > endRowColumn.row || (beginRowColumn.row === endRowColumn.row && beginRowColumn.column >= endRowColumn.column)) {
+      // This should not happen unless we have some bugs.
+      throw new Error('invalid range');
+    }
+
+    this._terminal.select(
+      beginRowColumn.column,
+      beginRowColumn.row,
+      (endRowColumn.row - beginRowColumn.row) * this._terminal.cols - beginRowColumn.column + endRowColumn.column
+    );
+  }
+
+  private _handleResize(rows: number): void {
     // Remove bottom boundary listener
     this._rowElements[this._rowElements.length - 1].removeEventListener('focus', this._bottomBoundaryFocusListener);
 
@@ -193,109 +383,25 @@ export class AccessibilityManager extends Disposable {
   }
 
   private _createAccessibilityTreeNode(): HTMLElement {
-    const element = document.createElement('div');
+    const element = this._coreBrowserService.mainDocument.createElement('div');
     element.setAttribute('role', 'listitem');
     element.tabIndex = -1;
     this._refreshRowDimensions(element);
     return element;
   }
-
-  private _onTab(spaceCount: number): void {
-    for (let i = 0; i < spaceCount; i++) {
-      this._onChar(' ');
-    }
-  }
-
-  private _onChar(char: string): void {
-    if (this._liveRegionLineCount < MAX_ROWS_TO_READ + 1) {
-      if (this._charsToConsume.length > 0) {
-        // Have the screen reader ignore the char if it was just input
-        const shiftedChar = this._charsToConsume.shift();
-        if (shiftedChar !== char) {
-          this._charsToAnnounce += char;
-        }
-      } else {
-        this._charsToAnnounce += char;
-      }
-
-      if (char === '\n') {
-        this._liveRegionLineCount++;
-        if (this._liveRegionLineCount === MAX_ROWS_TO_READ + 1) {
-          this._liveRegion.textContent += Strings.tooMuchOutput;
-        }
-      }
-
-      // Only detach/attach on mac as otherwise messages can go unaccounced
-      if (isMac) {
-        if (this._liveRegion.textContent && this._liveRegion.textContent.length > 0 && !this._liveRegion.parentNode) {
-          setTimeout(() => {
-            this._accessibilityTreeRoot.appendChild(this._liveRegion);
-          }, 0);
-        }
-      }
-    }
-  }
-
-  private _clearLiveRegion(): void {
-    this._liveRegion.textContent = '';
-    this._liveRegionLineCount = 0;
-
-    // Only detach/attach on mac as otherwise messages can go unaccounced
-    if (isMac) {
-      removeElementFromParent(this._liveRegion);
-    }
-  }
-
-  private _onKey(keyChar: string): void {
-    this._clearLiveRegion();
-    this._charsToConsume.push(keyChar);
-  }
-
-  private _refreshRows(start?: number, end?: number): void {
-    this._renderRowsDebouncer.refresh(start, end, this._terminal.rows);
-  }
-
-  private _renderRows(start: number, end: number): void {
-    const buffer: IBuffer = this._terminal.buffer;
-    const setSize = buffer.lines.length.toString();
-    for (let i = start; i <= end; i++) {
-      const lineData = buffer.translateBufferLineToString(buffer.ydisp + i, true);
-      const posInSet = (buffer.ydisp + i + 1).toString();
-      const element = this._rowElements[i];
-      if (element) {
-        if (lineData.length === 0) {
-          element.innerText = '\u00a0';
-        } else {
-          element.textContent = lineData;
-        }
-        element.setAttribute('aria-posinset', posInSet);
-        element.setAttribute('aria-setsize', setSize);
-      }
-    }
-    this._announceCharacters();
-  }
-
   private _refreshRowsDimensions(): void {
-    if (!this._renderService.dimensions.actualCellHeight) {
+    if (!this._renderService.dimensions.css.cell.height) {
       return;
     }
+    this._accessibilityContainer.style.width = `${this._renderService.dimensions.css.canvas.width}px`;
     if (this._rowElements.length !== this._terminal.rows) {
-      this._onResize(this._terminal.rows);
+      this._handleResize(this._terminal.rows);
     }
     for (let i = 0; i < this._terminal.rows; i++) {
       this._refreshRowDimensions(this._rowElements[i]);
     }
   }
-
   private _refreshRowDimensions(element: HTMLElement): void {
-    element.style.height = `${this._renderService.dimensions.actualCellHeight}px`;
-  }
-
-  private _announceCharacters(): void {
-    if (this._charsToAnnounce.length === 0) {
-      return;
-    }
-    this._liveRegion.textContent += this._charsToAnnounce;
-    this._charsToAnnounce = '';
+    element.style.height = `${this._renderService.dimensions.css.cell.height}px`;
   }
 }

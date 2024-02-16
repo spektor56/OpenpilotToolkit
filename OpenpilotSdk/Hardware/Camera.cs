@@ -1,6 +1,6 @@
 ﻿namespace OpenpilotSdk.Hardware
 {
-    public class Camera
+    public sealed class Camera
     {
         public CameraType Type { get; }
         public int FrameRate { get; }

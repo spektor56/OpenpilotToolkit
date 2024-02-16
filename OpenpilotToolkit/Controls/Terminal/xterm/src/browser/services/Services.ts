@@ -4,11 +4,11 @@
  */
 
 import { IEvent } from 'common/EventEmitter';
-import { IRenderDimensions, IRenderer } from 'browser/renderer/Types';
-import { IColorSet } from 'browser/Types';
+import { IRenderDimensions, IRenderer } from 'browser/renderer/shared/Types';
+import { IColorSet, ILink, ReadonlyColorSet } from 'browser/Types';
 import { ISelectionRedrawRequestEvent as ISelectionRequestRedrawEvent, ISelectionRequestScrollLinesEvent } from 'browser/selection/Types';
 import { createDecorator } from 'common/services/ServiceRegistry';
-import { IDisposable } from 'common/Types';
+import { AllColorIndex, IDisposable } from 'common/Types';
 
 export const ICharSizeService = createDecorator<ICharSizeService>('CharSizeService');
 export interface ICharSizeService {
@@ -28,6 +28,25 @@ export interface ICoreBrowserService {
   serviceBrand: undefined;
 
   readonly isFocused: boolean;
+
+  readonly onDprChange: IEvent<number>;
+  readonly onWindowChange: IEvent<Window & typeof globalThis>;
+
+  /**
+   * Gets or sets the parent window that the terminal is rendered into. DOM and rendering APIs (e.g.
+   * requestAnimationFrame) should be invoked in the context of this window. This should be set when
+   * the window hosting the xterm.js instance changes.
+   */
+  window: Window & typeof globalThis;
+  /**
+   * The document of the primary window to be used to create elements when working with multiple
+   * windows. This is defined by the documentOverride setting.
+   */
+  readonly mainDocument: Document;
+  /**
+   * Helper for getting the devicePixelRatio of the parent window.
+   */
+  readonly dpr: number;
 }
 
 export const IMouseService = createDecorator<IMouseService>('MouseService');
@@ -35,7 +54,7 @@ export interface IMouseService {
   serviceBrand: undefined;
 
   getCoords(event: {clientX: number, clientY: number}, element: HTMLElement, colCount: number, rowCount: number, isSelection?: boolean): [number, number] | undefined;
-  getRawByteCoords(event: MouseEvent, element: HTMLElement, colCount: number, rowCount: number): { x: number, y: number } | undefined;
+  getMouseReportCoords(event: MouseEvent, element: HTMLElement): { col: number, row: number, x: number, y: number } | undefined;
 }
 
 export const IRenderService = createDecorator<IRenderService>('RenderService');
@@ -47,25 +66,29 @@ export interface IRenderService extends IDisposable {
    * Fires when buffer changes are rendered. This does not fire when only cursor
    * or selections are rendered.
    */
-  onRenderedBufferChange: IEvent<{ start: number, end: number }>;
+  onRenderedViewportChange: IEvent<{ start: number, end: number }>;
+  /**
+   * Fires on render
+   */
+  onRender: IEvent<{ start: number, end: number }>;
   onRefreshRequest: IEvent<{ start: number, end: number }>;
 
   dimensions: IRenderDimensions;
 
+  addRefreshCallback(callback: FrameRequestCallback): number;
+
   refreshRows(start: number, end: number): void;
   clearTextureAtlas(): void;
   resize(cols: number, rows: number): void;
-  changeOptions(): void;
+  hasRenderer(): boolean;
   setRenderer(renderer: IRenderer): void;
-  setColors(colors: IColorSet): void;
-  onDevicePixelRatioChange(): void;
-  onResize(cols: number, rows: number): void;
-  // TODO: Is this useful when we have onResize?
-  onCharSizeChanged(): void;
-  onBlur(): void;
-  onFocus(): void;
-  onSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void;
-  onCursorMove(): void;
+  handleDevicePixelRatioChange(): void;
+  handleResize(cols: number, rows: number): void;
+  handleCharSizeChanged(): void;
+  handleBlur(): void;
+  handleFocus(): void;
+  handleSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void;
+  handleCursorMove(): void;
   clear(): void;
 }
 
@@ -94,16 +117,9 @@ export interface ISelectionService {
   shouldColumnSelect(event: KeyboardEvent | MouseEvent): boolean;
   shouldForceSelection(event: MouseEvent): boolean;
   refresh(isLinuxMouseSelection?: boolean): void;
-  onMouseDown(event: MouseEvent): void;
+  handleMouseDown(event: MouseEvent): void;
+  isCellInSelection(x: number, y: number): boolean;
 }
-
-export const ISoundService = createDecorator<ISoundService>('SoundService');
-export interface ISoundService {
-  serviceBrand: undefined;
-
-  playBellSound(): void;
-}
-
 
 export const ICharacterJoinerService = createDecorator<ICharacterJoinerService>('CharacterJoinerService');
 export interface ICharacterJoinerService {
@@ -112,4 +128,31 @@ export interface ICharacterJoinerService {
   register(handler: (text: string) => [number, number][]): number;
   deregister(joinerId: number): boolean;
   getJoinedCharacters(row: number): [number, number][];
+}
+
+export const IThemeService = createDecorator<IThemeService>('ThemeService');
+export interface IThemeService {
+  serviceBrand: undefined;
+
+  readonly colors: ReadonlyColorSet;
+
+  readonly onChangeColors: IEvent<ReadonlyColorSet>;
+
+  restoreColor(slot?: AllColorIndex): void;
+  /**
+   * Allows external modifying of colors in the theme, this is used instead of {@link colors} to
+   * prevent accidental writes.
+   */
+  modifyColors(callback: (colors: IColorSet) => void): void;
+}
+
+
+export const ILinkProviderService = createDecorator<ILinkProviderService>('LinkProviderService');
+export interface ILinkProviderService extends IDisposable {
+  serviceBrand: undefined;
+  readonly linkProviders: ReadonlyArray<ILinkProvider>;
+  registerLinkProvider(linkProvider: ILinkProvider): IDisposable;
+}
+export interface ILinkProvider {
+  provideLinks(y: number, callback: (links: ILink[] | undefined) => void): void;
 }

@@ -1,6 +1,4 @@
-﻿using Android.App;
-using Android.Content;
-using Android.OS;
+﻿using Android.Content;
 using Android.Runtime;
 using Android.Views;
 using Toolbar = AndroidX.AppCompat.Widget.Toolbar;
@@ -8,18 +6,14 @@ using AndroidX.AppCompat.App;
 using AndroidX.Core.View;
 using AndroidX.DrawerLayout.Widget;
 using Google.Android.Material.Navigation;
-using Octokit;
-using System.IO;
-using System.Linq;
 using Xamarin.Essentials;
-using Android.Widget;
 
 namespace OpenpilotToolkitAndroid
 {
     [Activity(Label = "Logs", Theme = "@style/AppTheme.NoActionBar")]
     public class LogActivity : AppCompatActivity, NavigationView.IOnNavigationItemSelectedListener
     {
-        protected override void OnCreate(Bundle savedInstanceState)
+        protected override void OnCreate(Bundle? savedInstanceState)
         {
             base.OnCreate(savedInstanceState);
 
@@ -35,11 +29,11 @@ namespace OpenpilotToolkitAndroid
             var drawer = FindViewById<DrawerLayout>(Resource.Id.drawer_layout);
             var toggle = new ActionBarDrawerToggle(this, drawer, toolbar, Resource.String.navigation_drawer_open,
                 Resource.String.navigation_drawer_close);
-            drawer.AddDrawerListener(toggle);
+            drawer?.AddDrawerListener(toggle);
             toggle.SyncState();
 
             NavigationView navigationView = FindViewById<NavigationView>(Resource.Id.nav_view);
-            navigationView.SetNavigationItemSelectedListener(this);
+            navigationView?.SetNavigationItemSelectedListener(this);
 
             var tietLog = (TextView)FindViewById(Resource.Id.tietLog);
             

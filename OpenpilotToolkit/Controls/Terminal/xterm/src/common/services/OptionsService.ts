@@ -3,83 +3,79 @@
  * @license MIT
  */
 
-import { IOptionsService, ITerminalOptions, FontWeight } from 'common/services/Services';
-import { EventEmitter, IEvent } from 'common/EventEmitter';
+import { EventEmitter } from 'common/EventEmitter';
+import { Disposable, toDisposable } from 'common/Lifecycle';
 import { isMac } from 'common/Platform';
+import { CursorStyle, IDisposable } from 'common/Types';
+import { FontWeight, IOptionsService, ITerminalOptions } from 'common/services/Services';
 
-// Source: https://freesound.org/people/altemark/sounds/45759/
-// This sound is released under the Creative Commons Attribution 3.0 Unported
-// (CC BY 3.0) license. It was created by 'altemark'. No modifications have been
-// made, apart from the conversion to base64.
-export const DEFAULT_BELL_SOUND = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjMyLjEwNAAAAAAAAAAAAAAA//tQxAADB8AhSmxhIIEVCSiJrDCQBTcu3UrAIwUdkRgQbFAZC1CQEwTJ9mjRvBA4UOLD8nKVOWfh+UlK3z/177OXrfOdKl7pyn3Xf//WreyTRUoAWgBgkOAGbZHBgG1OF6zM82DWbZaUmMBptgQhGjsyYqc9ae9XFz280948NMBWInljyzsNRFLPWdnZGWrddDsjK1unuSrVN9jJsK8KuQtQCtMBjCEtImISdNKJOopIpBFpNSMbIHCSRpRR5iakjTiyzLhchUUBwCgyKiweBv/7UsQbg8isVNoMPMjAAAA0gAAABEVFGmgqK////9bP/6XCykxBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq';
-
-export const DEFAULT_OPTIONS: Readonly<ITerminalOptions> = {
+export const DEFAULT_OPTIONS: Readonly<Required<ITerminalOptions>> = {
   cols: 80,
   rows: 24,
   cursorBlink: false,
   cursorStyle: 'block',
   cursorWidth: 1,
+  cursorInactiveStyle: 'outline',
   customGlyphs: true,
-  bellSound: DEFAULT_BELL_SOUND,
-  bellStyle: 'none',
   drawBoldTextInBrightColors: true,
+  documentOverride: null,
   fastScrollModifier: 'alt',
   fastScrollSensitivity: 5,
   fontFamily: 'courier-new, courier, monospace',
   fontSize: 15,
   fontWeight: 'normal',
   fontWeightBold: 'bold',
+  ignoreBracketedPasteMode: false,
   lineHeight: 1.0,
-  linkTooltipHoverDuration: 500,
   letterSpacing: 0,
+  linkHandler: null,
   logLevel: 'info',
+  logger: null,
   scrollback: 1000,
+  scrollOnUserInput: true,
   scrollSensitivity: 1,
   screenReaderMode: false,
+  smoothScrollDuration: 0,
   macOptionIsMeta: false,
   macOptionClickForcesSelection: false,
   minimumContrastRatio: 1,
   disableStdin: false,
-  allowProposedApi: true,
+  allowProposedApi: false,
   allowTransparency: false,
   tabStopWidth: 8,
   theme: {},
   rightClickSelectsWord: isMac,
-  rendererType: 'canvas',
   windowOptions: {},
   windowsMode: false,
+  windowsPty: {},
   wordSeparator: ' ()[]{}\',"`',
   altClickMovesCursor: true,
   convertEol: false,
   termName: 'xterm',
-  cancelEvents: false
+  cancelEvents: false,
+  overviewRulerWidth: 0
 };
 
 const FONT_WEIGHT_OPTIONS: Extract<FontWeight, string>[] = ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'];
 
-/**
- * The set of options that only have an effect when set in the Terminal constructor.
- */
-const CONSTRUCTOR_ONLY_OPTIONS = ['cols', 'rows'];
-
-export class OptionsService implements IOptionsService {
+export class OptionsService extends Disposable implements IOptionsService {
   public serviceBrand: any;
 
-  private _options: ITerminalOptions;
-  public options: ITerminalOptions;
-  public publicOptions: ITerminalOptions;
+  public readonly rawOptions: Required<ITerminalOptions>;
+  public options: Required<ITerminalOptions>;
 
-  private _onOptionChange = new EventEmitter<string>();
-  public get onOptionChange(): IEvent<string> { return this._onOptionChange.event; }
+  private readonly _onOptionChange = this.register(new EventEmitter<keyof ITerminalOptions>());
+  public readonly onOptionChange = this._onOptionChange.event;
 
   constructor(options: Partial<ITerminalOptions>) {
+    super();
     // set the default value of each option
-    this._options = { ...DEFAULT_OPTIONS };
+    const defaultOptions = { ...DEFAULT_OPTIONS };
     for (const key in options) {
-      if (key in this._options) {
+      if (key in defaultOptions) {
         try {
           const newValue = options[key];
-          this._options[key] = this._sanitizeAndValidateOption(key, newValue);
+          defaultOptions[key] = this._sanitizeAndValidateOption(key, newValue);
         } catch (e) {
           console.error(e);
         }
@@ -87,53 +83,76 @@ export class OptionsService implements IOptionsService {
     }
 
     // set up getters and setters for each option
-    this.options = this._setupOptions(this._options, false);
-    this.publicOptions = this._setupOptions(this._options, true);
+    this.rawOptions = defaultOptions;
+    this.options = { ... defaultOptions };
+    this._setupOptions();
+
+    // Clear out options that could link outside xterm.js as they could easily cause an embedder
+    // memory leak
+    this.register(toDisposable(() => {
+      this.rawOptions.linkHandler = null;
+      this.rawOptions.documentOverride = null;
+    }));
   }
 
-  private _setupOptions(options: ITerminalOptions, isPublic: boolean): ITerminalOptions {
-    const copiedOptions = { ... options };
-    for (const propName in copiedOptions) {
-      Object.defineProperty(copiedOptions, propName, {
-        get: () => {
-          if (!(propName in DEFAULT_OPTIONS)) {
-            throw new Error(`No option with key "${propName}"`);
-          }
-          return this._options[propName];
-        },
-        set: (value: any) => {
-          if (!(propName in DEFAULT_OPTIONS)) {
-            throw new Error(`No option with key "${propName}"`);
-          }
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  public onSpecificOptionChange<T extends keyof ITerminalOptions>(key: T, listener: (value: ITerminalOptions[T]) => any): IDisposable {
+    return this.onOptionChange(eventKey => {
+      if (eventKey === key) {
+        listener(this.rawOptions[key]);
+      }
+    });
+  }
 
-          // Throw an error if any constructor only option is modified
-          // from terminal.options
-          // Modifications from anywhere else are allowed
-          if (isPublic && CONSTRUCTOR_ONLY_OPTIONS.includes(propName)) {
-            throw new Error(`Option "${propName}" can only be set in the constructor`);
-          }
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  public onMultipleOptionChange(keys: (keyof ITerminalOptions)[], listener: () => any): IDisposable {
+    return this.onOptionChange(eventKey => {
+      if (keys.indexOf(eventKey) !== -1) {
+        listener();
+      }
+    });
+  }
 
-          value = this._sanitizeAndValidateOption(propName, value);
-          // Don't fire an option change event if they didn't change
-          if (this._options[propName] !== value) {
-            this._options[propName] = value;
-            this._onOptionChange.fire(propName);
-          }
-        }
-      });
+  private _setupOptions(): void {
+    const getter = (propName: string): any => {
+      if (!(propName in DEFAULT_OPTIONS)) {
+        throw new Error(`No option with key "${propName}"`);
+      }
+      return this.rawOptions[propName];
+    };
+
+    const setter = (propName: string, value: any): void => {
+      if (!(propName in DEFAULT_OPTIONS)) {
+        throw new Error(`No option with key "${propName}"`);
+      }
+
+      value = this._sanitizeAndValidateOption(propName, value);
+      // Don't fire an option change event if they didn't change
+      if (this.rawOptions[propName] !== value) {
+        this.rawOptions[propName] = value;
+        this._onOptionChange.fire(propName);
+      }
+    };
+
+    for (const propName in this.rawOptions) {
+      const desc = {
+        get: getter.bind(this, propName),
+        set: setter.bind(this, propName)
+      };
+      Object.defineProperty(this.options, propName, desc);
     }
-    return copiedOptions;
-  }
-
-  public setOption(key: string, value: any): void {
-    this.publicOptions[key] = value;
   }
 
   private _sanitizeAndValidateOption(key: string, value: any): any {
     switch (key) {
-      case 'bellStyle':
       case 'cursorStyle':
-      case 'rendererType':
+        if (!value) {
+          value = DEFAULT_OPTIONS[key];
+        }
+        if (!isCursorStyle(value)) {
+          throw new Error(`"${value}" is not a valid value for ${key}`);
+        }
+        break;
       case 'wordSeparator':
         if (!value) {
           value = DEFAULT_OPTIONS[key];
@@ -170,17 +189,21 @@ export class OptionsService implements IOptionsService {
         if (value <= 0) {
           throw new Error(`${key} cannot be less than or equal to 0, value: ${value}`);
         }
+        break;
       case 'rows':
       case 'cols':
         if (!value && value !== 0) {
           throw new Error(`${key} must be numeric, value: ${value}`);
         }
         break;
+      case 'windowsPty':
+        value = value ?? {};
+        break;
     }
     return value;
   }
+}
 
-  public getOption(key: string): any {
-    return this.publicOptions[key];
-  }
+function isCursorStyle(value: unknown): value is CursorStyle {
+  return value === 'block' || value === 'underline' || value === 'bar';
 }

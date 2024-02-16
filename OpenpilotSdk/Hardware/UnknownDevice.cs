@@ -1,8 +1,6 @@
-﻿using System.Collections.Generic;
-
-namespace OpenpilotSdk.Hardware
+﻿namespace OpenpilotSdk.Hardware
 {
-    public class UnknownDevice : OpenpilotDevice
+    public sealed class UnknownDevice : OpenpilotDevice
     {
         public override IReadOnlyDictionary<CameraType, Camera> Cameras => throw new System.NotImplementedException();
     }

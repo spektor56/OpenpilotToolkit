@@ -1,6 +1,4 @@
-﻿using Android.OS;
-using System;
-using Android.Graphics;
+﻿using Android.Graphics;
 using Android.Webkit;
 using System.Web;
 
@@ -19,7 +17,7 @@ namespace OpenpilotToolkitAndroid
             handler?.Invoke(this, e);
         }
 
-        public override void OnPageStarted(WebView view, string url, Bitmap favicon)
+        public override void OnPageStarted(WebView? view, string? url, Bitmap? favicon)
         {
             base.OnPageStarted(view, url, favicon);
 

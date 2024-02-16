@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace OpenpilotToolkitAndroid
+﻿namespace OpenpilotToolkitAndroid
 {
     public class TokenEventArgs : EventArgs
     {

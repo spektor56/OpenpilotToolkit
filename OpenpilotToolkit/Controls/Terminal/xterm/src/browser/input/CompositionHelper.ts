@@ -5,6 +5,7 @@
 
 import { IRenderService } from 'browser/services/Services';
 import { IBufferService, ICoreService, IOptionsService } from 'common/services/Services';
+import { C0 } from 'common/data/EscapeSequences';
 
 interface IPosition {
   start: number;
@@ -88,7 +89,7 @@ export class CompositionHelper {
   /**
    * Handles the keydown event, routing any necessary events to the CompositionHelper functions.
    * @param ev The keydown event.
-   * @return Whether the Terminal should continue processing the keydown event.
+   * @returns Whether the Terminal should continue processing the keydown event.
    */
   public keydown(ev: KeyboardEvent): boolean {
     if (this._isComposing || this._isSendingComposition) {
@@ -186,11 +187,19 @@ export class CompositionHelper {
       // Ignore if a composition has started since the timeout
       if (!this._isComposing) {
         const newValue = this._textarea.value;
+
         const diff = newValue.replace(oldValue, '');
-        if (diff.length > 0) {
-          this._dataAlreadySent = diff;
+
+        this._dataAlreadySent = diff;
+
+        if (newValue.length > oldValue.length) {
           this._coreService.triggerDataEvent(diff, true);
+        } else if (newValue.length < oldValue.length) {
+          this._coreService.triggerDataEvent(`${C0.DEL}`, true);
+        } else if ((newValue.length === oldValue.length) && (newValue !== oldValue)) {
+          this._coreService.triggerDataEvent(newValue, true);
         }
+
       }
     }, 0);
   }
@@ -209,16 +218,16 @@ export class CompositionHelper {
     if (this._bufferService.buffer.isCursorInViewport) {
       const cursorX = Math.min(this._bufferService.buffer.x, this._bufferService.cols - 1);
 
-      const cellHeight = this._renderService.dimensions.actualCellHeight;
-      const cursorTop = this._bufferService.buffer.y * this._renderService.dimensions.actualCellHeight;
-      const cursorLeft = cursorX * this._renderService.dimensions.actualCellWidth;
+      const cellHeight = this._renderService.dimensions.css.cell.height;
+      const cursorTop = this._bufferService.buffer.y * this._renderService.dimensions.css.cell.height;
+      const cursorLeft = cursorX * this._renderService.dimensions.css.cell.width;
 
       this._compositionView.style.left = cursorLeft + 'px';
       this._compositionView.style.top = cursorTop + 'px';
       this._compositionView.style.height = cellHeight + 'px';
       this._compositionView.style.lineHeight = cellHeight + 'px';
-      this._compositionView.style.fontFamily = this._optionsService.options.fontFamily;
-      this._compositionView.style.fontSize = this._optionsService.options.fontSize + 'px';
+      this._compositionView.style.fontFamily = this._optionsService.rawOptions.fontFamily;
+      this._compositionView.style.fontSize = this._optionsService.rawOptions.fontSize + 'px';
       // Sync the textarea to the exact position of the composition view so the IME knows where the
       // text is.
       const compositionViewBounds = this._compositionView.getBoundingClientRect();

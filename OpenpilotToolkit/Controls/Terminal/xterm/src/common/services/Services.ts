@@ -3,10 +3,11 @@
  * @license MIT
  */
 
-import { IEvent } from 'common/EventEmitter';
+import { IEvent, IEventEmitter } from 'common/EventEmitter';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
-import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEncoding, ICoreMouseProtocol, CoreMouseEventType, ICharset, IWindowOptions, IModes, IAttributeData, ScrollSource } from 'common/Types';
+import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEncoding, ICoreMouseProtocol, CoreMouseEventType, ICharset, IWindowOptions, IModes, IAttributeData, ScrollSource, IDisposable, IColor, CursorStyle, CursorInactiveStyle, IOscLinkData } from 'common/Types';
 import { createDecorator } from 'common/services/ServiceRegistry';
+import { IDecorationOptions, IDecoration, ILinkHandler, IWindowsPty, ILogger } from '@xterm/xterm';
 
 export const IBufferService = createDecorator<IBufferService>('BufferService');
 export interface IBufferService {
@@ -20,11 +21,7 @@ export interface IBufferService {
   onResize: IEvent<{ cols: number, rows: number }>;
   onScroll: IEvent<number>;
   scroll(eraseAttr: IAttributeData, isWrapped?: boolean): void;
-  scrollToBottom(): void;
-  scrollToTop(): void;
-  scrollToLine(line: number): void;
   scrollLines(disp: number, suppressScrollEvent?: boolean, source?: ScrollSource): void;
-  scrollPages(pageCount: number): void;
   resize(cols: number, rows: number): void;
   reset(): void;
 }
@@ -78,15 +75,16 @@ export interface ICoreService {
   readonly onData: IEvent<string>;
   readonly onUserInput: IEvent<void>;
   readonly onBinary: IEvent<string>;
+  readonly onRequestScrollToBottom: IEvent<void>;
 
   reset(): void;
 
   /**
    * Triggers the onData event in the public API.
    * @param data The data that is being emitted.
-   * @param wasFromUser Whether the data originated from the user (as opposed to
+   * @param wasUserInput Whether the data originated from the user (as opposed to
    * resulting from parsing incoming data). When true this will also:
-   * - Scroll to the bottom of the buffer.s
+   * - Scroll to the bottom of the buffer if option scrollOnUserInput is true.
    * - Fire the `onUserInput` event (so selection can be cleared).
    */
   triggerDataEvent(data: string, wasUserInput?: boolean): void;
@@ -121,19 +119,6 @@ export interface ICharsetService {
   setgCharset(g: number, charset: ICharset | undefined): void;
 }
 
-export const IDirtyRowService = createDecorator<IDirtyRowService>('DirtyRowService');
-export interface IDirtyRowService {
-  serviceBrand: undefined;
-
-  readonly start: number;
-  readonly end: number;
-
-  clearRange(): void;
-  markDirty(y: number): void;
-  markRangeDirty(y1: number, y2: number): void;
-  markAllDirty(): void;
-}
-
 export interface IServiceIdentifier<T> {
   (...args: any[]): void;
   type: T;
@@ -143,17 +128,9 @@ export interface IBrandedService {
   serviceBrand: undefined;
 }
 
-type GetLeadingNonServiceArgs<Args> =
-  Args extends [...IBrandedService[]] ? []
-    : Args extends [infer A1, ...IBrandedService[]] ? [A1]
-      : Args extends [infer A1, infer A2, ...IBrandedService[]] ? [A1, A2]
-        : Args extends [infer A1, infer A2, infer A3, ...IBrandedService[]] ? [A1, A2, A3]
-          : Args extends [infer A1, infer A2, infer A3, infer A4, ...IBrandedService[]] ? [A1, A2, A3, A4]
-            : Args extends [infer A1, infer A2, infer A3, infer A4, infer A5, ...IBrandedService[]] ? [A1, A2, A3, A4, A5]
-              : Args extends [infer A1, infer A2, infer A3, infer A4, infer A5, infer A6, ...IBrandedService[]] ? [A1, A2, A3, A4, A5, A6]
-                : Args extends [infer A1, infer A2, infer A3, infer A4, infer A5, infer A6, infer A7, ...IBrandedService[]] ? [A1, A2, A3, A4, A5, A6, A7]
-                  : Args extends [infer A1, infer A2, infer A3, infer A4, infer A5, infer A6, infer A7, infer A8, ...IBrandedService[]] ? [A1, A2, A3, A4, A5, A6, A7, A8]
-                    : never;
+type GetLeadingNonServiceArgs<TArgs extends any[]> = TArgs extends [] ? []
+  : TArgs extends [...infer TFirst, infer TLast] ? TLast extends IBrandedService ? GetLeadingNonServiceArgs<TFirst> : TArgs
+    : never;
 
 export const IInstantiationService = createDecorator<IInstantiationService>('InstantiationService');
 export interface IInstantiationService {
@@ -164,12 +141,22 @@ export interface IInstantiationService {
   createInstance<Ctor extends new (...args: any[]) => any, R extends InstanceType<Ctor>>(t: Ctor, ...args: GetLeadingNonServiceArgs<ConstructorParameters<Ctor>>): R;
 }
 
+export enum LogLevelEnum {
+  TRACE = 0,
+  DEBUG = 1,
+  INFO = 2,
+  WARN = 3,
+  ERROR = 4,
+  OFF = 5
+}
+
 export const ILogService = createDecorator<ILogService>('LogService');
 export interface ILogService {
   serviceBrand: undefined;
 
-  logLevel: LogLevelEnum;
+  readonly logLevel: LogLevelEnum;
 
+  trace(message: any, ...optionalParams: any[]): void;
   debug(message: any, ...optionalParams: any[]): void;
   info(message: any, ...optionalParams: any[]): void;
   warn(message: any, ...optionalParams: any[]): void;
@@ -180,67 +167,90 @@ export const IOptionsService = createDecorator<IOptionsService>('OptionsService'
 export interface IOptionsService {
   serviceBrand: undefined;
 
-  readonly options: ITerminalOptions;
-  readonly publicOptions: ITerminalOptions;
+  /**
+   * Read only access to the raw options object, this is an internal-only fast path for accessing
+   * single options without any validation as we trust TypeScript to enforce correct usage
+   * internally.
+   */
+  readonly rawOptions: Required<ITerminalOptions>;
 
-  readonly onOptionChange: IEvent<string>;
+  /**
+   * Options as exposed through the public API, this property uses getters and setters with
+   * validation which makes it safer but slower. {@link rawOptions} should be used for pretty much
+   * all internal usage for performance reasons.
+   */
+  readonly options: Required<ITerminalOptions>;
 
-  setOption<T>(key: string, value: T): void;
-  getOption<T>(key: string): T | undefined;
+  /**
+   * Adds an event listener for when any option changes.
+   */
+  readonly onOptionChange: IEvent<keyof ITerminalOptions>;
+
+  /**
+   * Adds an event listener for when a specific option changes, this is a convenience method that is
+   * preferred over {@link onOptionChange} when only a single option is being listened to.
+   */
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  onSpecificOptionChange<T extends keyof ITerminalOptions>(key: T, listener: (arg1: Required<ITerminalOptions>[T]) => any): IDisposable;
+
+  /**
+   * Adds an event listener for when a set of specific options change, this is a convenience method
+   * that is preferred over {@link onOptionChange} when multiple options are being listened to and
+   * handled the same way.
+   */
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  onMultipleOptionChange(keys: (keyof ITerminalOptions)[], listener: () => any): IDisposable;
 }
 
 export type FontWeight = 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900' | number;
-export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'off';
-export enum LogLevelEnum {
-  DEBUG = 0,
-  INFO = 1,
-  WARN = 2,
-  ERROR = 3,
-  OFF = 4
-}
-export type RendererType = 'dom' | 'canvas';
+export type LogLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'off';
 
 export interface ITerminalOptions {
-  allowProposedApi: boolean;
-  allowTransparency: boolean;
-  altClickMovesCursor: boolean;
-  bellSound: string;
-  bellStyle: 'none' | 'sound' /* | 'visual' | 'both' */;
-  cols: number;
-  cursorBlink: boolean;
-  cursorStyle: 'block' | 'underline' | 'bar';
-  cursorWidth: number;
-  customGlyphs: boolean;
-  disableStdin: boolean;
-  drawBoldTextInBrightColors: boolean;
-  fastScrollModifier: 'alt' | 'ctrl' | 'shift' | undefined;
-  fastScrollSensitivity: number;
-  fontSize: number;
-  fontFamily: string;
-  fontWeight: FontWeight;
-  fontWeightBold: FontWeight;
-  letterSpacing: number;
-  lineHeight: number;
-  linkTooltipHoverDuration: number;
-  logLevel: LogLevel;
-  macOptionIsMeta: boolean;
-  macOptionClickForcesSelection: boolean;
-  minimumContrastRatio: number;
-  rendererType: RendererType;
-  rightClickSelectsWord: boolean;
-  rows: number;
-  screenReaderMode: boolean;
-  scrollback: number;
-  scrollSensitivity: number;
-  tabStopWidth: number;
-  theme: ITheme;
-  windowsMode: boolean;
-  windowOptions: IWindowOptions;
-  wordSeparator: string;
+  allowProposedApi?: boolean;
+  allowTransparency?: boolean;
+  altClickMovesCursor?: boolean;
+  cols?: number;
+  convertEol?: boolean;
+  cursorBlink?: boolean;
+  cursorStyle?: CursorStyle;
+  cursorWidth?: number;
+  cursorInactiveStyle?: CursorInactiveStyle;
+  customGlyphs?: boolean;
+  disableStdin?: boolean;
+  documentOverride?: any | null;
+  drawBoldTextInBrightColors?: boolean;
+  fastScrollModifier?: 'none' | 'alt' | 'ctrl' | 'shift';
+  fastScrollSensitivity?: number;
+  fontSize?: number;
+  fontFamily?: string;
+  fontWeight?: FontWeight;
+  fontWeightBold?: FontWeight;
+  ignoreBracketedPasteMode?: boolean;
+  letterSpacing?: number;
+  lineHeight?: number;
+  linkHandler?: ILinkHandler | null;
+  logLevel?: LogLevel;
+  logger?: ILogger | null;
+  macOptionIsMeta?: boolean;
+  macOptionClickForcesSelection?: boolean;
+  minimumContrastRatio?: number;
+  rightClickSelectsWord?: boolean;
+  rows?: number;
+  screenReaderMode?: boolean;
+  scrollback?: number;
+  scrollOnUserInput?: boolean;
+  scrollSensitivity?: number;
+  smoothScrollDuration?: number;
+  tabStopWidth?: number;
+  theme?: ITheme;
+  windowsMode?: boolean;
+  windowsPty?: IWindowsPty;
+  windowOptions?: IWindowOptions;
+  wordSeparator?: string;
+  overviewRulerWidth?: number;
 
   [key: string]: any;
   cancelEvents: boolean;
-  convertEol: boolean;
   termName: string;
 }
 
@@ -249,7 +259,9 @@ export interface ITheme {
   background?: string;
   cursor?: string;
   cursorAccent?: string;
-  selection?: string;
+  selectionForeground?: string;
+  selectionBackground?: string;
+  selectionInactiveBackground?: string;
   black?: string;
   red?: string;
   green?: string;
@@ -266,7 +278,47 @@ export interface ITheme {
   brightMagenta?: string;
   brightCyan?: string;
   brightWhite?: string;
+  extendedAnsi?: string[];
 }
+
+export const IOscLinkService = createDecorator<IOscLinkService>('OscLinkService');
+export interface IOscLinkService {
+  serviceBrand: undefined;
+  /**
+   * Registers a link to the service, returning the link ID. The link data is managed by this
+   * service and will be freed when this current cursor position is trimmed off the buffer.
+   */
+  registerLink(linkData: IOscLinkData): number;
+  /**
+   * Adds a line to a link if needed.
+   */
+  addLineToLink(linkId: number, y: number): void;
+  /** Get the link data associated with a link ID. */
+  getLinkData(linkId: number): IOscLinkData | undefined;
+}
+
+/*
+ * Width and Grapheme_Cluster_Break properties of a character as a bit mask.
+ *
+ * bit 0: shouldJoin - should combine with preceding character.
+ * bit 1..2: wcwidth - see UnicodeCharWidth.
+ * bit 3..31: class of character (currently only 4 bits are used).
+ *   This is used to determined grapheme clustering - i.e. which codepoints
+ *   are to be combined into a single compound character.
+ *
+ * Use the UnicodeService static function createPropertyValue to create a
+ * UnicodeCharProperties; use extractShouldJoin, extractWidth, and
+ * extractCharKind to extract the components.
+ */
+export type UnicodeCharProperties = number;
+
+/**
+ * Width in columns of a character.
+ * In a CJK context, "half-width" characters (such as Latin) are width 1,
+ * while "full-width" characters (such as Kanji) are 2 columns wide.
+ * Combining characters (such as accents) are width 0.
+ */
+export type UnicodeCharWidth = 0 | 1 | 2;
 
 export const IUnicodeService = createDecorator<IUnicodeService>('UnicodeService');
 export interface IUnicodeService {
@@ -283,11 +335,39 @@ export interface IUnicodeService {
   /**
    * Unicode version dependent
    */
-  wcwidth(codepoint: number): number;
+  wcwidth(codepoint: number): UnicodeCharWidth;
   getStringCellWidth(s: string): number;
+  /**
+   * Return character width and type for grapheme clustering.
+   * If preceding != 0, it is the return code from the previous character;
+   * in that case the result specifies if the characters should be joined.
+   */
+  charProperties(codepoint: number, preceding: UnicodeCharProperties): UnicodeCharProperties;
 }
 
 export interface IUnicodeVersionProvider {
   readonly version: string;
-  wcwidth(ucs: number): 0 | 1 | 2;
+  wcwidth(ucs: number): UnicodeCharWidth;
+  charProperties(codepoint: number, preceding: UnicodeCharProperties): UnicodeCharProperties;
+}
+
+export const IDecorationService = createDecorator<IDecorationService>('DecorationService');
+export interface IDecorationService extends IDisposable {
+  serviceBrand: undefined;
+  readonly decorations: IterableIterator<IInternalDecoration>;
+  readonly onDecorationRegistered: IEvent<IInternalDecoration>;
+  readonly onDecorationRemoved: IEvent<IInternalDecoration>;
+  registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined;
+  reset(): void;
+  /**
+   * Trigger a callback over the decoration at a cell (in no particular order). This uses a callback
+   * instead of an iterator as it's typically used in hot code paths.
+   */
+  forEachDecorationAtCell(x: number, line: number, layer: 'bottom' | 'top' | undefined, callback: (decoration: IInternalDecoration) => void): void;
+}
+export interface IInternalDecoration extends IDecoration {
+  readonly options: IDecorationOptions;
+  readonly backgroundColorRGB: IColor | undefined;
+  readonly foregroundColorRGB: IColor | undefined;
+  readonly onRenderEmitter: IEventEmitter<HTMLElement>;
 }

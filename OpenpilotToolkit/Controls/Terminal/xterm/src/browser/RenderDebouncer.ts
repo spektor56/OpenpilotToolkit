@@ -3,27 +3,38 @@
  * @license MIT
  */
 
-import { IRenderDebouncer } from 'browser/Types';
+import { IRenderDebouncerWithCallback } from 'browser/Types';
+import { ICoreBrowserService } from 'browser/services/Services';
 
 /**
  * Debounces calls to render terminal rows using animation frames.
  */
-export class RenderDebouncer implements IRenderDebouncer {
+export class RenderDebouncer implements IRenderDebouncerWithCallback {
   private _rowStart: number | undefined;
   private _rowEnd: number | undefined;
   private _rowCount: number | undefined;
   private _animationFrame: number | undefined;
+  private _refreshCallbacks: FrameRequestCallback[] = [];
 
   constructor(
-    private _renderCallback: (start: number, end: number) => void
+    private _renderCallback: (start: number, end: number) => void,
+    private readonly _coreBrowserService: ICoreBrowserService
   ) {
   }
 
   public dispose(): void {
     if (this._animationFrame) {
-      window.cancelAnimationFrame(this._animationFrame);
+      this._coreBrowserService.window.cancelAnimationFrame(this._animationFrame);
       this._animationFrame = undefined;
     }
+  }
+
+  public addRefreshCallback(callback: FrameRequestCallback): number {
+    this._refreshCallbacks.push(callback);
+    if (!this._animationFrame) {
+      this._animationFrame = this._coreBrowserService.window.requestAnimationFrame(() => this._innerRefresh());
+    }
+    return this._animationFrame;
   }
 
   public refresh(rowStart: number | undefined, rowEnd: number | undefined, rowCount: number): void {
@@ -39,12 +50,15 @@ export class RenderDebouncer implements IRenderDebouncer {
       return;
     }
 
-    this._animationFrame = window.requestAnimationFrame(() => this._innerRefresh());
+    this._animationFrame = this._coreBrowserService.window.requestAnimationFrame(() => this._innerRefresh());
   }
 
   private _innerRefresh(): void {
+    this._animationFrame = undefined;
+
     // Make sure values are set
     if (this._rowStart === undefined || this._rowEnd === undefined || this._rowCount === undefined) {
+      this._runRefreshCallbacks();
       return;
     }
 
@@ -55,9 +69,16 @@ export class RenderDebouncer implements IRenderDebouncer {
     // Reset debouncer (this happens before render callback as the render could trigger it again)
     this._rowStart = undefined;
     this._rowEnd = undefined;
-    this._animationFrame = undefined;
 
     // Run render callback
     this._renderCallback(start, end);
+    this._runRefreshCallbacks();
+  }
+
+  private _runRefreshCallbacks(): void {
+    for (const callback of this._refreshCallbacks) {
+      callback(0);
+    }
+    this._refreshCallbacks = [];
   }
 }

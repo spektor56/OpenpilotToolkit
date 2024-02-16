@@ -57,13 +57,22 @@ export class EventEmitter<T, U = void> implements IEventEmitter<T, U> {
   }
 
   public dispose(): void {
+    this.clearListeners();
+    this._disposed = true;
+  }
+
+  public clearListeners(): void {
     if (this._listeners) {
       this._listeners.length = 0;
     }
-    this._disposed = true;
   }
 }
 
 export function forwardEvent<T>(from: IEvent<T>, to: IEventEmitter<T>): IDisposable {
   return from(e => to.fire(e));
+}
+
+export function runAndSubscribe<T>(event: IEvent<T>, handler: (e: T | undefined) => any): IDisposable {
+  handler(undefined);
+  return event(e => handler(e));
 }

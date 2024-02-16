@@ -2,16 +2,15 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net7.0-windows</TargetFramework>
+    <TargetFramework>net8.0-windows</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
 	<DebugType>embedded</DebugType>
 	<ApplicationIcon>Resources\ic_launcher-web.ico</ApplicationIcon>
-	<Platforms>AnyCPU;x64</Platforms>
+	<Platforms>x64;ARM64</Platforms>
 	<LangVersion>preview</LangVersion>
 	<StartupObject>OpenpilotToolkit.Program</StartupObject>
 	<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
 	<ApplicationManifest>app.manifest</ApplicationManifest>
-	<SupportedOSPlatformVersion>7.0</SupportedOSPlatformVersion>
   </PropertyGroup>
 
 	<PropertyGroup Condition="'$(PlatformTarget)' == 'x86'">
@@ -24,58 +23,42 @@
 		<SelfContained Condition="'$(SelfContained)' == ''">false</SelfContained>
 	</PropertyGroup>
 
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-	  <NoWarn>1701;1702</NoWarn>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-	  <NoWarn>1701;1702</NoWarn>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-	  <NoWarn>1701;1702</NoWarn>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-	  <NoWarn>1701;1702</NoWarn>
-	</PropertyGroup>
+	<ItemGroup>
+	  <Compile Remove="Controls\Terminal\xterm-addon-fit\**" />
+	  <Compile Remove="Controls\Terminal\xterm-addon-webgl\**" />
+	  <EmbeddedResource Remove="Controls\Terminal\xterm-addon-fit\**" />
+	  <EmbeddedResource Remove="Controls\Terminal\xterm-addon-webgl\**" />
+	  <None Remove="Controls\Terminal\xterm-addon-fit\**" />
+	  <None Remove="Controls\Terminal\xterm-addon-webgl\**" />
+	</ItemGroup>
 
 	<ItemGroup>
-	  <None Remove="Controls\Terminal\desktop.ini" />
+	  <None Remove="Controls\Terminal\addon-fit\lib\addon-fit.js" />
+	  <None Remove="Controls\Terminal\addon-fit\lib\addon-fit.js.map" />
+	  <None Remove="Controls\Terminal\addon-fit\LICENSE" />
+	  <None Remove="Controls\Terminal\addon-fit\package.json" />
+	  <None Remove="Controls\Terminal\addon-fit\README.md" />
+	  <None Remove="Controls\Terminal\addon-fit\src\FitAddon.ts" />
+	  <None Remove="Controls\Terminal\addon-fit\typings\addon-fit.d.ts" />
+	  <None Remove="Controls\Terminal\addon-webgl\lib\addon-webgl.js" />
+	  <None Remove="Controls\Terminal\addon-webgl\lib\addon-webgl.js.map" />
+	  <None Remove="Controls\Terminal\addon-webgl\LICENSE" />
+	  <None Remove="Controls\Terminal\addon-webgl\package.json" />
+	  <None Remove="Controls\Terminal\addon-webgl\README.md" />
+	  <None Remove="Controls\Terminal\addon-webgl\src\GlyphRenderer.ts" />
+	  <None Remove="Controls\Terminal\addon-webgl\src\RectangleRenderer.ts" />
+	  <None Remove="Controls\Terminal\addon-webgl\src\renderLayer\BaseRenderLayer.ts" />
+	  <None Remove="Controls\Terminal\addon-webgl\src\renderLayer\LinkRenderLayer.ts" />
+	  <None Remove="Controls\Terminal\addon-webgl\src\renderLayer\Types.ts" />
+	  <None Remove="Controls\Terminal\addon-webgl\src\RenderModel.ts" />
+	  <None Remove="Controls\Terminal\addon-webgl\src\TypedArray.ts" />
+	  <None Remove="Controls\Terminal\addon-webgl\src\Types.d.ts" />
+	  <None Remove="Controls\Terminal\addon-webgl\src\WebglAddon.ts" />
+	  <None Remove="Controls\Terminal\addon-webgl\src\WebglRenderer.ts" />
+	  <None Remove="Controls\Terminal\addon-webgl\src\WebglUtils.ts" />
+	  <None Remove="Controls\Terminal\addon-webgl\typings\addon-webgl.d.ts" />
 	  <None Remove="Controls\Terminal\index.html" />
 	  <None Remove="Controls\Terminal\Roboto Mono for Powerline.ttf" />
-	  <None Remove="Controls\Terminal\xterm-addon-fit\lib\xterm-addon-fit.js" />
-	  <None Remove="Controls\Terminal\xterm-addon-fit\lib\xterm-addon-fit.js.map" />
-	  <None Remove="Controls\Terminal\xterm-addon-fit\LICENSE" />
-	  <None Remove="Controls\Terminal\xterm-addon-fit\out-test\FitAddon.api.js.map" />
-	  <None Remove="Controls\Terminal\xterm-addon-fit\out\FitAddon.js" />
-	  <None Remove="Controls\Terminal\xterm-addon-fit\out\FitAddon.js.map" />
-	  <None Remove="Controls\Terminal\xterm-addon-fit\package.json" />
-	  <None Remove="Controls\Terminal\xterm-addon-fit\README.md" />
-	  <None Remove="Controls\Terminal\xterm-addon-fit\src\FitAddon.ts" />
-	  <None Remove="Controls\Terminal\xterm-addon-fit\typings\xterm-addon-fit.d.ts" />
-	  <None Remove="Controls\Terminal\xterm-addon-webgl\lib\xterm-addon-webgl.js" />
-	  <None Remove="Controls\Terminal\xterm-addon-webgl\lib\xterm-addon-webgl.js.map" />
-	  <None Remove="Controls\Terminal\xterm-addon-webgl\LICENSE" />
-	  <None Remove="Controls\Terminal\xterm-addon-webgl\package.json" />
-	  <None Remove="Controls\Terminal\xterm-addon-webgl\README.md" />
-	  <None Remove="Controls\Terminal\xterm-addon-webgl\src\atlas\CharAtlasCache.ts" />
-	  <None Remove="Controls\Terminal\xterm-addon-webgl\src\atlas\CharAtlasUtils.ts" />
-	  <None Remove="Controls\Terminal\xterm-addon-webgl\src\atlas\Types.d.ts" />
-	  <None Remove="Controls\Terminal\xterm-addon-webgl\src\atlas\WebglCharAtlas.ts" />
-	  <None Remove="Controls\Terminal\xterm-addon-webgl\src\GlyphRenderer.ts" />
-	  <None Remove="Controls\Terminal\xterm-addon-webgl\src\RectangleRenderer.ts" />
-	  <None Remove="Controls\Terminal\xterm-addon-webgl\src\renderLayer\BaseRenderLayer.ts" />
-	  <None Remove="Controls\Terminal\xterm-addon-webgl\src\renderLayer\CursorRenderLayer.ts" />
-	  <None Remove="Controls\Terminal\xterm-addon-webgl\src\renderLayer\LinkRenderLayer.ts" />
-	  <None Remove="Controls\Terminal\xterm-addon-webgl\src\renderLayer\Types.ts" />
-	  <None Remove="Controls\Terminal\xterm-addon-webgl\src\RenderModel.ts" />
-	  <None Remove="Controls\Terminal\xterm-addon-webgl\src\TypedArray.ts" />
-	  <None Remove="Controls\Terminal\xterm-addon-webgl\src\Types.d.ts" />
-	  <None Remove="Controls\Terminal\xterm-addon-webgl\src\WebglAddon.ts" />
-	  <None Remove="Controls\Terminal\xterm-addon-webgl\src\WebglRenderer.ts" />
-	  <None Remove="Controls\Terminal\xterm-addon-webgl\src\WebglUtils.ts" />
-	  <None Remove="Controls\Terminal\xterm-addon-webgl\typings\xterm-addon-webgl.d.ts" />
 	  <None Remove="Controls\Terminal\xterm\css\xterm.css" />
 	  <None Remove="Controls\Terminal\xterm\lib\xterm.js" />
 	  <None Remove="Controls\Terminal\xterm\lib\xterm.js.map" />
@@ -84,10 +67,10 @@
 	  <None Remove="Controls\Terminal\xterm\README.md" />
 	  <None Remove="Controls\Terminal\xterm\src\browser\AccessibilityManager.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\browser\Clipboard.ts" />
-	  <None Remove="Controls\Terminal\xterm\src\browser\Color.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\browser\ColorContrastCache.ts" />
-	  <None Remove="Controls\Terminal\xterm\src\browser\ColorManager.ts" />
-	  <None Remove="Controls\Terminal\xterm\src\browser\Dom.ts" />
+	  <None Remove="Controls\Terminal\xterm\src\browser\decorations\BufferDecorationRenderer.ts" />
+	  <None Remove="Controls\Terminal\xterm\src\browser\decorations\ColorZoneStore.ts" />
+	  <None Remove="Controls\Terminal\xterm\src\browser\decorations\OverviewRulerRenderer.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\browser\input\CompositionHelper.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\browser\input\Mouse.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\browser\input\MoveToCell.ts" />
@@ -95,39 +78,36 @@
 	  <None Remove="Controls\Terminal\xterm\src\browser\Linkifier.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\browser\Linkifier2.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\browser\LocalizableStrings.ts" />
-	  <None Remove="Controls\Terminal\xterm\src\browser\MouseZoneManager.ts" />
+	  <None Remove="Controls\Terminal\xterm\src\browser\OscLinkProvider.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\browser\public\Terminal.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\browser\RenderDebouncer.ts" />
-	  <None Remove="Controls\Terminal\xterm\src\browser\renderer\atlas\BaseCharAtlas.ts" />
-	  <None Remove="Controls\Terminal\xterm\src\browser\renderer\atlas\CharAtlasCache.ts" />
-	  <None Remove="Controls\Terminal\xterm\src\browser\renderer\atlas\CharAtlasUtils.ts" />
-	  <None Remove="Controls\Terminal\xterm\src\browser\renderer\atlas\Constants.ts" />
-	  <None Remove="Controls\Terminal\xterm\src\browser\renderer\atlas\DynamicCharAtlas.ts" />
-	  <None Remove="Controls\Terminal\xterm\src\browser\renderer\atlas\LRUMap.ts" />
-	  <None Remove="Controls\Terminal\xterm\src\browser\renderer\atlas\Types.d.ts" />
-	  <None Remove="Controls\Terminal\xterm\src\browser\renderer\BaseRenderLayer.ts" />
-	  <None Remove="Controls\Terminal\xterm\src\browser\renderer\CursorRenderLayer.ts" />
-	  <None Remove="Controls\Terminal\xterm\src\browser\renderer\CustomGlyphs.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\browser\renderer\dom\DomRenderer.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\browser\renderer\dom\DomRendererRowFactory.ts" />
-	  <None Remove="Controls\Terminal\xterm\src\browser\renderer\GridCache.ts" />
-	  <None Remove="Controls\Terminal\xterm\src\browser\renderer\LinkRenderLayer.ts" />
-	  <None Remove="Controls\Terminal\xterm\src\browser\renderer\Renderer.ts" />
-	  <None Remove="Controls\Terminal\xterm\src\browser\renderer\RendererUtils.ts" />
-	  <None Remove="Controls\Terminal\xterm\src\browser\renderer\SelectionRenderLayer.ts" />
-	  <None Remove="Controls\Terminal\xterm\src\browser\renderer\TextRenderLayer.ts" />
-	  <None Remove="Controls\Terminal\xterm\src\browser\renderer\Types.d.ts" />
+	  <None Remove="Controls\Terminal\xterm\src\browser\renderer\dom\WidthCache.ts" />
+	  <None Remove="Controls\Terminal\xterm\src\browser\renderer\shared\CellColorResolver.ts" />
+	  <None Remove="Controls\Terminal\xterm\src\browser\renderer\shared\CharAtlasCache.ts" />
+	  <None Remove="Controls\Terminal\xterm\src\browser\renderer\shared\CharAtlasUtils.ts" />
+	  <None Remove="Controls\Terminal\xterm\src\browser\renderer\shared\Constants.ts" />
+	  <None Remove="Controls\Terminal\xterm\src\browser\renderer\shared\CursorBlinkStateManager.ts" />
+	  <None Remove="Controls\Terminal\xterm\src\browser\renderer\shared\CustomGlyphs.ts" />
+	  <None Remove="Controls\Terminal\xterm\src\browser\renderer\shared\DevicePixelObserver.ts" />
+	  <None Remove="Controls\Terminal\xterm\src\browser\renderer\shared\README.md" />
+	  <None Remove="Controls\Terminal\xterm\src\browser\renderer\shared\RendererUtils.ts" />
+	  <None Remove="Controls\Terminal\xterm\src\browser\renderer\shared\SelectionRenderModel.ts" />
+	  <None Remove="Controls\Terminal\xterm\src\browser\renderer\shared\TextureAtlas.ts" />
+	  <None Remove="Controls\Terminal\xterm\src\browser\renderer\shared\Types.d.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\browser\ScreenDprMonitor.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\browser\selection\SelectionModel.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\browser\selection\Types.d.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\browser\services\CharacterJoinerService.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\browser\services\CharSizeService.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\browser\services\CoreBrowserService.ts" />
+	  <None Remove="Controls\Terminal\xterm\src\browser\services\LinkProviderService.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\browser\services\MouseService.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\browser\services\RenderService.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\browser\services\SelectionService.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\browser\services\Services.ts" />
-	  <None Remove="Controls\Terminal\xterm\src\browser\services\SoundService.ts" />
+	  <None Remove="Controls\Terminal\xterm\src\browser\services\ThemeService.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\browser\Terminal.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\browser\TimeBasedDebouncer.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\browser\Types.d.ts" />
@@ -144,6 +124,7 @@
 	  <None Remove="Controls\Terminal\xterm\src\common\buffer\Types.d.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\common\CircularList.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\common\Clone.ts" />
+	  <None Remove="Controls\Terminal\xterm\src\common\Color.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\common\CoreTerminal.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\common\data\Charsets.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\common\data\EscapeSequences.ts" />
@@ -153,7 +134,9 @@
 	  <None Remove="Controls\Terminal\xterm\src\common\input\TextDecoder.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\common\input\UnicodeV6.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\common\input\WriteBuffer.ts" />
+	  <None Remove="Controls\Terminal\xterm\src\common\input\XParseColor.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\common\Lifecycle.ts" />
+	  <None Remove="Controls\Terminal\xterm\src\common\MultiKeyMap.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\common\parser\Constants.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\common\parser\DcsParser.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\common\parser\EscapeSequenceParser.ts" />
@@ -171,123 +154,101 @@
 	  <None Remove="Controls\Terminal\xterm\src\common\services\CharsetService.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\common\services\CoreMouseService.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\common\services\CoreService.ts" />
-	  <None Remove="Controls\Terminal\xterm\src\common\services\DirtyRowService.ts" />
+	  <None Remove="Controls\Terminal\xterm\src\common\services\DecorationService.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\common\services\InstantiationService.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\common\services\LogService.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\common\services\OptionsService.ts" />
+	  <None Remove="Controls\Terminal\xterm\src\common\services\OscLinkService.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\common\services\ServiceRegistry.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\common\services\Services.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\common\services\UnicodeService.ts" />
+	  <None Remove="Controls\Terminal\xterm\src\common\SortedList.ts" />
+	  <None Remove="Controls\Terminal\xterm\src\common\TaskQueue.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\common\TypedArrayUtils.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\common\Types.d.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\common\WindowsMode.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\headless\public\Terminal.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\headless\Terminal.ts" />
-	  <None Remove="Controls\Terminal\xterm\src\headless\Types.d.ts" />
 	  <None Remove="Controls\Terminal\xterm\typings\xterm.d.ts" />
 	</ItemGroup>
 
 	<ItemGroup>
+	  <Content Include="Controls\Terminal\addon-fit\lib\addon-fit.js">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Controls\Terminal\addon-fit\lib\addon-fit.js.map">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Controls\Terminal\addon-fit\LICENSE">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Controls\Terminal\addon-fit\package.json">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Controls\Terminal\addon-fit\README.md">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Controls\Terminal\addon-fit\src\FitAddon.ts">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Controls\Terminal\addon-fit\typings\addon-fit.d.ts">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Controls\Terminal\addon-webgl\lib\addon-webgl.js">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Controls\Terminal\addon-webgl\lib\addon-webgl.js.map">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Controls\Terminal\addon-webgl\LICENSE">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Controls\Terminal\addon-webgl\package.json">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Controls\Terminal\addon-webgl\README.md">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Controls\Terminal\addon-webgl\src\GlyphRenderer.ts">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Controls\Terminal\addon-webgl\src\RectangleRenderer.ts">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Controls\Terminal\addon-webgl\src\renderLayer\BaseRenderLayer.ts">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Controls\Terminal\addon-webgl\src\renderLayer\LinkRenderLayer.ts">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Controls\Terminal\addon-webgl\src\renderLayer\Types.ts">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Controls\Terminal\addon-webgl\src\RenderModel.ts">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Controls\Terminal\addon-webgl\src\TypedArray.ts">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Controls\Terminal\addon-webgl\src\Types.d.ts">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Controls\Terminal\addon-webgl\src\WebglAddon.ts">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Controls\Terminal\addon-webgl\src\WebglRenderer.ts">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Controls\Terminal\addon-webgl\src\WebglUtils.ts">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Controls\Terminal\addon-webgl\typings\addon-webgl.d.ts">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
 	  <Content Include="Controls\Terminal\index.html">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </Content>
 	  <Content Include="Controls\Terminal\Roboto Mono for Powerline.ttf">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
-	  <Content Include="Controls\Terminal\xterm-addon-fit\lib\xterm-addon-fit.js">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
-	  <Content Include="Controls\Terminal\xterm-addon-fit\lib\xterm-addon-fit.js.map">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
-	  <Content Include="Controls\Terminal\xterm-addon-fit\LICENSE">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
-	  <Content Include="Controls\Terminal\xterm-addon-fit\out-test\FitAddon.api.js.map">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
-	  <Content Include="Controls\Terminal\xterm-addon-fit\out\FitAddon.js">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
-	  <Content Include="Controls\Terminal\xterm-addon-fit\out\FitAddon.js.map">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
-	  <Content Include="Controls\Terminal\xterm-addon-fit\package.json">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
-	  <Content Include="Controls\Terminal\xterm-addon-fit\README.md">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
-	  <Content Include="Controls\Terminal\xterm-addon-fit\src\FitAddon.ts">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
-	  <Content Include="Controls\Terminal\xterm-addon-fit\typings\xterm-addon-fit.d.ts">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
-	  <Content Include="Controls\Terminal\xterm-addon-webgl\lib\xterm-addon-webgl.js">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
-	  <Content Include="Controls\Terminal\xterm-addon-webgl\lib\xterm-addon-webgl.js.map">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
-	  <Content Include="Controls\Terminal\xterm-addon-webgl\LICENSE">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
-	  <Content Include="Controls\Terminal\xterm-addon-webgl\package.json">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
-	  <Content Include="Controls\Terminal\xterm-addon-webgl\README.md">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
-	  <Content Include="Controls\Terminal\xterm-addon-webgl\src\atlas\CharAtlasCache.ts">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
-	  <Content Include="Controls\Terminal\xterm-addon-webgl\src\atlas\CharAtlasUtils.ts">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
-	  <Content Include="Controls\Terminal\xterm-addon-webgl\src\atlas\Types.d.ts">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
-	  <Content Include="Controls\Terminal\xterm-addon-webgl\src\atlas\WebglCharAtlas.ts">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
-	  <Content Include="Controls\Terminal\xterm-addon-webgl\src\GlyphRenderer.ts">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
-	  <Content Include="Controls\Terminal\xterm-addon-webgl\src\RectangleRenderer.ts">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
-	  <Content Include="Controls\Terminal\xterm-addon-webgl\src\renderLayer\BaseRenderLayer.ts">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
-	  <Content Include="Controls\Terminal\xterm-addon-webgl\src\renderLayer\CursorRenderLayer.ts">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
-	  <Content Include="Controls\Terminal\xterm-addon-webgl\src\renderLayer\LinkRenderLayer.ts">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
-	  <Content Include="Controls\Terminal\xterm-addon-webgl\src\renderLayer\Types.ts">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
-	  <Content Include="Controls\Terminal\xterm-addon-webgl\src\RenderModel.ts">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
-	  <Content Include="Controls\Terminal\xterm-addon-webgl\src\TypedArray.ts">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
-	  <Content Include="Controls\Terminal\xterm-addon-webgl\src\Types.d.ts">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
-	  <Content Include="Controls\Terminal\xterm-addon-webgl\src\WebglAddon.ts">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
-	  <Content Include="Controls\Terminal\xterm-addon-webgl\src\WebglRenderer.ts">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
-	  <Content Include="Controls\Terminal\xterm-addon-webgl\src\WebglUtils.ts">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
-	  <Content Include="Controls\Terminal\xterm-addon-webgl\typings\xterm-addon-webgl.d.ts">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </Content>
 	  <Content Include="Controls\Terminal\xterm\css\xterm.css">
@@ -314,16 +275,16 @@
 	  <Content Include="Controls\Terminal\xterm\src\browser\Clipboard.ts">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </Content>
-	  <Content Include="Controls\Terminal\xterm\src\browser\Color.ts">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
 	  <Content Include="Controls\Terminal\xterm\src\browser\ColorContrastCache.ts">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </Content>
-	  <Content Include="Controls\Terminal\xterm\src\browser\ColorManager.ts">
+	  <Content Include="Controls\Terminal\xterm\src\browser\decorations\BufferDecorationRenderer.ts">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </Content>
-	  <Content Include="Controls\Terminal\xterm\src\browser\Dom.ts">
+	  <Content Include="Controls\Terminal\xterm\src\browser\decorations\ColorZoneStore.ts">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Controls\Terminal\xterm\src\browser\decorations\OverviewRulerRenderer.ts">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </Content>
 	  <Content Include="Controls\Terminal\xterm\src\browser\input\CompositionHelper.ts">
@@ -341,13 +302,10 @@
 	  <Content Include="Controls\Terminal\xterm\src\browser\Linkifier.ts">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </Content>
-	  <Content Include="Controls\Terminal\xterm\src\browser\Linkifier2.ts">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
 	  <Content Include="Controls\Terminal\xterm\src\browser\LocalizableStrings.ts">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </Content>
-	  <Content Include="Controls\Terminal\xterm\src\browser\MouseZoneManager.ts">
+	  <Content Include="Controls\Terminal\xterm\src\browser\OscLinkProvider.ts">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </Content>
 	  <Content Include="Controls\Terminal\xterm\src\browser\public\Terminal.ts">
@@ -356,64 +314,49 @@
 	  <Content Include="Controls\Terminal\xterm\src\browser\RenderDebouncer.ts">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </Content>
-	  <Content Include="Controls\Terminal\xterm\src\browser\renderer\atlas\BaseCharAtlas.ts">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
-	  <Content Include="Controls\Terminal\xterm\src\browser\renderer\atlas\CharAtlasCache.ts">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
-	  <Content Include="Controls\Terminal\xterm\src\browser\renderer\atlas\CharAtlasUtils.ts">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
-	  <Content Include="Controls\Terminal\xterm\src\browser\renderer\atlas\Constants.ts">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
-	  <Content Include="Controls\Terminal\xterm\src\browser\renderer\atlas\DynamicCharAtlas.ts">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
-	  <Content Include="Controls\Terminal\xterm\src\browser\renderer\atlas\LRUMap.ts">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
-	  <Content Include="Controls\Terminal\xterm\src\browser\renderer\atlas\Types.d.ts">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
-	  <Content Include="Controls\Terminal\xterm\src\browser\renderer\BaseRenderLayer.ts">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
-	  <Content Include="Controls\Terminal\xterm\src\browser\renderer\CursorRenderLayer.ts">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
-	  <Content Include="Controls\Terminal\xterm\src\browser\renderer\CustomGlyphs.ts">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
 	  <Content Include="Controls\Terminal\xterm\src\browser\renderer\dom\DomRenderer.ts">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </Content>
 	  <Content Include="Controls\Terminal\xterm\src\browser\renderer\dom\DomRendererRowFactory.ts">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </Content>
-	  <Content Include="Controls\Terminal\xterm\src\browser\renderer\GridCache.ts">
+	  <Content Include="Controls\Terminal\xterm\src\browser\renderer\dom\WidthCache.ts">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </Content>
-	  <Content Include="Controls\Terminal\xterm\src\browser\renderer\LinkRenderLayer.ts">
+	  <Content Include="Controls\Terminal\xterm\src\browser\renderer\shared\CellColorResolver.ts">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </Content>
-	  <Content Include="Controls\Terminal\xterm\src\browser\renderer\Renderer.ts">
+	  <Content Include="Controls\Terminal\xterm\src\browser\renderer\shared\CharAtlasCache.ts">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </Content>
-	  <Content Include="Controls\Terminal\xterm\src\browser\renderer\RendererUtils.ts">
+	  <Content Include="Controls\Terminal\xterm\src\browser\renderer\shared\CharAtlasUtils.ts">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </Content>
-	  <Content Include="Controls\Terminal\xterm\src\browser\renderer\SelectionRenderLayer.ts">
+	  <Content Include="Controls\Terminal\xterm\src\browser\renderer\shared\Constants.ts">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </Content>
-	  <Content Include="Controls\Terminal\xterm\src\browser\renderer\TextRenderLayer.ts">
+	  <Content Include="Controls\Terminal\xterm\src\browser\renderer\shared\CursorBlinkStateManager.ts">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </Content>
-	  <Content Include="Controls\Terminal\xterm\src\browser\renderer\Types.d.ts">
+	  <Content Include="Controls\Terminal\xterm\src\browser\renderer\shared\CustomGlyphs.ts">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </Content>
-	  <Content Include="Controls\Terminal\xterm\src\browser\ScreenDprMonitor.ts">
+	  <Content Include="Controls\Terminal\xterm\src\browser\renderer\shared\DevicePixelObserver.ts">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Controls\Terminal\xterm\src\browser\renderer\shared\README.md">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Controls\Terminal\xterm\src\browser\renderer\shared\RendererUtils.ts">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Controls\Terminal\xterm\src\browser\renderer\shared\SelectionRenderModel.ts">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Controls\Terminal\xterm\src\browser\renderer\shared\TextureAtlas.ts">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Controls\Terminal\xterm\src\browser\renderer\shared\Types.d.ts">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </Content>
 	  <Content Include="Controls\Terminal\xterm\src\browser\selection\SelectionModel.ts">
@@ -431,6 +374,9 @@
 	  <Content Include="Controls\Terminal\xterm\src\browser\services\CoreBrowserService.ts">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </Content>
+	  <Content Include="Controls\Terminal\xterm\src\browser\services\LinkProviderService.ts">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
 	  <Content Include="Controls\Terminal\xterm\src\browser\services\MouseService.ts">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </Content>
@@ -443,7 +389,7 @@
 	  <Content Include="Controls\Terminal\xterm\src\browser\services\Services.ts">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </Content>
-	  <Content Include="Controls\Terminal\xterm\src\browser\services\SoundService.ts">
+	  <Content Include="Controls\Terminal\xterm\src\browser\services\ThemeService.ts">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </Content>
 	  <Content Include="Controls\Terminal\xterm\src\browser\Terminal.ts">
@@ -494,6 +440,9 @@
 	  <Content Include="Controls\Terminal\xterm\src\common\Clone.ts">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </Content>
+	  <Content Include="Controls\Terminal\xterm\src\common\Color.ts">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
 	  <Content Include="Controls\Terminal\xterm\src\common\CoreTerminal.ts">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </Content>
@@ -521,7 +470,13 @@
 	  <Content Include="Controls\Terminal\xterm\src\common\input\WriteBuffer.ts">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </Content>
+	  <Content Include="Controls\Terminal\xterm\src\common\input\XParseColor.ts">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
 	  <Content Include="Controls\Terminal\xterm\src\common\Lifecycle.ts">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Controls\Terminal\xterm\src\common\MultiKeyMap.ts">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </Content>
 	  <Content Include="Controls\Terminal\xterm\src\common\parser\Constants.ts">
@@ -575,7 +530,7 @@
 	  <Content Include="Controls\Terminal\xterm\src\common\services\CoreService.ts">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </Content>
-	  <Content Include="Controls\Terminal\xterm\src\common\services\DirtyRowService.ts">
+	  <Content Include="Controls\Terminal\xterm\src\common\services\DecorationService.ts">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </Content>
 	  <Content Include="Controls\Terminal\xterm\src\common\services\InstantiationService.ts">
@@ -587,6 +542,9 @@
 	  <Content Include="Controls\Terminal\xterm\src\common\services\OptionsService.ts">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </Content>
+	  <Content Include="Controls\Terminal\xterm\src\common\services\OscLinkService.ts">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
 	  <Content Include="Controls\Terminal\xterm\src\common\services\ServiceRegistry.ts">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </Content>
@@ -594,6 +552,12 @@
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </Content>
 	  <Content Include="Controls\Terminal\xterm\src\common\services\UnicodeService.ts">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Controls\Terminal\xterm\src\common\SortedList.ts">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Controls\Terminal\xterm\src\common\TaskQueue.ts">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </Content>
 	  <Content Include="Controls\Terminal\xterm\src\common\TypedArrayUtils.ts">
@@ -611,52 +575,31 @@
 	  <Content Include="Controls\Terminal\xterm\src\headless\Terminal.ts">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </Content>
-	  <Content Include="Controls\Terminal\xterm\src\headless\Types.d.ts">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
 	  <Content Include="Controls\Terminal\xterm\typings\xterm.d.ts">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </Content>
 	</ItemGroup>
 
   <ItemGroup>
-	<PackageReference Include="CefSharp.WinForms.NetCore" Version="100.0.230" />
-	<PackageReference Include="chromiumembeddedframework.runtime.win-arm64" Version="100.0.23" />
-	<PackageReference Include="chromiumembeddedframework.runtime.win-x64" />
-	<PackageReference Include="chromiumembeddedframework.runtime.win-x86" Version="100.0.23" />
+	<PackageReference Include="CefSharp.WinForms.NetCore" Version="112.3.0" />
+	<PackageReference Include="chromiumembeddedframework.runtime.win-arm64" Version="112.3.0" />
+	<PackageReference Include="chromiumembeddedframework.runtime.win-x64" Version="112.3.0" />
+	<PackageReference Include="chromiumembeddedframework.runtime.win-x86" Version="112.3.0" />
 	<PackageReference Include="LibUsbDotNet" Version="2.2.29" />
-    <PackageReference Include="LibVLCSharp" Version="3.6.6" />
-    <PackageReference Include="LibVLCSharp.WinForms" Version="3.6.6" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.4" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="6.0.4">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="6.0.4">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="Microsoft.Windows.Compatibility" Version="6.0.0" />
-    <PackageReference Include="Octokit" Version="0.51.0" />
-    <PackageReference Include="Serilog" Version="2.11.0" />
-    <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
-    <PackageReference Include="SixLabors.ImageSharp" Version="2.1.1" />
-    <PackageReference Include="SshKeyGenerator" Version="1.1.50" />
-    <PackageReference Include="System.Reactive" Version="5.0.0" />
-    <PackageReference Include="VideoLAN.LibVLC.Windows" Version="3.0.17.4" />
+    <PackageReference Include="LibVLCSharp" Version="3.7.0" />
+    <PackageReference Include="LibVLCSharp.WinForms" Version="3.7.0" />
+    <PackageReference Include="Microsoft.Windows.Compatibility" Version="8.0.0-preview.3.23174.8" />
+    <PackageReference Include="Octokit" Version="5.1.0" />
+    <PackageReference Include="Serilog" Version="3.0.0-dev-01984" />
+    <PackageReference Include="Serilog.Sinks.File" Version="5.0.1-dev-00947" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.0.1" />
+    <PackageReference Include="SshKeyGenerator" Version="1.1.51" />
+    <PackageReference Include="VideoLAN.LibVLC.Windows" Version="3.0.18" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\MaterialSkin\MaterialSkin\MaterialSkinCore.csproj" />
     <ProjectReference Include="..\OpenpilotSdk\OpenpilotSdk.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Reference Include="MaterialSkin">
-      <HintPath>Libs\MaterialSkin.dll</HintPath>
-    </Reference>
-    <Reference Include="Renci.SshNet">
-      <HintPath>..\OpenpilotSdk\Libs\Renci.SshNet.dll</HintPath>
-    </Reference>
   </ItemGroup>
 
   <ItemGroup>
@@ -669,9 +612,7 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
-    <Compile Update="Controls\ucTaskProgress.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
+    <Compile Update="Controls\ucTaskProgress.cs" />
     <Compile Update="Controls\ucTaskProgress.Designer.cs">
       <DependentUpon>ucTaskProgress.cs</DependentUpon>
     </Compile>
@@ -696,9 +637,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Libs\MaterialSkinCore.dll">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </None>
     <None Update="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -723,8 +661,5 @@
 		<Message Importance="high" Text="OutDir = $(OutDir)" />
 	</Target>
 
-	<ItemGroup>
-	  <PackageReference Update="chromiumembeddedframework.runtime.win-x64" Version="100.0.23" />
-	</ItemGroup>
 
 </Project>

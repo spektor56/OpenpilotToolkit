@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 
 namespace OpenpilotSdk.OpenPilot
 {
-    public class Drive
+    public sealed class Drive
     {
         protected bool Equals(Drive other)
         {

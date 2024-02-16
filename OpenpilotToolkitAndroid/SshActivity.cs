@@ -1,15 +1,7 @@
-﻿using Android.App;
-using Android.Content;
-using Android.OS;
+﻿using Android.Content;
 using Android.Runtime;
 using Android.Views;
-using Android.Widget;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using Android.Webkit;
 using AndroidX.AppCompat.App;
 using AndroidX.Core.View;
@@ -17,8 +9,6 @@ using AndroidX.DrawerLayout.Widget;
 using Google.Android.Material.Navigation;
 using Java.Interop;
 using Octokit;
-using OpenpilotSdk.Hardware;
-using OpenpilotSdk.Git;
 using Serilog;
 using Serilog.Core;
 using Xamarin.Essentials;
@@ -35,7 +25,7 @@ namespace OpenpilotToolkitAndroid
         private string _oauthCode = "";
         private WebView web_view;
 
-        protected override void OnCreate(Bundle savedInstanceState)
+        protected override void OnCreate(Bundle? savedInstanceState)
         {
             base.OnCreate(savedInstanceState);
 
@@ -86,7 +76,7 @@ namespace OpenpilotToolkitAndroid
         }
 
         [Export("GithubLogin")]
-        public async void GithubLogin(View view)
+        public async void GithubLogin(View? view)
         {
             var username = FindViewById<EditText>(Resource.Id.txtUsername);
             
@@ -103,7 +93,7 @@ namespace OpenpilotToolkitAndroid
             web_view.LoadUrl(loginUrl.ToString());
         }
 
-        private async void SshWebViewClientOnTokenReceived(object sender, TokenEventArgs e)
+        private async void SshWebViewClientOnTokenReceived(object? sender, TokenEventArgs e)
         {
             web_view = FindViewById<WebView>(Resource.Id.webView1);
             var sshLayout = FindViewById<LinearLayout>(Resource.Id.sshLoginLayout);

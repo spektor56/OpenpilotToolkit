@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Collections.Immutable;
 using Capnp;
 using Cereal;
 using ICSharpCode.SharpZipLib.BZip2;
@@ -11,7 +6,7 @@ using NetTopologySuite.IO;
 
 namespace OpenpilotSdk.OpenPilot.Logging
 {
-    public class LogFile
+    public sealed class LogFile
     {
         public static async Task<IEnumerable<GpxWaypoint>> GetWaypointsAsync(Stream fileStream)
         {
@@ -53,14 +48,38 @@ namespace OpenpilotSdk.OpenPilot.Logging
             return waypoints;
         }
 
-        public static async Task<IEnumerable<Firmware>> GetFirmware(Stream fileStream)
+        public static async Task<IEnumerable<Firmware>> GetFirmware(Stream fileStream, bool compressed)
         {
             List<Firmware> firmwares = new List<Firmware>();
 
-            //using (var fileStream = File.OpenRead(file))
-            using (var bz2Stream = new BZip2InputStream(fileStream))
+            if (compressed)
             {
-                var pump = new FramePump(bz2Stream);
+                using (var bz2Stream = new BZip2InputStream(fileStream))
+                {
+                    var pump = new FramePump(bz2Stream);
+                    pump.FrameReceived += frame =>
+                    {
+                        var deserializer = DeserializerState.CreateRoot(frame);
+                        var reader = new Event.READER(deserializer);
+                        if (reader.which == Event.WHICH.CarParams)
+                        {
+                            foreach (var fw in reader.CarParams.TheCarFw)
+                            {
+                                var firmware = new Firmware(fw.Ecu, fw.FwVersion.ToArray(), fw.Address, fw.SubAddress);
+                                firmwares.Add(firmware);
+                            }
+                        }
+                    };
+                    await Task.Run(() =>
+                    {
+                        pump.Run();
+                    });
+
+                }
+            }
+            else
+            {
+                var pump = new FramePump(fileStream);
                 pump.FrameReceived += frame =>
                 {
                     var deserializer = DeserializerState.CreateRoot(frame);
@@ -78,8 +97,8 @@ namespace OpenpilotSdk.OpenPilot.Logging
                 {
                     pump.Run();
                 });
-
             }
+            
             return firmwares;
         }
     }

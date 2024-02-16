@@ -3,29 +3,65 @@
  * @license MIT
  */
 
-import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings, ITerminalAddon, ISelectionPosition, IBufferNamespace as IBufferNamespaceApi, IParser, ILinkProvider, IUnicodeHandling, FontWeight, IModes } from 'xterm';
-import { ITerminal } from 'browser/Types';
-import { Terminal as TerminalCore } from 'browser/Terminal';
 import * as Strings from 'browser/LocalizableStrings';
+import { Terminal as TerminalCore } from 'browser/Terminal';
+import { IBufferRange, ITerminal } from 'browser/Types';
 import { IEvent } from 'common/EventEmitter';
-import { ParserApi } from 'common/public/ParserApi';
-import { UnicodeApi } from 'common/public/UnicodeApi';
+import { Disposable } from 'common/Lifecycle';
+import { ITerminalOptions } from 'common/Types';
 import { AddonManager } from 'common/public/AddonManager';
 import { BufferNamespaceApi } from 'common/public/BufferNamespaceApi';
+import { ParserApi } from 'common/public/ParserApi';
+import { UnicodeApi } from 'common/public/UnicodeApi';
+import { IBufferNamespace as IBufferNamespaceApi, IDecoration, IDecorationOptions, IDisposable, ILinkProvider, ILocalizableStrings, IMarker, IModes, IParser, ITerminalAddon, Terminal as ITerminalApi, ITerminalInitOnlyOptions, IUnicodeHandling } from '@xterm/xterm';
 
-export class Terminal implements ITerminalApi {
+/**
+ * The set of options that only have an effect when set in the Terminal constructor.
+ */
+const CONSTRUCTOR_ONLY_OPTIONS = ['cols', 'rows'];
+
+export class Terminal extends Disposable implements ITerminalApi {
   private _core: ITerminal;
   private _addonManager: AddonManager;
   private _parser: IParser | undefined;
   private _buffer: BufferNamespaceApi | undefined;
+  private _publicOptions: Required<ITerminalOptions>;
 
-  constructor(options?: ITerminalOptions) {
-    this._core = new TerminalCore(options);
-    this._addonManager = new AddonManager();
+  constructor(options?: ITerminalOptions & ITerminalInitOnlyOptions) {
+    super();
+
+    this._core = this.register(new TerminalCore(options));
+    this._addonManager = this.register(new AddonManager());
+
+    this._publicOptions = { ... this._core.options };
+    const getter = (propName: string): any => {
+      return this._core.options[propName];
+    };
+    const setter = (propName: string, value: any): void => {
+      this._checkReadonlyOptions(propName);
+      this._core.options[propName] = value;
+    };
+
+    for (const propName in this._core.options) {
+      const desc = {
+        get: getter.bind(this, propName),
+        set: setter.bind(this, propName)
+      };
+      Object.defineProperty(this._publicOptions, propName, desc);
+    }
+  }
+
+  private _checkReadonlyOptions(propName: string): void {
+    // Throw an error if any constructor only option is modified
+    // from terminal.options
+    // Modifications from anywhere else are allowed
+    if (CONSTRUCTOR_ONLY_OPTIONS.includes(propName)) {
+      throw new Error(`Option "${propName}" can only be set in the constructor`);
+    }
   }
 
   private _checkProposedApi(): void {
-    if (!this._core.optionsService.options.allowProposedApi) {
+    if (!this._core.optionsService.rawOptions.allowProposedApi) {
       throw new Error('You must set the allowProposedApi option to true to use proposed API');
     }
   }
@@ -41,10 +77,10 @@ export class Terminal implements ITerminalApi {
   public get onScroll(): IEvent<number> { return this._core.onScroll; }
   public get onSelectionChange(): IEvent<void> { return this._core.onSelectionChange; }
   public get onTitleChange(): IEvent<string> { return this._core.onTitleChange; }
+  public get onWriteParsed(): IEvent<void> { return this._core.onWriteParsed; }
 
   public get element(): HTMLElement | undefined { return this._core.element; }
   public get parser(): IParser {
-    this._checkProposedApi();
     if (!this._parser) {
       this._parser = new ParserApi(this._core);
     }
@@ -58,9 +94,8 @@ export class Terminal implements ITerminalApi {
   public get rows(): number { return this._core.rows; }
   public get cols(): number { return this._core.cols; }
   public get buffer(): IBufferNamespaceApi {
-    this._checkProposedApi();
     if (!this._buffer) {
-      this._buffer = new BufferNamespaceApi(this._core);
+      this._buffer = this.register(new BufferNamespaceApi(this._core));
     }
     return this._buffer;
   }
@@ -89,14 +124,22 @@ export class Terminal implements ITerminalApi {
       wraparoundMode: m.wraparound
     };
   }
-  public get options(): ITerminalOptions {
-    return this._core.options;
+  public get options(): Required<ITerminalOptions> {
+    return this._publicOptions;
+  }
+  public set options(options: ITerminalOptions) {
+    for (const propName in options) {
+      this._publicOptions[propName] = options[propName];
+    }
   }
   public blur(): void {
     this._core.blur();
   }
   public focus(): void {
     this._core.focus();
+  }
+  public input(data: string, wasUserInput: boolean = true): void {
+    this._core.input(data, wasUserInput);
   }
   public resize(columns: number, rows: number): void {
     this._verifyIntegers(columns, rows);
@@ -108,16 +151,10 @@ export class Terminal implements ITerminalApi {
   public attachCustomKeyEventHandler(customKeyEventHandler: (event: KeyboardEvent) => boolean): void {
     this._core.attachCustomKeyEventHandler(customKeyEventHandler);
   }
-  public registerLinkMatcher(regex: RegExp, handler: (event: MouseEvent, uri: string) => void, options?: ILinkMatcherOptions): number {
-    this._checkProposedApi();
-    return this._core.registerLinkMatcher(regex, handler, options);
-  }
-  public deregisterLinkMatcher(matcherId: number): void {
-    this._checkProposedApi();
-    this._core.deregisterLinkMatcher(matcherId);
+  public attachCustomWheelEventHandler(customWheelEventHandler: (event: WheelEvent) => boolean): void {
+    this._core.attachCustomWheelEventHandler(customWheelEventHandler);
   }
   public registerLinkProvider(linkProvider: ILinkProvider): IDisposable {
-    this._checkProposedApi();
     return this._core.registerLinkProvider(linkProvider);
   }
   public registerCharacterJoiner(handler: (text: string) => [number, number][]): number {
@@ -128,13 +165,14 @@ export class Terminal implements ITerminalApi {
     this._checkProposedApi();
     this._core.deregisterCharacterJoiner(joinerId);
   }
-  public registerMarker(cursorYOffset: number): IMarker | undefined {
-    this._checkProposedApi();
+  public registerMarker(cursorYOffset: number = 0): IMarker {
     this._verifyIntegers(cursorYOffset);
-    return this._core.addMarker(cursorYOffset);
+    return this._core.registerMarker(cursorYOffset);
   }
-  public addMarker(cursorYOffset: number): IMarker | undefined {
-    return this.registerMarker(cursorYOffset);
+  public registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined {
+    this._checkProposedApi();
+    this._verifyPositiveIntegers(decorationOptions.x ?? 0, decorationOptions.width ?? 0, decorationOptions.height ?? 0);
+    return this._core.registerDecoration(decorationOptions);
   }
   public hasSelection(): boolean {
     return this._core.hasSelection();
@@ -146,7 +184,7 @@ export class Terminal implements ITerminalApi {
   public getSelection(): string {
     return this._core.getSelection();
   }
-  public getSelectionPosition(): ISelectionPosition | undefined {
+  public getSelectionPosition(): IBufferRange | undefined {
     return this._core.getSelectionPosition();
   }
   public clearSelection(): void {
@@ -160,8 +198,7 @@ export class Terminal implements ITerminalApi {
     this._core.selectLines(start, end);
   }
   public dispose(): void {
-    this._addonManager.dispose();
-    this._core.dispose();
+    super.dispose();
   }
   public scrollLines(amount: number): void {
     this._verifyIntegers(amount);
@@ -187,36 +224,12 @@ export class Terminal implements ITerminalApi {
   public write(data: string | Uint8Array, callback?: () => void): void {
     this._core.write(data, callback);
   }
-  public writeUtf8(data: Uint8Array, callback?: () => void): void {
-    this._core.write(data, callback);
-  }
   public writeln(data: string | Uint8Array, callback?: () => void): void {
     this._core.write(data);
     this._core.write('\r\n', callback);
   }
   public paste(data: string): void {
     this._core.paste(data);
-  }
-  public getOption(key: 'bellSound' | 'bellStyle' | 'cursorStyle' | 'fontFamily' | 'logLevel' | 'rendererType' | 'termName' | 'wordSeparator'): string;
-  public getOption(key: 'allowTransparency' | 'altClickMovesCursor' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'disableStdin' | 'macOptionIsMeta' | 'rightClickSelectsWord' | 'popOnBell' | 'visualBell'): boolean;
-  public getOption(key: 'cols' | 'fontSize' | 'letterSpacing' | 'lineHeight' | 'rows' | 'tabStopWidth' | 'scrollback'): number;
-  public getOption(key: 'fontWeight' | 'fontWeightBold'): FontWeight;
-  public getOption(key: string): any;
-  public getOption(key: any): any {
-    return this._core.optionsService.getOption(key);
-  }
-  public setOption(key: 'bellSound' | 'fontFamily' | 'termName' | 'wordSeparator', value: string): void;
-  public setOption(key: 'fontWeight' | 'fontWeightBold', value: 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900' | number): void;
-  public setOption(key: 'logLevel', value: 'debug' | 'info' | 'warn' | 'error' | 'off'): void;
-  public setOption(key: 'bellStyle', value: 'none' | 'visual' | 'sound' | 'both'): void;
-  public setOption(key: 'cursorStyle', value: 'block' | 'underline' | 'bar'): void;
-  public setOption(key: 'allowTransparency' | 'altClickMovesCursor' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'disableStdin' | 'macOptionIsMeta' | 'rightClickSelectsWord' | 'popOnBell' | 'visualBell', value: boolean): void;
-  public setOption(key: 'fontSize' | 'letterSpacing' | 'lineHeight' | 'tabStopWidth' | 'scrollback', value: number): void;
-  public setOption(key: 'theme', value: ITheme): void;
-  public setOption(key: 'cols' | 'rows', value: number): void;
-  public setOption(key: string, value: any): void;
-  public setOption(key: any, value: any): void {
-    this._core.optionsService.setOption(key, value);
   }
   public refresh(start: number, end: number): void {
     this._verifyIntegers(start, end);
@@ -229,7 +242,7 @@ export class Terminal implements ITerminalApi {
     this._core.clearTextureAtlas();
   }
   public loadAddon(addon: ITerminalAddon): void {
-    return this._addonManager.loadAddon(this, addon);
+    this._addonManager.loadAddon(this, addon);
   }
   public static get strings(): ILocalizableStrings {
     return Strings;
@@ -239,6 +252,14 @@ export class Terminal implements ITerminalApi {
     for (const value of values) {
       if (value === Infinity || isNaN(value) || value % 1 !== 0) {
         throw new Error('This API only accepts integers');
+      }
+    }
+  }
+
+  private _verifyPositiveIntegers(...values: number[]): void {
+    for (const value of values) {
+      if (value && (value === Infinity || isNaN(value) || value % 1 !== 0 || value < 0)) {
+        throw new Error('This API only accepts positive integers');
       }
     }
   }

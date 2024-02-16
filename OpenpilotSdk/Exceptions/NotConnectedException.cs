@@ -1,8 +1,6 @@
-﻿using System;
-
-namespace OpenpilotSdk.Exceptions
+﻿namespace OpenpilotSdk.Exceptions
 {
-    public class NotConnectedException : Exception
+    public sealed class NotConnectedException : Exception
     {
         public NotConnectedException()
         {

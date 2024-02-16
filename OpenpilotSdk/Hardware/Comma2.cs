@@ -1,15 +1,13 @@
-﻿using System.Collections.Generic;
-using System.Net;
-using System.Threading.Tasks;
+﻿using System.Net;
 
 namespace OpenpilotSdk.Hardware
 {
-    public class Comma2 : OpenpilotDevice
+    public sealed class Comma2 : OpenpilotDevice
     {
         protected override string NotConnectedMessage { get; set; } = "No connection has been made to the Comma2";
 
-        public virtual string OpenSettingsCommand { get; protected set; } = @"am start -a android.settings.SETTINGS";
-        public virtual string CloseSettingsCommand { get; protected set; } = @"kill $(pgrep com.android.settings)";
+        public string OpenSettingsCommand { get; protected set; } = @"am start -a android.settings.SETTINGS";
+        public string CloseSettingsCommand { get; protected set; } = @"kill $(pgrep com.android.settings)";
         public override string DeviceName { get; protected set; } = @"Comma2";
 
         public override IReadOnlyDictionary<CameraType, Camera> Cameras => new Dictionary<CameraType, Camera>()

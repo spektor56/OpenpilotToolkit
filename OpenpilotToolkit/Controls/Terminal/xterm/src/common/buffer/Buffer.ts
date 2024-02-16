@@ -4,16 +4,17 @@
  */
 
 import { CircularList, IInsertEvent } from 'common/CircularList';
-import { IBuffer, BufferIndex, IBufferStringIterator, IBufferStringIteratorResult } from 'common/buffer/Types';
-import { IBufferLine, ICellData, IAttributeData, ICharset } from 'common/Types';
-import { BufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
-import { CellData } from 'common/buffer/CellData';
-import { NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_WIDTH, WHITESPACE_CELL_CODE, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX } from 'common/buffer/Constants';
-import { reflowLargerApplyNewLayout, reflowLargerCreateNewLayout, reflowLargerGetLinesToRemove, reflowSmallerGetNewLineLengths, getWrappedLineTrimmedLength } from 'common/buffer/BufferReflow';
-import { Marker } from 'common/buffer/Marker';
-import { IOptionsService, IBufferService } from 'common/services/Services';
-import { DEFAULT_CHARSET } from 'common/data/Charsets';
+import { IdleTaskQueue } from 'common/TaskQueue';
+import { IAttributeData, IBufferLine, ICellData, ICharset } from 'common/Types';
 import { ExtendedAttrs } from 'common/buffer/AttributeData';
+import { BufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
+import { getWrappedLineTrimmedLength, reflowLargerApplyNewLayout, reflowLargerCreateNewLayout, reflowLargerGetLinesToRemove, reflowSmallerGetNewLineLengths } from 'common/buffer/BufferReflow';
+import { CellData } from 'common/buffer/CellData';
+import { NULL_CELL_CHAR, NULL_CELL_CODE, NULL_CELL_WIDTH, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_CODE, WHITESPACE_CELL_WIDTH } from 'common/buffer/Constants';
+import { Marker } from 'common/buffer/Marker';
+import { IBuffer } from 'common/buffer/Types';
+import { DEFAULT_CHARSET } from 'common/data/Charsets';
+import { IBufferService, IOptionsService } from 'common/services/Services';
 
 export const MAX_BUFFER_SIZE = 4294967295; // 2^32 - 1
 
@@ -32,8 +33,7 @@ export class Buffer implements IBuffer {
   public x: number = 0;
   public scrollBottom: number;
   public scrollTop: number;
-  // TODO: Type me
-  public tabs: any;
+  public tabs: { [column: number]: boolean | undefined } = {};
   public savedY: number = 0;
   public savedX: number = 0;
   public savedCurAttrData = DEFAULT_ATTR_DATA.clone();
@@ -43,6 +43,7 @@ export class Buffer implements IBuffer {
   private _whitespaceCell: ICellData = CellData.fromCharData([0, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_WIDTH, WHITESPACE_CELL_CODE]);
   private _cols: number;
   private _rows: number;
+  private _isClearing: boolean = false;
 
   constructor(
     private _hasScrollback: boolean,
@@ -107,7 +108,7 @@ export class Buffer implements IBuffer {
       return rows;
     }
 
-    const correctBufferLength = rows + this._optionsService.options.scrollback;
+    const correctBufferLength = rows + this._optionsService.rawOptions.scrollback;
 
     return correctBufferLength > MAX_BUFFER_SIZE ? MAX_BUFFER_SIZE : correctBufferLength;
   }
@@ -150,6 +151,9 @@ export class Buffer implements IBuffer {
     // store reference to null cell with default attrs
     const nullCell = this.getNullCell(DEFAULT_ATTR_DATA);
 
+    // count bufferlines with overly big memory to be cleaned afterwards
+    let dirtyMemoryLines = 0;
+
     // Increase max length if needed before adjustments to allow space to fill
     // as required.
     const newMaxLength = this._getCorrectBufferLength(newRows);
@@ -163,7 +167,8 @@ export class Buffer implements IBuffer {
       // Deal with columns increasing (reducing needs to happen after reflow)
       if (this._cols < newCols) {
         for (let i = 0; i < this.lines.length; i++) {
-          this.lines.get(i)!.resize(newCols, nullCell);
+          // +boolean for fast 0 or 1 conversion
+          dirtyMemoryLines += +this.lines.get(i)!.resize(newCols, nullCell);
         }
       }
 
@@ -172,7 +177,7 @@ export class Buffer implements IBuffer {
       if (this._rows < newRows) {
         for (let y = this._rows; y < newRows; y++) {
           if (this.lines.length < newRows + this.ybase) {
-            if (this._optionsService.options.windowsMode) {
+            if (this._optionsService.rawOptions.windowsMode || this._optionsService.rawOptions.windowsPty.backend !== undefined || this._optionsService.rawOptions.windowsPty.buildNumber !== undefined) {
               // Just add the new missing rows on Windows as conpty reprints the screen with it's
               // view of the world. Once a line enters scrollback for conpty it remains there
               this.lines.push(new BufferLine(newCols, nullCell));
@@ -242,17 +247,54 @@ export class Buffer implements IBuffer {
       // Trim the end of the line off if cols shrunk
       if (this._cols > newCols) {
         for (let i = 0; i < this.lines.length; i++) {
-          this.lines.get(i)!.resize(newCols, nullCell);
+          // +boolean for fast 0 or 1 conversion
+          dirtyMemoryLines += +this.lines.get(i)!.resize(newCols, nullCell);
         }
       }
     }
 
     this._cols = newCols;
     this._rows = newRows;
+
+    this._memoryCleanupQueue.clear();
+    // schedule memory cleanup only, if more than 10% of the lines are affected
+    if (dirtyMemoryLines > 0.1 * this.lines.length) {
+      this._memoryCleanupPosition = 0;
+      this._memoryCleanupQueue.enqueue(() => this._batchedMemoryCleanup());
+    }
+  }
+
+  private _memoryCleanupQueue = new IdleTaskQueue();
+  private _memoryCleanupPosition = 0;
+
+  private _batchedMemoryCleanup(): boolean {
+    let normalRun = true;
+    if (this._memoryCleanupPosition >= this.lines.length) {
+      // cleanup made it once through all lines, thus rescan in loop below to also catch shifted
+      // lines, which should finish rather quick if there are no more cleanups pending
+      this._memoryCleanupPosition = 0;
+      normalRun = false;
+    }
+    let counted = 0;
+    while (this._memoryCleanupPosition < this.lines.length) {
+      counted += this.lines.get(this._memoryCleanupPosition++)!.cleanupMemory();
+      // cleanup max 100 lines per batch
+      if (counted > 100) {
+        return true;
+      }
+    }
+    // normal runs always need another rescan afterwards
+    // if we made it here with normalRun=false, we are in a final run
+    // and can end the cleanup task for sure
+    return normalRun;
   }
 
   private get _isReflowEnabled(): boolean {
-    return this._hasScrollback && !this._optionsService.options.windowsMode;
+    const windowsPty = this._optionsService.rawOptions.windowsPty;
+    if (windowsPty && windowsPty.buildNumber) {
+      return this._hasScrollback && windowsPty.backend === 'conpty' && windowsPty.buildNumber >= 21376;
+    }
+    return this._hasScrollback && !this._optionsService.rawOptions.windowsMode;
   }
 
   private _reflow(newCols: number, newRows: number): void {
@@ -367,6 +409,11 @@ export class Buffer implements IBuffer {
       let srcCol = lastLineLength;
       while (srcLineIndex >= 0) {
         const cellsToCopy = Math.min(srcCol, destCol);
+        if (wrappedLines[destLineIndex] === undefined) {
+          // Sanity check that the line exists, this has been known to fail for an unknown reason
+          // which would stop the reflow from happening if an exception would throw.
+          break;
+        }
         wrappedLines[destLineIndex].copyCellsFrom(wrappedLines[srcLineIndex], srcCol - cellsToCopy, destCol - cellsToCopy, cellsToCopy, true);
         destCol -= cellsToCopy;
         if (destCol === 0) {
@@ -467,49 +514,12 @@ export class Buffer implements IBuffer {
     }
   }
 
-  // private _reflowSmallerGetLinesNeeded()
-
-  /**
-   * Translates a string index back to a BufferIndex.
-   * To get the correct buffer position the string must start at `startCol` 0
-   * (default in translateBufferLineToString).
-   * The method also works on wrapped line strings given rows were not trimmed.
-   * The method operates on the CharData string length, there are no
-   * additional content or boundary checks. Therefore the string and the buffer
-   * should not be altered in between.
-   * TODO: respect trim flag after fixing #1685
-   * @param lineIndex line index the string was retrieved from
-   * @param stringIndex index within the string
-   * @param startCol column offset the string was retrieved from
-   */
-  public stringIndexToBufferIndex(lineIndex: number, stringIndex: number, trimRight: boolean = false): BufferIndex {
-    while (stringIndex) {
-      const line = this.lines.get(lineIndex);
-      if (!line) {
-        return [-1, -1];
-      }
-      const length = (trimRight) ? line.getTrimmedLength() : line.length;
-      for (let i = 0; i < length; ++i) {
-        if (line.get(i)[CHAR_DATA_WIDTH_INDEX]) {
-          // empty cells report a string length of 0, but get replaced
-          // with a whitespace in translateToString, thus replace with 1
-          stringIndex -= line.get(i)[CHAR_DATA_CHAR_INDEX].length || 1;
-        }
-        if (stringIndex < 0) {
-          return [lineIndex, i];
-        }
-      }
-      lineIndex++;
-    }
-    return [lineIndex, 0];
-  }
-
   /**
    * Translates a buffer line to a string, with optional start and end columns.
    * Wide characters will count as two columns in the resulting string. This
    * function is useful for getting the actual text underneath the raw selection
    * position.
-   * @param line The line being translated.
+   * @param lineIndex The absolute index of the line being translated.
    * @param trimRight Whether to trim whitespace to the right.
    * @param startCol The column to start at.
    * @param endCol The column to end at.
@@ -550,7 +560,7 @@ export class Buffer implements IBuffer {
       i = 0;
     }
 
-    for (; i < this._cols; i += this._optionsService.options.tabStopWidth) {
+    for (; i < this._cols; i += this._optionsService.rawOptions.tabStopWidth) {
       this.tabs[i] = true;
     }
   }
@@ -577,6 +587,33 @@ export class Buffer implements IBuffer {
     }
     while (!this.tabs[++x] && x < this._cols);
     return x >= this._cols ? this._cols - 1 : x < 0 ? 0 : x;
+  }
+
+  /**
+   * Clears markers on single line.
+   * @param y The line to clear.
+   */
+  public clearMarkers(y: number): void {
+    this._isClearing = true;
+    for (let i = 0; i < this.markers.length; i++) {
+      if (this.markers[i].line === y) {
+        this.markers[i].dispose();
+        this.markers.splice(i--, 1);
+      }
+    }
+    this._isClearing = false;
+  }
+
+  /**
+   * Clears markers on all lines
+   */
+  public clearAllMarkers(): void {
+    this._isClearing = true;
+    for (let i = 0; i < this.markers.length; i++) {
+      this.markers[i].dispose();
+      this.markers.splice(i--, 1);
+    }
+    this._isClearing = false;
   }
 
   public addMarker(y: number): Marker {
@@ -610,67 +647,8 @@ export class Buffer implements IBuffer {
   }
 
   private _removeMarker(marker: Marker): void {
-    this.markers.splice(this.markers.indexOf(marker), 1);
-  }
-
-  public iterator(trimRight: boolean, startIndex?: number, endIndex?: number, startOverscan?: number, endOverscan?: number): IBufferStringIterator {
-    return new BufferStringIterator(this, trimRight, startIndex, endIndex, startOverscan, endOverscan);
-  }
-}
-
-/**
- * Iterator to get unwrapped content strings from the buffer.
- * The iterator returns at least the string data between the borders
- * `startIndex` and `endIndex` (exclusive) and will expand the lines
- * by `startOverscan` to the top and by `endOverscan` to the bottom,
- * if no new line was found in between.
- * It will never read/return string data beyond `startIndex - startOverscan`
- * or `endIndex + endOverscan`. Therefore the first and last line might be truncated.
- * It is possible to always get the full string for the first and last line as well
- * by setting the overscan values to the actual buffer length. This not recommended
- * since it might return the whole buffer within a single string in a worst case scenario.
- */
-export class BufferStringIterator implements IBufferStringIterator {
-  private _current: number;
-
-  constructor (
-    private _buffer: IBuffer,
-    private _trimRight: boolean,
-    private _startIndex: number = 0,
-    private _endIndex: number = _buffer.lines.length,
-    private _startOverscan: number = 0,
-    private _endOverscan: number = 0
-  ) {
-    if (this._startIndex < 0) {
-      this._startIndex = 0;
+    if (!this._isClearing) {
+      this.markers.splice(this.markers.indexOf(marker), 1);
     }
-    if (this._endIndex > this._buffer.lines.length) {
-      this._endIndex = this._buffer.lines.length;
-    }
-    this._current = this._startIndex;
-  }
-
-  public hasNext(): boolean {
-    return this._current < this._endIndex;
-  }
-
-  public next(): IBufferStringIteratorResult {
-    const range = this._buffer.getWrappedRangeForLine(this._current);
-    // limit search window to overscan value at both borders
-    if (range.first < this._startIndex - this._startOverscan) {
-      range.first = this._startIndex - this._startOverscan;
-    }
-    if (range.last > this._endIndex + this._endOverscan) {
-      range.last = this._endIndex + this._endOverscan;
-    }
-    // limit to current buffer length
-    range.first = Math.max(range.first, 0);
-    range.last = Math.min(range.last, this._buffer.lines.length);
-    let content = '';
-    for (let i = range.first; i <= range.last; ++i) {
-      content += this._buffer.translateBufferLineToString(i, this._trimRight);
-    }
-    this._current = range.last + 1;
-    return { range, content };
   }
 }

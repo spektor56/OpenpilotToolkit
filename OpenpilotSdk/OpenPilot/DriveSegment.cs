@@ -2,7 +2,7 @@
 
 namespace OpenpilotSdk.OpenPilot
 {
-    public class DriveSegment
+    public sealed class DriveSegment
     {
         public Video DriverVideo { get; }
         public Video WideVideo { get; }
@@ -11,11 +11,14 @@ namespace OpenpilotSdk.OpenPilot
         public ISftpFile RawLog { get; }
         public Video FrontVideoQuick { get; }
 
+        public bool RawLogCompressed { get; }
+        public bool QuickLogCompressed { get; }
+
         public string Path { get; }
 
         public int Index { get; }
 
-        public DriveSegment(int index, string path, Video frontVideo, ISftpFile quickLog, ISftpFile rawLog = null, Video driverVideo = null, Video frontVideoQuick = null, Video wideVideo = null)
+        public DriveSegment(int index, string path, Video frontVideo, ISftpFile quickLog, ISftpFile rawLog = null, Video driverVideo = null, Video frontVideoQuick = null, Video wideVideo = null, bool rawLogCompressed = false, bool quickLogCompressed = false)
         {
             Path = path;
             Index = index;
@@ -25,6 +28,8 @@ namespace OpenpilotSdk.OpenPilot
             DriverVideo = driverVideo;
             FrontVideoQuick = frontVideoQuick;
             WideVideo = wideVideo;
+            RawLogCompressed = rawLogCompressed;
+            QuickLogCompressed = quickLogCompressed;
         }
 
         public override string ToString()

@@ -2,7 +2,7 @@
 
 namespace OpenpilotSdk.OpenPilot.Cereal.Json
 {
-    public partial class OpenpilotLogRecord
+    public sealed partial class OpenpilotLogRecord
     {
         public static OpenpilotLogRecord FromJson(string json) => JsonConvert.DeserializeObject<OpenpilotLogRecord>(json, Converter.Settings);
 

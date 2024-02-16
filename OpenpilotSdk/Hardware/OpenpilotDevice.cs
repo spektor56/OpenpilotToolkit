@@ -1,16 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
 using System.Drawing;
-using System.IO;
-using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading;
-using System.Threading.Tasks;
 using FFMpegCore;
 using FFMpegCore.Enums;
 using FFMpegCore.Exceptions;
@@ -41,10 +35,10 @@ namespace OpenpilotSdk.Hardware
         protected readonly string TempDirectory = Path.Combine(AppContext.BaseDirectory ?? Environment.GetFolderPath(Environment.SpecialFolder.Personal), "tmp");
         public int Port { get; set; } = 8022;
         public IPAddress IpAddress { get; set; }
-        protected SftpClient SftpClient;
-        protected SshClient SshClient;
+        protected SftpClient? SftpClient;
+        protected SshClient? SshClient;
 
-        public virtual string DeviceName { get; protected set; }
+        public virtual string DeviceName { get; protected set; } = "";
         public virtual string StorageDirectory { get; protected set; } = @"/data/media/0/realdata/";
         public virtual string RebootCommand { get; protected set; } = @"am start -a android.intent.action.REBOOT";
         public virtual string ShutdownCommand { get; protected set; } = @"am start -n android/com.android.internal.app.ShutdownActivity";
@@ -132,12 +126,12 @@ namespace OpenpilotSdk.Hardware
             await Task.WhenAll(deleteTasks);
         }
 
-        public async Task ExportDriveAsync(string exportPath, Drive drive, Camera camera, bool combineSegments = false, IProgress<OpenPilot.Camera.Progress> progress = null)
+        public async Task ExportDriveAsync(string exportPath, Drive drive, Camera camera, bool combineSegments = false, IProgress<OpenPilot.Camera.Progress>? progress = null)
         {
             await ConnectAsync();
 
             var cameraProgress = new OpenPilot.Camera.Progress(camera);
-            Progress<Progress> segmentProgress = null;
+            Progress<Progress>? segmentProgress = null;
             if (progress != null)
             {
                 segmentProgress = new Progress<Progress>();
@@ -215,15 +209,13 @@ namespace OpenpilotSdk.Hardware
 
                 if (exportedSegments.Length > 1)
                 {
-                    await using (var file = File.CreateText(Path.Combine(exportPath, m3uFileName)))
-                    {
-                        await file.WriteAsync(string.Join(Environment.NewLine, exportedSegments));
-                    }
+                    await File.WriteAllTextAsync(Path.Combine(exportPath, m3uFileName),
+                        string.Join(Environment.NewLine, exportedSegments));
                 }
             }
         }
         
-        public void ExportDrive(string path, Drive drive, IProgress<int> progress = null)
+        public void ExportDrive(string path, Drive drive, IProgress<int>? progress = null)
         {
             Connect();
 
@@ -240,14 +232,14 @@ namespace OpenpilotSdk.Hardware
                 m3uList.AppendLine(ExportSegment(path, segment));
             }
 
-            using (var file = File.CreateText(Path.Combine(path, m3uFileName)))
+            if (m3uList.Length > 1)
             {
-                file.WriteAsync(m3uList.ToString());
+                File.WriteAllText(Path.Combine(path, m3uFileName), m3uList.ToString());
             }
         }
 
         public async Task<string> ExportSegmentAsync(string path, DriveSegment driveSegment, Camera camera, bool containerize,
-            IProgress<Progress> progress = null)
+            IProgress<Progress>? progress = null)
         {
             var segmentProgress = new Progress(driveSegment.Index);
 
@@ -286,8 +278,9 @@ namespace OpenpilotSdk.Hardware
                                     "comma",
                                     new PrivateKeyAuthenticationMethod("comma",
                                         new PrivateKeyFile(Path.Combine(
-                                            AppContext.BaseDirectory ??
-                                            Environment.GetFolderPath(Environment.SpecialFolder.Personal),
+                                            OperatingSystem.IsWindows()
+                                                ? AppContext.BaseDirectory
+                                                : Environment.GetFolderPath(Environment.SpecialFolder.Personal),
                                             "opensshkey"))));
 
                                 using (var sftpClient = new SftpClient(connectionInfo))
@@ -443,6 +436,9 @@ namespace OpenpilotSdk.Hardware
             ISftpFile rawLog = null;
             ISftpFile frontVideoQuick = null;
 
+            bool rawLogCompressed = false;
+            bool quickLogCompressed = false;
+
             await foreach (var segmentFile in segmentFiles)
             {
                 if (segmentFile.Name.Equals("fcamera.hevc", StringComparison.OrdinalIgnoreCase))
@@ -457,13 +453,21 @@ namespace OpenpilotSdk.Hardware
                 {
                     wideVideo = segmentFile;
                 }
-                else if (segmentFile.Name.Equals("rlog.bz2", StringComparison.OrdinalIgnoreCase))
+                else if (segmentFile.Name.StartsWith("rlog", StringComparison.OrdinalIgnoreCase))
                 {
                     rawLog = segmentFile;
+                    if (segmentFile.Name.Contains(".bz2", StringComparison.OrdinalIgnoreCase))
+                    {
+                        rawLogCompressed = true;
+                    }
                 }
-                else if (segmentFile.Name.Equals("qlog.bz2", StringComparison.OrdinalIgnoreCase))
+                else if (segmentFile.Name.StartsWith("qlog", StringComparison.OrdinalIgnoreCase))
                 {
                     quickLog = segmentFile;
+                    if (segmentFile.Name.Contains(".bz2", StringComparison.OrdinalIgnoreCase))
+                    {
+                        quickLogCompressed = true;
+                    }
                 }
                 else if (segmentFile.Name.Equals("qcamera.ts", StringComparison.OrdinalIgnoreCase))
                 {
@@ -477,7 +481,7 @@ namespace OpenpilotSdk.Hardware
                 quickLog, rawLog, 
                 driverVideo == null ? null : new Video(driverVideo, Cameras[CameraType.Driver].FrameRate), 
                 frontVideoQuick == null ? null : new Video(frontVideoQuick, Cameras[CameraType.Front].FrameRate), 
-                wideVideo == null ? null : new Video(wideVideo, Cameras[CameraType.Wide].FrameRate));
+                wideVideo == null ? null : new Video(wideVideo, Cameras[CameraType.Wide].FrameRate), rawLogCompressed, quickLogCompressed);
         }
 
         public DriveSegment GetSegment(DateTime driveDate, int index)
@@ -495,6 +499,9 @@ namespace OpenpilotSdk.Hardware
             ISftpFile rawLog = null;
             ISftpFile frontVideoQuick = null;
 
+            bool rawLogCompressed = false;
+            bool quickLogCompressed = false;
+
             foreach (var segmentFile in segmentFiles)
             {
                 if (segmentFile.Name.Equals("fcamera.hevc", StringComparison.OrdinalIgnoreCase))
@@ -509,13 +516,21 @@ namespace OpenpilotSdk.Hardware
                 {
                     wideVideo = segmentFile;
                 }
-                else if (segmentFile.Name.Equals("rlog.bz2", StringComparison.OrdinalIgnoreCase))
+                else if (segmentFile.Name.StartsWith("rlog", StringComparison.OrdinalIgnoreCase))
                 {
                     rawLog = segmentFile;
+                    if (segmentFile.Name.Contains(".bz2", StringComparison.OrdinalIgnoreCase))
+                    {
+                        rawLogCompressed = true;
+                    }
                 }
-                else if (segmentFile.Name.Equals("qlog.bz2", StringComparison.OrdinalIgnoreCase))
+                else if (segmentFile.Name.StartsWith("qlog", StringComparison.OrdinalIgnoreCase))
                 {
                     quickLog = segmentFile;
+                    if (segmentFile.Name.Contains(".bz2", StringComparison.OrdinalIgnoreCase))
+                    {
+                        quickLogCompressed = true;
+                    }
                 }
                 else if (segmentFile.Name.Equals("qcamera.ts", StringComparison.OrdinalIgnoreCase))
                 {
@@ -534,7 +549,7 @@ namespace OpenpilotSdk.Hardware
                 quickLog, rawLog,
                 driverVideo == null ? null : new Video(driverVideo, Cameras[CameraType.Driver].FrameRate),
                 frontVideoQuick == null ? null : new Video(frontVideoQuick, Cameras[CameraType.Front].FrameRate),
-                wideVideo == null ? null : new Video(wideVideo, Cameras[CameraType.Wide].FrameRate));
+                wideVideo == null ? null : new Video(wideVideo, Cameras[CameraType.Wide].FrameRate), rawLogCompressed, quickLogCompressed);
         }
 
         public async Task<List<GpxWaypoint>> MapillaryExportAsync(Drive drive)
@@ -585,7 +600,7 @@ namespace OpenpilotSdk.Hardware
             return waypointsToExport;
         }
 
-        public async Task<IEnumerable<Firmware>> GetFirmwareVersions(IProgress<int> progress = null)
+        public async Task<IEnumerable<Firmware>> GetFirmwareVersions(IProgress<int>? progress = null)
         {
             await ConnectAsync();
 
@@ -595,7 +610,7 @@ namespace OpenpilotSdk.Hardware
             {
                 foreach (var driveSegment in drive.Segments.OrderBy(segment => segment.Index))
                 {
-                    var firmware = await OpenPilot.Logging.LogFile.GetFirmware(SftpClient.OpenRead(driveSegment.QuickLog.FullName));
+                    var firmware = await OpenPilot.Logging.LogFile.GetFirmware(SftpClient.OpenRead(driveSegment.QuickLog.FullName), driveSegment.QuickLogCompressed);
 
                     if (firmware != null && firmware.Any())
                     {
@@ -634,7 +649,7 @@ namespace OpenpilotSdk.Hardware
             }
         }
 
-        public async Task<GpxFile> GenerateGpxFileAsync(Drive drive, IProgress<int> progress = null)
+        public async Task<GpxFile> GenerateGpxFileAsync(Drive drive, IProgress<int>? progress = null)
         {
             await ConnectAsync();
 
@@ -668,7 +683,7 @@ namespace OpenpilotSdk.Hardware
         {
             await ConnectAsync(cancellationToken);
 
-            IOrderedEnumerable<IGrouping<DateTime, SftpFile>> directoryListing;
+            IOrderedEnumerable<IGrouping<DateTime, ISftpFile>>? directoryListing;
 
             try
             {
@@ -689,7 +704,7 @@ namespace OpenpilotSdk.Hardware
                 yield break;
             }
 
-            foreach(var segmentGroup in directoryListing)
+            foreach (var segmentGroup in directoryListing)
             {
                 var driveDate = segmentGroup.Key;
 
@@ -715,7 +730,7 @@ namespace OpenpilotSdk.Hardware
                     .Where(dir => OpenPilot.Extensions.FolderRegex.IsMatch(dir.Name))
                     .OrderBy(dir =>
                     {
-                        var date = DateTime.ParseExact(dir.Name.AsSpan().Slice(0,20), "yyyy-MM-dd--HH-mm-ss", CultureInfo.CurrentCulture, DateTimeStyles.AssumeUniversal);
+                        var date = DateTime.ParseExact(dir.Name.AsSpan().Slice(0,20), "yyyy-MM-dd--HH-mm-ss", CultureInfo.CurrentCulture, DateTimeStyles.AssumeLocal);
                         return date;
                     }).ThenBy(dir =>
                         {
@@ -775,7 +790,7 @@ namespace OpenpilotSdk.Hardware
             return Equals(IpAddress, other.IpAddress);
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (ReferenceEquals(null, obj))
             {
@@ -839,15 +854,15 @@ namespace OpenpilotSdk.Hardware
             var fileSystemEntries = SftpClient.EnumerateFileSystemEntries(path);
             return fileSystemEntries;
         }
-
-        public async Task<IEnumerable<ISftpFile>> EnumerateFilesAsync(string path = ".")
+        
+        public async Task<IEnumerable<ISftpFile>?> EnumerateFilesAsync(string path = ".")
         {
             await ConnectAsync();
 
             var directoryListing = await SftpClient.ListDirectoryAsync(path, CancellationToken.None);
             return directoryListing;
         }
-
+        
         public IEnumerable<ISftpFile> EnumerateFiles(string path = ".")
         {
             Connect();
@@ -968,8 +983,16 @@ namespace OpenpilotSdk.Hardware
                 var socketConnected = false;
                 using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
                 {
-
-                    var socketTask = socket.ConnectAsync(address, port);
+                    Task socketTask;
+                    try
+                    {
+                        socketTask = socket.ConnectAsync(address, port);
+                    }
+                    catch (Exception)
+                    {
+                        return null;
+                    }
+                    
                     await Task.WhenAny(Task.Delay(timeout), socketTask).ConfigureAwait(false);
 
                     socketConnected = socket.Connected;
@@ -987,11 +1010,15 @@ namespace OpenpilotSdk.Hardware
                 {
                     Serilog.Log.Information("Connected to {Address} on port {port}", address, port);
 
+                    var privateKeyFile = Path.Combine(
+                        OperatingSystem.IsWindows()
+                            ? AppContext.BaseDirectory
+                            : Environment.GetFolderPath(Environment.SpecialFolder.Personal),
+                        "opensshkey");
+
                     var privateKeys = new PrivateKeyFile[]
                     {
-                        new PrivateKeyFile(Path.Combine(
-                            AppContext.BaseDirectory ?? Environment.GetFolderPath(Environment.SpecialFolder.Personal),
-                            "opensshkey"))
+                        new PrivateKeyFile(privateKeyFile)
                     };
 
                     bool foundDevice = false;
@@ -1049,7 +1076,7 @@ namespace OpenpilotSdk.Hardware
             return null;
         }
 
-        public virtual async Task<ForkResult> ReinstallOpenpilotAsync(IProgress<InstallProgress> progress = null)
+        public virtual async Task<ForkResult> ReinstallOpenpilotAsync(IProgress<InstallProgress>? progress = null)
         {
             await ConnectAsync();
 
@@ -1131,17 +1158,17 @@ namespace OpenpilotSdk.Hardware
             }
         }
 
-        public virtual async Task<ForkResult> InstallForkAsync(string username, string branch, IProgress<InstallProgress> progress)
+        public virtual async Task<ForkResult> InstallForkAsync(string username, string branch, IProgress<InstallProgress>? progress, string repository = "openpilot")
         {
             if (progress == null)
             {
-                return await InstallForkAsync(username, branch).ConfigureAwait(false);
+                return await InstallForkAsync(username, branch, repository).ConfigureAwait(false);
             }
 
             await ConnectAsync();
 
             var installCommand =
-                string.Format(@"cd /data && rm -rf openpilot ; git clone -b {1} --depth 1 --single-branch --progress --recurse-submodules --shallow-submodules https://github.com/{0}/openpilot.git openpilot", username, branch);
+                string.Format(@"cd /data && rm -rf openpilot ; git clone -b {1} --depth 1 --single-branch --progress --recurse-submodules --shallow-submodules https://github.com/{0}/{2}.git openpilot", username, branch, repository);
 
             var progressRegex = new Regex(@"\d+(?=%)", RegexOptions.Compiled);
             int previousProgress = 0;
@@ -1193,12 +1220,12 @@ namespace OpenpilotSdk.Hardware
             }
         }
 
-        public virtual async Task<ForkResult> InstallForkAsync(string username, string branch)
+        public virtual async Task<ForkResult> InstallForkAsync(string username, string branch, string repository = "openpilot")
         {
             await ConnectAsync();
 
             var installCommand =
-                string.Format(@"cd /data && rm -rf openpilot; git clone -b {1} --depth 1 --single-branch --recurse-submodules --shallow-submodules https://github.com/{0}/openpilot.git openpilot", username, branch);
+                string.Format(@"cd /data && rm -rf openpilot; git clone -b {1} --depth 1 --single-branch --recurse-submodules --shallow-submodules https://github.com/{0}/{2}.git openpilot", username, branch, repository);
 
             using (var command = SshClient.CreateCommand(installCommand))
             {
@@ -1222,6 +1249,9 @@ namespace OpenpilotSdk.Hardware
         {
             await ConnectAsync();
             var client = SshClient.CreateShellStream(this.ToString(), 0, 0, 0, 0, 1024);
+
+            await client.WriteAsync(new ReadOnlyMemory<byte>(Encoding.UTF8.GetBytes("export TERM='xterm-256color'\n")));
+            await client.FlushAsync();
             return client;
         }
 
@@ -1233,6 +1263,7 @@ namespace OpenpilotSdk.Hardware
         }
 
         //More than 10 concurrent requests to SftpClient.ConnectAsync will throw an exception
+        //ConnectionInfo.MaxSessions
         private readonly SemaphoreSlim _maxConcurrentConnectionLock = new SemaphoreSlim(10, 10);
         private readonly SemaphoreSlim _connectionLock = new SemaphoreSlim(1, 1);
         public void Connect()
@@ -1245,10 +1276,16 @@ namespace OpenpilotSdk.Hardware
                     var connectionInfo = new ConnectionInfo(IpAddress.ToString(), Port,
                         "comma",
                         new PrivateKeyAuthenticationMethod("comma",
-                            new PrivateKeyFile(Path.Combine(AppContext.BaseDirectory ?? Environment.GetFolderPath(Environment.SpecialFolder.Personal),
+                            new PrivateKeyFile(Path.Combine(
+                                OperatingSystem.IsWindows()
+                                    ? AppContext.BaseDirectory
+                                    : Environment.GetFolderPath(Environment.SpecialFolder.Personal),
                                 "opensshkey"))));
                     SftpClient = new SftpClient(connectionInfo);
                     SshClient = new SshClient(connectionInfo);
+
+                    SftpClient.KeepAliveInterval = TimeSpan.FromSeconds(20);
+                    SshClient.KeepAliveInterval = TimeSpan.FromSeconds(20);
 
                     SftpClient.Connect();
                     SshClient.Connect();
@@ -1274,19 +1311,27 @@ namespace OpenpilotSdk.Hardware
             {
                 if (SftpClient == null || !SftpClient.IsConnected)
                 {
+                    var privateKeyFile = Path.Combine(
+                        OperatingSystem.IsWindows()
+                            ? AppContext.BaseDirectory
+                            : Environment.GetFolderPath(Environment.SpecialFolder.Personal),
+                        "opensshkey");
+
                     var connectionInfo = new ConnectionInfo(IpAddress.ToString(), Port,
                         "comma",
                         new PrivateKeyAuthenticationMethod("comma",
-                            new PrivateKeyFile(Path.Combine(AppContext.BaseDirectory ?? Environment.GetFolderPath(Environment.SpecialFolder.Personal),
-                                "opensshkey"))));
+                            new PrivateKeyFile(privateKeyFile)));
                     SftpClient = new SftpClient(connectionInfo);
                     SshClient = new SshClient(connectionInfo);
+
+                    SftpClient.KeepAliveInterval = TimeSpan.FromSeconds(20);
+                    SshClient.KeepAliveInterval = TimeSpan.FromSeconds(20);
 
                     await _maxConcurrentConnectionLock.WaitAsync(cancellationToken);
                     try
                     {
                         await SftpClient.ConnectAsync(cancellationToken);
-                        SftpClient.ChangeDirectory("/data/openpilot/");
+                        //SftpClient.ChangeDirectory("/data/openpilot/");
 
                         await SshClient.ConnectAsync(cancellationToken);
                     }

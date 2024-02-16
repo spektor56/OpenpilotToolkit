@@ -1,6 +1,6 @@
 ﻿namespace OpenpilotSdk.Git
 {
-    public class ForkResult
+    public sealed class ForkResult
     {
         public bool Success { get; private set; }
         public string Message { get; private set; }

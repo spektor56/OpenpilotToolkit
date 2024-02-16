@@ -3,11 +3,11 @@
  * @license MIT
  */
 
-import { ICoreService, ILogService, IOptionsService, IBufferService } from 'common/services/Services';
-import { EventEmitter, IEvent } from 'common/EventEmitter';
-import { IDecPrivateModes, IModes } from 'common/Types';
 import { clone } from 'common/Clone';
+import { EventEmitter } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';
+import { IDecPrivateModes, IModes } from 'common/Types';
+import { IBufferService, ICoreService, ILogService, IOptionsService } from 'common/services/Services';
 
 const DEFAULT_MODES: IModes = Object.freeze({
   insertMode: false
@@ -31,26 +31,21 @@ export class CoreService extends Disposable implements ICoreService {
   public modes: IModes;
   public decPrivateModes: IDecPrivateModes;
 
-  // Circular dependency, this must be unset or memory will leak after Terminal.dispose
-  private _scrollToBottom: (() => void) | undefined;
-
-  private _onData = this.register(new EventEmitter<string>());
-  public get onData(): IEvent<string> { return this._onData.event; }
-  private _onUserInput = this.register(new EventEmitter<void>());
-  public get onUserInput(): IEvent<void> { return this._onUserInput.event; }
-  private _onBinary = this.register(new EventEmitter<string>());
-  public get onBinary(): IEvent<string> { return this._onBinary.event; }
+  private readonly _onData = this.register(new EventEmitter<string>());
+  public readonly onData = this._onData.event;
+  private readonly _onUserInput = this.register(new EventEmitter<void>());
+  public readonly onUserInput = this._onUserInput.event;
+  private readonly _onBinary = this.register(new EventEmitter<string>());
+  public readonly onBinary = this._onBinary.event;
+  private readonly _onRequestScrollToBottom = this.register(new EventEmitter<void>());
+  public readonly onRequestScrollToBottom = this._onRequestScrollToBottom.event;
 
   constructor(
-    // TODO: Move this into a service
-    scrollToBottom: () => void,
     @IBufferService private readonly _bufferService: IBufferService,
     @ILogService private readonly _logService: ILogService,
     @IOptionsService private readonly _optionsService: IOptionsService
   ) {
     super();
-    this._scrollToBottom = scrollToBottom;
-    this.register({ dispose: () => this._scrollToBottom = undefined });
     this.modes = clone(DEFAULT_MODES);
     this.decPrivateModes = clone(DEFAULT_DEC_PRIVATE_MODES);
   }
@@ -62,14 +57,14 @@ export class CoreService extends Disposable implements ICoreService {
 
   public triggerDataEvent(data: string, wasUserInput: boolean = false): void {
     // Prevents all events to pty process if stdin is disabled
-    if (this._optionsService.options.disableStdin) {
+    if (this._optionsService.rawOptions.disableStdin) {
       return;
     }
 
     // Input is being sent to the terminal, the terminal should focus the prompt.
     const buffer = this._bufferService.buffer;
-    if (buffer.ybase !== buffer.ydisp) {
-      this._scrollToBottom!();
+    if (wasUserInput && this._optionsService.rawOptions.scrollOnUserInput && buffer.ybase !== buffer.ydisp) {
+      this._onRequestScrollToBottom.fire();
     }
 
     // Fire onUserInput so listeners can react as well (eg. clear selection)
@@ -83,7 +78,7 @@ export class CoreService extends Disposable implements ICoreService {
   }
 
   public triggerBinaryEvent(data: string): void {
-    if (this._optionsService.options.disableStdin) {
+    if (this._optionsService.rawOptions.disableStdin) {
       return;
     }
     this._logService.debug(`sending binary "${data}"`, () => data.split('').map(e => e.charCodeAt(0)));

@@ -4,28 +4,29 @@
  * @license MIT
  */
 
-import { IInputHandler, IAttributeData, IDisposable, IWindowOptions, IAnsiColorChangeEvent, IParseStack } from 'common/Types';
+import { IInputHandler, IAttributeData, IDisposable, IWindowOptions, IColorEvent, IParseStack, ColorIndex, ColorRequestType, SpecialColorIndex } from 'common/Types';
 import { C0, C1 } from 'common/data/EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from 'common/data/Charsets';
 import { EscapeSequenceParser } from 'common/parser/EscapeSequenceParser';
 import { Disposable } from 'common/Lifecycle';
-import { concat } from 'common/TypedArrayUtils';
-import { StringToUtf32, stringFromCodePoint, utf32ToString, Utf8ToUtf32 } from 'common/input/TextDecoder';
-import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
-import { EventEmitter, IEvent } from 'common/EventEmitter';
-import { IParsingState, IDcsHandler, IEscapeSequenceParser, IParams, IFunctionIdentifier } from 'common/parser/Types';
+import { StringToUtf32, stringFromCodePoint, Utf8ToUtf32 } from 'common/input/TextDecoder';
+import { BufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
+import { EventEmitter } from 'common/EventEmitter';
+import { IParsingState, IEscapeSequenceParser, IParams, IFunctionIdentifier } from 'common/parser/Types';
 import { NULL_CELL_CODE, NULL_CELL_WIDTH, Attributes, FgFlags, BgFlags, Content, UnderlineStyle } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
 import { AttributeData } from 'common/buffer/AttributeData';
-import { ICoreService, IBufferService, IOptionsService, ILogService, IDirtyRowService, ICoreMouseService, ICharsetService, IUnicodeService, LogLevelEnum } from 'common/services/Services';
+import { ICoreService, IBufferService, IOptionsService, ILogService, ICoreMouseService, ICharsetService, IUnicodeService, LogLevelEnum, IOscLinkService } from 'common/services/Services';
+import { UnicodeService } from 'common/services/UnicodeService';
 import { OscHandler } from 'common/parser/OscParser';
 import { DcsHandler } from 'common/parser/DcsParser';
 import { IBuffer } from 'common/buffer/Types';
+import { parseColor } from 'common/input/XParseColor';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.
  */
-const GLEVEL: {[key: string]: number} = { '(': 0, ')': 1, '*': 2, '+': 3, '-': 1, '.': 2 };
+const GLEVEL: { [key: string]: number } = { '(': 0, ')': 1, '*': 2, '+': 3, '-': 1, '.': 2 };
 
 /**
  * VT commands done by the parser - FIXME: move this to the parser?
@@ -46,10 +47,13 @@ const GLEVEL: {[key: string]: number} = { '(': 0, ')': 1, '*': 2, '+': 3, '-': 1
 // @vt: #Y   C0    ESC   "Escape"                        "\e, \x1B"  "Start of a sequence. Cancels any other sequence."
 
 /**
- * Document common VT features here that are currently unsupported
+ * Document xterm VT features here that are currently unsupported
  */
-// @vt: #N   DCS   SIXEL   "SIXEL Graphics"  "DCS Ps ; Ps ; Ps ; q 	Pt ST"   "Draw SIXEL image starting at cursor position."
-// @vt: #N   OSC    1   "Set Icon Name"  "OSC 1 ; Pt BEL"  "Set icon name."
+// @vt: #E[Supported via @xterm/addon-image.]  DCS   SIXEL       "SIXEL Graphics"          "DCS Ps ; Ps ; Ps ; q 	Pt ST"  "Draw SIXEL image."
+// @vt: #N  DCS   DECUDK      "User Defined Keys"       "DCS Ps ; Ps \| Pt ST"           "Definitions for user-defined keys."
+// @vt: #N  DCS   XTGETTCAP   "Request Terminfo String" "DCS + q Pt ST"                 "Request Terminfo String."
+// @vt: #N  DCS   XTSETTCAP   "Set Terminfo Data"       "DCS + p Pt ST"                 "Set Terminfo Data."
+// @vt: #N  OSC   1           "Set Icon Name"           "OSC 1 ; Pt BEL"                "Set icon name."
 
 /**
  * Max length of the UTF32 input buffer. Real memory consumption is 4 times higher.
@@ -101,119 +105,8 @@ export enum WindowsOptionsReportType {
 // create a warning log if an async handler takes longer than the limit (in ms)
 const SLOW_ASYNC_LIMIT = 5000;
 
-/**
- * DCS subparser implementations
- */
-
-/**
- * DCS $ q Pt ST
- *   DECRQSS (https://vt100.net/docs/vt510-rm/DECRQSS.html)
- *   Request Status String (DECRQSS), VT420 and up.
- *   Response: DECRPSS (https://vt100.net/docs/vt510-rm/DECRPSS.html)
- *
- * @vt: #P[See limited support below.]  DCS   DECRQSS   "Request Selection or Setting"  "DCS $ q Pt ST"   "Request several terminal settings."
- * Response is in the form `ESC P 1 $ r Pt ST` for valid requests, where `Pt` contains the corresponding CSI string,
- * `ESC P 0 ST` for invalid requests.
- *
- * Supported requests and responses:
- *
- * | Type                             | Request           | Response (`Pt`)                                       |
- * | -------------------------------- | ----------------- | ----------------------------------------------------- |
- * | Graphic Rendition (SGR)          | `DCS $ q m ST`    | always reporting `0m` (currently broken)              |
- * | Top and Bottom Margins (DECSTBM) | `DCS $ q r ST`    | `Ps ; Ps r`                                           |
- * | Cursor Style (DECSCUSR)          | `DCS $ q SP q ST` | `Ps SP q`                                             |
- * | Protection Attribute (DECSCA)    | `DCS $ q " q ST`  | always reporting `0 " q` (DECSCA is unsupported)      |
- * | Conformance Level (DECSCL)       | `DCS $ q " p ST`  | always reporting `61 ; 1 " p` (DECSCL is unsupported) |
- *
- *
- * TODO:
- * - fix SGR report
- * - either implement DECSCA or remove the report
- * - either check which conformance is better suited or remove the report completely
- *   --> we are currently a mixture of all up to VT400 but dont follow anyone strictly
- */
-class DECRQSS implements IDcsHandler {
-  private _data: Uint32Array = new Uint32Array(0);
-
-  constructor(
-    private _bufferService: IBufferService,
-    private _coreService: ICoreService,
-    private _logService: ILogService,
-    private _optionsService: IOptionsService
-  ) { }
-
-  public hook(params: IParams): void {
-    this._data = new Uint32Array(0);
-  }
-
-  public put(data: Uint32Array, start: number, end: number): void {
-    this._data = concat(this._data, data.subarray(start, end));
-  }
-
-  public unhook(success: boolean): boolean {
-    if (!success) {
-      this._data = new Uint32Array(0);
-      return true;
-    }
-    const data = utf32ToString(this._data);
-    this._data = new Uint32Array(0);
-    switch (data) {
-      // valid: DCS 1 $ r Pt ST (xterm)
-      case '"q': // DECSCA
-        this._coreService.triggerDataEvent(`${C0.ESC}P1$r0"q${C0.ESC}\\`);
-        break;
-      case '"p': // DECSCL
-        this._coreService.triggerDataEvent(`${C0.ESC}P1$r61;1"p${C0.ESC}\\`);
-        break;
-      case 'r': // DECSTBM
-        const pt = '' + (this._bufferService.buffer.scrollTop + 1) +
-                ';' + (this._bufferService.buffer.scrollBottom + 1) + 'r';
-        this._coreService.triggerDataEvent(`${C0.ESC}P1$r${pt}${C0.ESC}\\`);
-        break;
-      case 'm': // SGR
-        // TODO: report real settings instead of 0m
-        this._coreService.triggerDataEvent(`${C0.ESC}P1$r0m${C0.ESC}\\`);
-        break;
-      case ' q': // DECSCUSR
-        const STYLES: {[key: string]: number} = { 'block': 2, 'underline': 4, 'bar': 6 };
-        let style = STYLES[this._optionsService.options.cursorStyle];
-        style -= this._optionsService.options.cursorBlink ? 1 : 0;
-        this._coreService.triggerDataEvent(`${C0.ESC}P1$r${style} q${C0.ESC}\\`);
-        break;
-      default:
-        // invalid: DCS 0 $ r Pt ST (xterm)
-        this._logService.debug('Unknown DCS $q %s', data);
-        this._coreService.triggerDataEvent(`${C0.ESC}P0$r${C0.ESC}\\`);
-    }
-    return true;
-  }
-}
-
-/**
- * DCS Ps; Ps| Pt ST
- *   DECUDK (https://vt100.net/docs/vt510-rm/DECUDK.html)
- *   not supported
- *
- * @vt: #N  DCS   DECUDK   "User Defined Keys"  "DCS Ps ; Ps | Pt ST"   "Definitions for user-defined keys."
- */
-
-/**
- * DCS + q Pt ST (xterm)
- *   Request Terminfo String
- *   not implemented
- *
- * @vt: #N  DCS   XTGETTCAP   "Request Terminfo String"  "DCS + q Pt ST"   "Request Terminfo String."
- */
-
-/**
- * DCS + p Pt ST (xterm)
- *   Set Terminfo Data
- *   not supported
- *
- * @vt: #N  DCS   XTSETTCAP   "Set Terminfo Data"  "DCS + p Pt ST"   "Set Terminfo Data."
- */
-
-
+// Work variables to avoid garbage collection
+let $temp = 0;
 
 /**
  * The terminal's standard implementation of IInputHandler, this handles all
@@ -229,41 +122,43 @@ export class InputHandler extends Disposable implements IInputHandler {
   private _workCell: CellData = new CellData();
   private _windowTitle = '';
   private _iconName = '';
+  private _dirtyRowTracker: IDirtyRowTracker;
   protected _windowTitleStack: string[] = [];
   protected _iconNameStack: string[] = [];
 
   private _curAttrData: IAttributeData = DEFAULT_ATTR_DATA.clone();
+  public getAttrData(): IAttributeData { return this._curAttrData; }
   private _eraseAttrDataInternal: IAttributeData = DEFAULT_ATTR_DATA.clone();
 
   private _activeBuffer: IBuffer;
 
-  private _onRequestBell = new EventEmitter<void>();
-  public get onRequestBell(): IEvent<void> { return this._onRequestBell.event; }
-  private _onRequestRefreshRows = new EventEmitter<number, number>();
-  public get onRequestRefreshRows(): IEvent<number, number> { return this._onRequestRefreshRows.event; }
-  private _onRequestReset = new EventEmitter<void>();
-  public get onRequestReset(): IEvent<void> { return this._onRequestReset.event; }
-  private _onRequestSendFocus = new EventEmitter<void>();
-  public get onRequestSendFocus(): IEvent<void> { return this._onRequestSendFocus.event; }
-  private _onRequestSyncScrollBar = new EventEmitter<void>();
-  public get onRequestSyncScrollBar(): IEvent<void> { return this._onRequestSyncScrollBar.event; }
-  private _onRequestWindowsOptionsReport = new EventEmitter<WindowsOptionsReportType>();
-  public get onRequestWindowsOptionsReport(): IEvent<WindowsOptionsReportType> { return this._onRequestWindowsOptionsReport.event; }
+  private readonly _onRequestBell = this.register(new EventEmitter<void>());
+  public readonly onRequestBell = this._onRequestBell.event;
+  private readonly _onRequestRefreshRows = this.register(new EventEmitter<number, number>());
+  public readonly onRequestRefreshRows = this._onRequestRefreshRows.event;
+  private readonly _onRequestReset = this.register(new EventEmitter<void>());
+  public readonly onRequestReset = this._onRequestReset.event;
+  private readonly _onRequestSendFocus = this.register(new EventEmitter<void>());
+  public readonly onRequestSendFocus = this._onRequestSendFocus.event;
+  private readonly _onRequestSyncScrollBar = this.register(new EventEmitter<void>());
+  public readonly onRequestSyncScrollBar = this._onRequestSyncScrollBar.event;
+  private readonly _onRequestWindowsOptionsReport = this.register(new EventEmitter<WindowsOptionsReportType>());
+  public readonly onRequestWindowsOptionsReport = this._onRequestWindowsOptionsReport.event;
 
-  private _onA11yChar = new EventEmitter<string>();
-  public get onA11yChar(): IEvent<string> { return this._onA11yChar.event; }
-  private _onA11yTab = new EventEmitter<number>();
-  public get onA11yTab(): IEvent<number> { return this._onA11yTab.event; }
-  private _onCursorMove = new EventEmitter<void>();
-  public get onCursorMove(): IEvent<void> { return this._onCursorMove.event; }
-  private _onLineFeed = new EventEmitter<void>();
-  public get onLineFeed(): IEvent<void> { return this._onLineFeed.event; }
-  private _onScroll = new EventEmitter<number>();
-  public get onScroll(): IEvent<number> { return this._onScroll.event; }
-  private _onTitleChange = new EventEmitter<string>();
-  public get onTitleChange(): IEvent<string> { return this._onTitleChange.event; }
-  private _onAnsiColorChange = new EventEmitter<IAnsiColorChangeEvent>();
-  public get onAnsiColorChange(): IEvent<IAnsiColorChangeEvent> { return this._onAnsiColorChange.event; }
+  private readonly _onA11yChar = this.register(new EventEmitter<string>());
+  public readonly onA11yChar = this._onA11yChar.event;
+  private readonly _onA11yTab = this.register(new EventEmitter<number>());
+  public readonly onA11yTab = this._onA11yTab.event;
+  private readonly _onCursorMove = this.register(new EventEmitter<void>());
+  public readonly onCursorMove = this._onCursorMove.event;
+  private readonly _onLineFeed = this.register(new EventEmitter<void>());
+  public readonly onLineFeed = this._onLineFeed.event;
+  private readonly _onScroll = this.register(new EventEmitter<number>());
+  public readonly onScroll = this._onScroll.event;
+  private readonly _onTitleChange = this.register(new EventEmitter<string>());
+  public readonly onTitleChange = this._onTitleChange.event;
+  private readonly _onColor = this.register(new EventEmitter<IColorEvent>());
+  public readonly onColor = this._onColor.event;
 
   private _parseStack: IParseStack = {
     paused: false,
@@ -277,15 +172,16 @@ export class InputHandler extends Disposable implements IInputHandler {
     private readonly _bufferService: IBufferService,
     private readonly _charsetService: ICharsetService,
     private readonly _coreService: ICoreService,
-    private readonly _dirtyRowService: IDirtyRowService,
     private readonly _logService: ILogService,
     private readonly _optionsService: IOptionsService,
+    private readonly _oscLinkService: IOscLinkService,
     private readonly _coreMouseService: ICoreMouseService,
     private readonly _unicodeService: IUnicodeService,
     private readonly _parser: IEscapeSequenceParser = new EscapeSequenceParser()
   ) {
     super();
     this.register(this._parser);
+    this._dirtyRowTracker = new DirtyRowTracker(this._bufferService);
 
     // Track properties used in performance critical code manually to avoid using slow getters
     this._activeBuffer = this._bufferService.buffer;
@@ -333,10 +229,10 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._parser.registerCsiHandler({ final: 'G' }, params => this.cursorCharAbsolute(params));
     this._parser.registerCsiHandler({ final: 'H' }, params => this.cursorPosition(params));
     this._parser.registerCsiHandler({ final: 'I' }, params => this.cursorForwardTab(params));
-    this._parser.registerCsiHandler({ final: 'J' }, params => this.eraseInDisplay(params));
-    this._parser.registerCsiHandler({ prefix: '?', final: 'J' }, params => this.eraseInDisplay(params));
-    this._parser.registerCsiHandler({ final: 'K' }, params => this.eraseInLine(params));
-    this._parser.registerCsiHandler({ prefix: '?', final: 'K' }, params => this.eraseInLine(params));
+    this._parser.registerCsiHandler({ final: 'J' }, params => this.eraseInDisplay(params, false));
+    this._parser.registerCsiHandler({ prefix: '?', final: 'J' }, params => this.eraseInDisplay(params, true));
+    this._parser.registerCsiHandler({ final: 'K' }, params => this.eraseInLine(params, false));
+    this._parser.registerCsiHandler({ prefix: '?', final: 'K' }, params => this.eraseInLine(params, true));
     this._parser.registerCsiHandler({ final: 'L' }, params => this.insertLines(params));
     this._parser.registerCsiHandler({ final: 'M' }, params => this.deleteLines(params));
     this._parser.registerCsiHandler({ final: 'P' }, params => this.deleteChars(params));
@@ -368,6 +264,9 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._parser.registerCsiHandler({ final: 'u' }, params => this.restoreCursor(params));
     this._parser.registerCsiHandler({ intermediates: '\'', final: '}' }, params => this.insertColumns(params));
     this._parser.registerCsiHandler({ intermediates: '\'', final: '~' }, params => this.deleteColumns(params));
+    this._parser.registerCsiHandler({ intermediates: '"', final: 'q' }, params => this.selectProtected(params));
+    this._parser.registerCsiHandler({ intermediates: '$', final: 'p' }, params => this.requestMode(params, true));
+    this._parser.registerCsiHandler({ prefix: '?', intermediates: '$', final: 'p' }, params => this.requestMode(params, false));
 
     /**
      * execute handler
@@ -398,13 +297,18 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._parser.registerOscHandler(2, new OscHandler(data => this.setTitle(data)));
     //   3 - set property X in the form "prop=value"
     //   4 - Change Color Number
-    this._parser.registerOscHandler(4, new OscHandler(data => this.setAnsiColor(data)));
+    this._parser.registerOscHandler(4, new OscHandler(data => this.setOrReportIndexedColor(data)));
     //   5 - Change Special Color Number
     //   6 - Enable/disable Special Color Number c
     //   7 - current directory? (not in xterm spec, see https://gitlab.com/gnachman/iterm2/issues/3939)
+    //   8 - create hyperlink (not in xterm spec, see https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda)
+    this._parser.registerOscHandler(8, new OscHandler(data => this.setHyperlink(data)));
     //  10 - Change VT100 text foreground color to Pt.
+    this._parser.registerOscHandler(10, new OscHandler(data => this.setOrReportFgColor(data)));
     //  11 - Change VT100 text background color to Pt.
+    this._parser.registerOscHandler(11, new OscHandler(data => this.setOrReportBgColor(data)));
     //  12 - Change text cursor color to Pt.
+    this._parser.registerOscHandler(12, new OscHandler(data => this.setOrReportCursorColor(data)));
     //  13 - Change mouse foreground color to Pt.
     //  14 - Change mouse background color to Pt.
     //  15 - Change Tektronix foreground color to Pt.
@@ -417,11 +321,15 @@ export class InputHandler extends Disposable implements IInputHandler {
     //  51 - reserved for Emacs shell.
     //  52 - Manipulate Selection Data.
     // 104 ; c - Reset Color Number c.
+    this._parser.registerOscHandler(104, new OscHandler(data => this.restoreIndexedColor(data)));
     // 105 ; c - Reset Special Color Number c.
     // 106 ; c; f - Enable/disable Special Color Number c.
     // 110 - Reset VT100 text foreground color.
+    this._parser.registerOscHandler(110, new OscHandler(data => this.restoreFgColor(data)));
     // 111 - Reset VT100 text background color.
+    this._parser.registerOscHandler(111, new OscHandler(data => this.restoreBgColor(data)));
     // 112 - Reset text cursor color.
+    this._parser.registerOscHandler(112, new OscHandler(data => this.restoreCursorColor(data)));
     // 113 - Reset mouse foreground color.
     // 114 - Reset mouse background color.
     // 115 - Reset Tektronix foreground color.
@@ -471,11 +379,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     /**
      * DCS handler
      */
-    this._parser.registerDcsHandler({ intermediates: '$', final: 'q' }, new DECRQSS(this._bufferService, this._coreService, this._logService, this._optionsService));
-  }
-
-  public dispose(): void {
-    super.dispose();
+    this._parser.registerDcsHandler({ intermediates: '$', final: 'q' }, new DcsHandler((data, params) => this.requestStatusString(data, params)));
   }
 
   /**
@@ -502,6 +406,10 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
   }
 
+  private _getCurrentLinkId(): number {
+    return this._curAttrData.extended.urlId;
+  }
+
   /**
    * Parse call with async handler support.
    *
@@ -509,11 +417,11 @@ export class InputHandler extends Disposable implements IInputHandler {
    * - undefined (void):
    *   all handlers were sync, no stack save, continue normally with next chunk
    * - Promise\<boolean\>:
-   *   execution stopped at async handler, stack saved, continue with
-   *   same chunk and the promise resolve value as `promiseResult` until the method returns `undefined`
+   *   execution stopped at async handler, stack saved, continue with same chunk and the promise
+   *   resolve value as `promiseResult` until the method returns `undefined`
    *
-   * Note: This method should only be called by `Terminal.write` to ensure correct execution order and
-   * proper continuation of async parser handlers.
+   * Note: This method should only be called by `Terminal.write` to ensure correct execution order
+   * and proper continuation of async parser handlers.
    */
   public parse(data: string | Uint8Array, promiseResult?: boolean): void | Promise<boolean> {
     let result: void | Promise<boolean>;
@@ -536,7 +444,13 @@ export class InputHandler extends Disposable implements IInputHandler {
       }
     }
 
-    this._logService.debug('parsing data', data);
+    // Log debug data, the log level gate is to prevent extra work in this hot path
+    if (this._logService.logLevel <= LogLevelEnum.DEBUG) {
+      this._logService.debug(`parsing data${typeof data === 'string' ? ` "${data}"` : ` "${Array.prototype.map.call(data, e => String.fromCharCode(e)).join('')}"`}`, typeof data === 'string'
+        ? data.split('').map(e => e.charCodeAt(0))
+        : data
+      );
+    }
 
     // resize input buffer if needed
     if (this._parseBuffer.length < data.length) {
@@ -548,7 +462,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     // Clear the dirty row service so we know which lines changed as a result of parsing
     // Important: do not clear between async calls, otherwise we lost pending update information.
     if (!wasPaused) {
-      this._dirtyRowService.clearRange();
+      this._dirtyRowTracker.clearRange();
     }
 
     // process big data in smaller chunks
@@ -581,34 +495,36 @@ export class InputHandler extends Disposable implements IInputHandler {
       this._onCursorMove.fire();
     }
 
-    // Refresh any dirty rows accumulated as part of parsing
-    this._onRequestRefreshRows.fire(this._dirtyRowService.start, this._dirtyRowService.end);
+    // Refresh any dirty rows accumulated as part of parsing, fire only for rows within the
+    // _viewport_ which is relative to ydisp, not relative to ybase.
+    const viewportEnd = this._dirtyRowTracker.end + (this._bufferService.buffer.ybase - this._bufferService.buffer.ydisp);
+    const viewportStart = this._dirtyRowTracker.start + (this._bufferService.buffer.ybase - this._bufferService.buffer.ydisp);
+    if (viewportStart < this._bufferService.rows) {
+      this._onRequestRefreshRows.fire(Math.min(viewportStart, this._bufferService.rows - 1), Math.min(viewportEnd, this._bufferService.rows - 1));
+    }
   }
 
   public print(data: Uint32Array, start: number, end: number): void {
     let code: number;
     let chWidth: number;
     const charset = this._charsetService.charset;
-    const screenReaderMode = this._optionsService.options.screenReaderMode;
+    const screenReaderMode = this._optionsService.rawOptions.screenReaderMode;
     const cols = this._bufferService.cols;
     const wraparoundMode = this._coreService.decPrivateModes.wraparound;
     const insertMode = this._coreService.modes.insertMode;
     const curAttr = this._curAttrData;
     let bufferRow = this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)!;
 
-    this._dirtyRowService.markDirty(this._activeBuffer.y);
+    this._dirtyRowTracker.markDirty(this._activeBuffer.y);
 
     // handle wide chars: reset start_cell-1 if we would overwrite the second cell of a wide char
     if (this._activeBuffer.x && end - start > 0 && bufferRow.getWidth(this._activeBuffer.x - 1) === 2) {
-      bufferRow.setCellFromCodePoint(this._activeBuffer.x - 1, 0, 1, curAttr.fg, curAttr.bg, curAttr.extended);
+      bufferRow.setCellFromCodepoint(this._activeBuffer.x - 1, 0, 1, curAttr);
     }
 
+    let precedingJoinState = this._parser.precedingJoinState;
     for (let pos = start; pos < end; ++pos) {
       code = data[pos];
-
-      // calculate print space
-      // expensive call, therefore we save width in line buffer
-      chWidth = this._unicodeService.wcwidth(code);
 
       // get charset replacement character
       // charset is only defined for ASCII, therefore we only
@@ -620,38 +536,29 @@ export class InputHandler extends Disposable implements IInputHandler {
         }
       }
 
+      const currentInfo = this._unicodeService.charProperties(code, precedingJoinState);
+      chWidth = UnicodeService.extractWidth(currentInfo);
+      const shouldJoin = UnicodeService.extractShouldJoin(currentInfo);
+      const oldWidth = shouldJoin ? UnicodeService.extractWidth(precedingJoinState) : 0;
+      precedingJoinState = currentInfo;
+
       if (screenReaderMode) {
         this._onA11yChar.fire(stringFromCodePoint(code));
       }
-
-      // insert combining char at last cursor position
-      // this._activeBuffer.x should never be 0 for a combining char
-      // since they always follow a cell consuming char
-      // therefore we can test for this._activeBuffer.x to avoid overflow left
-      if (!chWidth && this._activeBuffer.x) {
-        if (!bufferRow.getWidth(this._activeBuffer.x - 1)) {
-          // found empty cell after fullwidth, need to go 2 cells back
-          // it is save to step 2 cells back here
-          // since an empty cell is only set by fullwidth chars
-          bufferRow.addCodepointToCell(this._activeBuffer.x - 2, code);
-        } else {
-          bufferRow.addCodepointToCell(this._activeBuffer.x - 1, code);
-        }
-        continue;
+      if (this._getCurrentLinkId()) {
+        this._oscLinkService.addLineToLink(this._getCurrentLinkId(), this._activeBuffer.ybase + this._activeBuffer.y);
       }
 
       // goto next line if ch would overflow
       // NOTE: To avoid costly width checks here,
       // the terminal does not allow a cols < 2.
-      if (this._activeBuffer.x + chWidth - 1 >= cols) {
+      if (this._activeBuffer.x + chWidth - oldWidth > cols) {
         // autowrap - DECAWM
         // automatically wraps to the beginning of the next line
         if (wraparoundMode) {
-          // clear left over cells to the right
-          while (this._activeBuffer.x < cols) {
-            bufferRow.setCellFromCodePoint(this._activeBuffer.x++, 0, 1, curAttr.fg, curAttr.bg, curAttr.extended);
-          }
-          this._activeBuffer.x = 0;
+          const oldRow = bufferRow;
+          let oldCol = this._activeBuffer.x - oldWidth;
+          this._activeBuffer.x = oldWidth;
           this._activeBuffer.y++;
           if (this._activeBuffer.y === this._activeBuffer.scrollBottom + 1) {
             this._activeBuffer.y--;
@@ -666,6 +573,16 @@ export class InputHandler extends Disposable implements IInputHandler {
           }
           // row changed, get it again
           bufferRow = this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)!;
+          if (oldWidth > 0 && bufferRow instanceof BufferLine) {
+            // Combining character widens 1 column to 2.
+            // Move old character to next line.
+            bufferRow.copyCellsFrom(oldRow as BufferLine,
+              oldCol, 0, oldWidth, false);
+          }
+          // clear left over cells to the right
+          while (oldCol < cols) {
+            oldRow.setCellFromCodepoint(oldCol++, 0, 1, curAttr);
+          }
         } else {
           this._activeBuffer.x = cols - 1;
           if (chWidth === 2) {
@@ -676,20 +593,37 @@ export class InputHandler extends Disposable implements IInputHandler {
         }
       }
 
+      // insert combining char at last cursor position
+      // this._activeBuffer.x should never be 0 for a combining char
+      // since they always follow a cell consuming char
+      // therefore we can test for this._activeBuffer.x to avoid overflow left
+      if (shouldJoin && this._activeBuffer.x) {
+        const offset = bufferRow.getWidth(this._activeBuffer.x - 1) ? 1 : 2;
+        // if empty cell after fullwidth, need to go 2 cells back
+        // it is save to step 2 cells back here
+        // since an empty cell is only set by fullwidth chars
+        bufferRow.addCodepointToCell(this._activeBuffer.x - offset,
+          code, chWidth);
+        for (let delta = chWidth - oldWidth; --delta >= 0; ) {
+          bufferRow.setCellFromCodepoint(this._activeBuffer.x++, 0, 0, curAttr);
+        }
+        continue;
+      }
+
       // insert mode: move characters to right
       if (insertMode) {
         // right shift cells according to the width
-        bufferRow.insertCells(this._activeBuffer.x, chWidth, this._activeBuffer.getNullCell(curAttr), curAttr);
+        bufferRow.insertCells(this._activeBuffer.x, chWidth - oldWidth, this._activeBuffer.getNullCell(curAttr));
         // test last cell - since the last cell has only room for
         // a halfwidth char any fullwidth shifted there is lost
         // and will be set to empty cell
         if (bufferRow.getWidth(cols - 1) === 2) {
-          bufferRow.setCellFromCodePoint(cols - 1, NULL_CELL_CODE, NULL_CELL_WIDTH, curAttr.fg, curAttr.bg, curAttr.extended);
+          bufferRow.setCellFromCodepoint(cols - 1, NULL_CELL_CODE, NULL_CELL_WIDTH, curAttr);
         }
       }
 
       // write current char to buffer and advance cursor
-      bufferRow.setCellFromCodePoint(this._activeBuffer.x++, code, chWidth, curAttr.fg, curAttr.bg, curAttr.extended);
+      bufferRow.setCellFromCodepoint(this._activeBuffer.x++, code, chWidth, curAttr);
 
       // fullwidth char - also set next cell to placeholder stub and advance cursor
       // for graphemes bigger than fullwidth we can simply loop to zero
@@ -697,31 +631,19 @@ export class InputHandler extends Disposable implements IInputHandler {
       if (chWidth > 0) {
         while (--chWidth) {
           // other than a regular empty cell a cell following a wide char has no width
-          bufferRow.setCellFromCodePoint(this._activeBuffer.x++, 0, 0, curAttr.fg, curAttr.bg, curAttr.extended);
+          bufferRow.setCellFromCodepoint(this._activeBuffer.x++, 0, 0, curAttr);
         }
       }
     }
-    // store last char in Parser.precedingCodepoint for REP to work correctly
-    // This needs to check whether:
-    //  - fullwidth + surrogates: reset
-    //  - combining: only base char gets carried on (bug in xterm?)
-    if (end - start > 0) {
-      bufferRow.loadCell(this._activeBuffer.x - 1, this._workCell);
-      if (this._workCell.getWidth() === 2 || this._workCell.getCode() > 0xFFFF) {
-        this._parser.precedingCodepoint = 0;
-      } else if (this._workCell.isCombined()) {
-        this._parser.precedingCodepoint = this._workCell.getChars().charCodeAt(0);
-      } else {
-        this._parser.precedingCodepoint = this._workCell.content;
-      }
-    }
+
+    this._parser.precedingJoinState = precedingJoinState;
 
     // handle wide chars: reset cell to the right if it is second cell of a wide char
     if (this._activeBuffer.x < cols && end - start > 0 && bufferRow.getWidth(this._activeBuffer.x) === 0 && !bufferRow.hasContent(this._activeBuffer.x)) {
-      bufferRow.setCellFromCodePoint(this._activeBuffer.x, 0, 1, curAttr.fg, curAttr.bg, curAttr.extended);
+      bufferRow.setCellFromCodepoint(this._activeBuffer.x, 0, 1, curAttr);
     }
 
-    this._dirtyRowService.markDirty(this._activeBuffer.y);
+    this._dirtyRowTracker.markDirty(this._activeBuffer.y);
   }
 
   /**
@@ -731,7 +653,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (id.final === 't' && !id.prefix && !id.intermediates) {
       // security: always check whether window option is allowed
       return this._parser.registerCsiHandler(id, params => {
-        if (!paramToWindowOption(params.params[0], this._optionsService.options.windowOptions)) {
+        if (!paramToWindowOption(params.params[0], this._optionsService.rawOptions.windowOptions)) {
           return true;
         }
         return callback(params);
@@ -785,8 +707,8 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @vt: #Y   C0    FF   "Form Feed"            "\f, \x0C"  "Treated as LF."
    */
   public lineFeed(): boolean {
-    this._dirtyRowService.markDirty(this._activeBuffer.y);
-    if (this._optionsService.options.convertEol) {
+    this._dirtyRowTracker.markDirty(this._activeBuffer.y);
+    if (this._optionsService.rawOptions.convertEol) {
       this._activeBuffer.x = 0;
     }
     this._activeBuffer.y++;
@@ -795,12 +717,19 @@ export class InputHandler extends Disposable implements IInputHandler {
       this._bufferService.scroll(this._eraseAttrData());
     } else if (this._activeBuffer.y >= this._bufferService.rows) {
       this._activeBuffer.y = this._bufferService.rows - 1;
+    } else {
+      // There was an explicit line feed (not just a carriage return), so clear the wrapped state of
+      // the line. This is particularly important on conpty/Windows where revisiting lines to
+      // reprint is common, especially on resize. Note that the windowsMode wrapped line heuristics
+      // can mess with this so windowsMode should be disabled, which is recommended on Windows build
+      // 21376 and above.
+      this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)!.isWrapped = false;
     }
     // If the end of the line is hit, prevent this action from wrapping around to the next line.
     if (this._activeBuffer.x >= this._bufferService.cols) {
       this._activeBuffer.x--;
     }
-    this._dirtyRowService.markDirty(this._activeBuffer.y);
+    this._dirtyRowTracker.markDirty(this._activeBuffer.y);
 
     this._onLineFeed.fire();
     return true;
@@ -855,22 +784,22 @@ export class InputHandler extends Disposable implements IInputHandler {
        * - any cursor movement sequence keeps working as expected
        */
       if (this._activeBuffer.x === 0
-          && this._activeBuffer.y > this._activeBuffer.scrollTop
-          && this._activeBuffer.y <= this._activeBuffer.scrollBottom
-          && this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)?.isWrapped)
-      {
+        && this._activeBuffer.y > this._activeBuffer.scrollTop
+        && this._activeBuffer.y <= this._activeBuffer.scrollBottom
+        && this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)?.isWrapped) {
         this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)!.isWrapped = false;
         this._activeBuffer.y--;
         this._activeBuffer.x = this._bufferService.cols - 1;
         // find last taken cell - last cell can have 3 different states:
         // - hasContent(true) + hasWidth(1): narrow char - we are done
         // - hasWidth(0): second part of wide char - we are done
-        // - hasContent(false) + hasWidth(1): empty cell due to early wrapping wide char, go one cell further back
+        // - hasContent(false) + hasWidth(1): empty cell due to early wrapping wide char, go one
+        //   cell further back
         const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)!;
         if (line.hasWidth(this._activeBuffer.x) && !line.hasContent(this._activeBuffer.x)) {
           this._activeBuffer.x--;
-          // We do this only once, since width=1 + hasContent=false currently happens only once before
-          // early wrapping of a wide char.
+          // We do this only once, since width=1 + hasContent=false currently happens only once
+          // before early wrapping of a wide char.
           // This needs to be fixed once we support graphemes taking more than 2 cells.
         }
       }
@@ -891,7 +820,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
     const originalX = this._activeBuffer.x;
     this._activeBuffer.x = this._activeBuffer.nextStop();
-    if (this._optionsService.options.screenReaderMode) {
+    if (this._optionsService.rawOptions.screenReaderMode) {
       this._onA11yTab.fire(this._activeBuffer.x - originalX);
     }
     return true;
@@ -929,14 +858,14 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._activeBuffer.y = this._coreService.decPrivateModes.origin
       ? Math.min(this._activeBuffer.scrollBottom, Math.max(this._activeBuffer.scrollTop, this._activeBuffer.y))
       : Math.min(this._bufferService.rows - 1, Math.max(0, this._activeBuffer.y));
-    this._dirtyRowService.markDirty(this._activeBuffer.y);
+    this._dirtyRowTracker.markDirty(this._activeBuffer.y);
   }
 
   /**
    * Set absolute cursor position.
    */
   private _setCursor(x: number, y: number): void {
-    this._dirtyRowService.markDirty(this._activeBuffer.y);
+    this._dirtyRowTracker.markDirty(this._activeBuffer.y);
     if (this._coreService.decPrivateModes.origin) {
       this._activeBuffer.x = x;
       this._activeBuffer.y = this._activeBuffer.scrollTop + y;
@@ -945,7 +874,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       this._activeBuffer.y = y;
     }
     this._restrictCursor();
-    this._dirtyRowService.markDirty(this._activeBuffer.y);
+    this._dirtyRowTracker.markDirty(this._activeBuffer.y);
   }
 
   /**
@@ -1188,21 +1117,35 @@ export class InputHandler extends Disposable implements IInputHandler {
     return true;
   }
 
+  /**
+   * CSI Ps " q  Select Character Protection Attribute (DECSCA).
+   *
+   * @vt: #Y CSI DECSCA   "Select Character Protection Attribute"  "CSI Ps " q"  "Whether DECSED and DECSEL can erase (0=default, 2) or not (1)."
+   */
+  public selectProtected(params: IParams): boolean {
+    const p = params.params[0];
+    if (p === 1) this._curAttrData.bg |= BgFlags.PROTECTED;
+    if (p === 2 || p === 0) this._curAttrData.bg &= ~BgFlags.PROTECTED;
+    return true;
+  }
+
 
   /**
    * Helper method to erase cells in a terminal row.
    * The cell gets replaced with the eraseChar of the terminal.
-   * @param y row index
-   * @param start first cell index to be erased
-   * @param end   end - 1 is last erased cell
+   * @param y The row index relative to the viewport.
+   * @param start The start x index of the range to be erased.
+   * @param end The end x index of the range to be erased (exclusive).
+   * @param clearWrap clear the isWrapped flag
+   * @param respectProtect Whether to respect the protection attribute (DECSCA).
    */
-  private _eraseInBufferLine(y: number, start: number, end: number, clearWrap: boolean = false): void {
+  private _eraseInBufferLine(y: number, start: number, end: number, clearWrap: boolean = false, respectProtect: boolean = false): void {
     const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + y)!;
     line.replaceCells(
       start,
       end,
       this._activeBuffer.getNullCell(this._eraseAttrData()),
-      this._eraseAttrData()
+      respectProtect
     );
     if (clearWrap) {
       line.isWrapped = false;
@@ -1210,14 +1153,17 @@ export class InputHandler extends Disposable implements IInputHandler {
   }
 
   /**
-   * Helper method to reset cells in a terminal row.
-   * The cell gets replaced with the eraseChar of the terminal and the isWrapped property is set to false.
+   * Helper method to reset cells in a terminal row. The cell gets replaced with the eraseChar of
+   * the terminal and the isWrapped property is set to false.
    * @param y row index
    */
-  private _resetBufferLine(y: number): void {
-    const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + y)!;
-    line.fill(this._activeBuffer.getNullCell(this._eraseAttrData()));
-    line.isWrapped = false;
+  private _resetBufferLine(y: number, respectProtect: boolean = false): void {
+    const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + y);
+    if (line) {
+      line.fill(this._activeBuffer.getNullCell(this._eraseAttrData()), respectProtect);
+      this._bufferService.buffer.clearMarkers(this._activeBuffer.ybase + y);
+      line.isWrapped = false;
+    }
   }
 
   /**
@@ -1242,42 +1188,42 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 2  | Erase complete viewport.                                     |
    * | 3  | Erase scrollback.                                            |
    *
-   * @vt: #P[Protection attributes are not supported.] CSI DECSED   "Selective Erase In Display"  "CSI ? Ps J"  "Currently the same as ED."
+   * @vt: #Y CSI DECSED   "Selective Erase In Display"  "CSI ? Ps J"  "Same as ED with respecting protection flag."
    */
-  public eraseInDisplay(params: IParams): boolean {
+  public eraseInDisplay(params: IParams, respectProtect: boolean = false): boolean {
     this._restrictCursor(this._bufferService.cols);
     let j;
     switch (params.params[0]) {
       case 0:
         j = this._activeBuffer.y;
-        this._dirtyRowService.markDirty(j);
-        this._eraseInBufferLine(j++, this._activeBuffer.x, this._bufferService.cols, this._activeBuffer.x === 0);
+        this._dirtyRowTracker.markDirty(j);
+        this._eraseInBufferLine(j++, this._activeBuffer.x, this._bufferService.cols, this._activeBuffer.x === 0, respectProtect);
         for (; j < this._bufferService.rows; j++) {
-          this._resetBufferLine(j);
+          this._resetBufferLine(j, respectProtect);
         }
-        this._dirtyRowService.markDirty(j);
+        this._dirtyRowTracker.markDirty(j);
         break;
       case 1:
         j = this._activeBuffer.y;
-        this._dirtyRowService.markDirty(j);
+        this._dirtyRowTracker.markDirty(j);
         // Deleted front part of line and everything before. This line will no longer be wrapped.
-        this._eraseInBufferLine(j, 0, this._activeBuffer.x + 1, true);
+        this._eraseInBufferLine(j, 0, this._activeBuffer.x + 1, true, respectProtect);
         if (this._activeBuffer.x + 1 >= this._bufferService.cols) {
           // Deleted entire previous line. This next line can no longer be wrapped.
           this._activeBuffer.lines.get(j + 1)!.isWrapped = false;
         }
         while (j--) {
-          this._resetBufferLine(j);
+          this._resetBufferLine(j, respectProtect);
         }
-        this._dirtyRowService.markDirty(0);
+        this._dirtyRowTracker.markDirty(0);
         break;
       case 2:
         j = this._bufferService.rows;
-        this._dirtyRowService.markDirty(j - 1);
+        this._dirtyRowTracker.markDirty(j - 1);
         while (j--) {
-          this._resetBufferLine(j);
+          this._resetBufferLine(j, respectProtect);
         }
-        this._dirtyRowService.markDirty(0);
+        this._dirtyRowTracker.markDirty(0);
         break;
       case 3:
         // Clear scrollback (everything not in viewport)
@@ -1314,22 +1260,22 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 1  | Erase from the beginning of the line through the cursor. |
    * | 2  | Erase complete line.                                     |
    *
-   * @vt: #P[Protection attributes are not supported.] CSI DECSEL   "Selective Erase In Line"  "CSI ? Ps K"  "Currently the same as EL."
+   * @vt: #Y CSI DECSEL   "Selective Erase In Line"  "CSI ? Ps K"  "Same as EL with respecting protecting flag."
    */
-  public eraseInLine(params: IParams): boolean {
+  public eraseInLine(params: IParams, respectProtect: boolean = false): boolean {
     this._restrictCursor(this._bufferService.cols);
     switch (params.params[0]) {
       case 0:
-        this._eraseInBufferLine(this._activeBuffer.y, this._activeBuffer.x, this._bufferService.cols);
+        this._eraseInBufferLine(this._activeBuffer.y, this._activeBuffer.x, this._bufferService.cols, this._activeBuffer.x === 0, respectProtect);
         break;
       case 1:
-        this._eraseInBufferLine(this._activeBuffer.y, 0, this._activeBuffer.x + 1);
+        this._eraseInBufferLine(this._activeBuffer.y, 0, this._activeBuffer.x + 1, false, respectProtect);
         break;
       case 2:
-        this._eraseInBufferLine(this._activeBuffer.y, 0, this._bufferService.cols);
+        this._eraseInBufferLine(this._activeBuffer.y, 0, this._bufferService.cols, true, respectProtect);
         break;
     }
-    this._dirtyRowService.markDirty(this._activeBuffer.y);
+    this._dirtyRowTracker.markDirty(this._activeBuffer.y);
     return true;
   }
 
@@ -1361,7 +1307,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       this._activeBuffer.lines.splice(row, 0, this._activeBuffer.getBlankLine(this._eraseAttrData()));
     }
 
-    this._dirtyRowService.markRangeDirty(this._activeBuffer.y, this._activeBuffer.scrollBottom);
+    this._dirtyRowTracker.markRangeDirty(this._activeBuffer.y, this._activeBuffer.scrollBottom);
     this._activeBuffer.x = 0; // see https://vt100.net/docs/vt220-rm/chapter4.html - vt220 only?
     return true;
   }
@@ -1395,7 +1341,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       this._activeBuffer.lines.splice(j, 0, this._activeBuffer.getBlankLine(this._eraseAttrData()));
     }
 
-    this._dirtyRowService.markRangeDirty(this._activeBuffer.y, this._activeBuffer.scrollBottom);
+    this._dirtyRowTracker.markRangeDirty(this._activeBuffer.y, this._activeBuffer.scrollBottom);
     this._activeBuffer.x = 0; // see https://vt100.net/docs/vt220-rm/chapter4.html - vt220 only?
     return true;
   }
@@ -1405,8 +1351,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Insert Ps (Blank) Character(s) (default = 1) (ICH).
    *
    * @vt: #Y CSI ICH  "Insert Characters"   "CSI Ps @"  "Insert `Ps` (blank) characters (default = 1)."
-   * The ICH sequence inserts `Ps` blank characters. The cursor remains at the beginning of the blank characters.
-   * Text between the cursor and right margin moves to the right. Characters moved past the right margin are lost.
+   * The ICH sequence inserts `Ps` blank characters. The cursor remains at the beginning of the
+   * blank characters. Text between the cursor and right margin moves to the right. Characters moved
+   * past the right margin are lost.
    *
    *
    * FIXME: check against xterm - should not work outside of scroll margins (see VT520 manual)
@@ -1418,10 +1365,9 @@ export class InputHandler extends Disposable implements IInputHandler {
       line.insertCells(
         this._activeBuffer.x,
         params.params[0] || 1,
-        this._activeBuffer.getNullCell(this._eraseAttrData()),
-        this._eraseAttrData()
+        this._activeBuffer.getNullCell(this._eraseAttrData())
       );
-      this._dirtyRowService.markDirty(this._activeBuffer.y);
+      this._dirtyRowTracker.markDirty(this._activeBuffer.y);
     }
     return true;
   }
@@ -1431,8 +1377,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Delete Ps Character(s) (default = 1) (DCH).
    *
    * @vt: #Y CSI DCH   "Delete Character"  "CSI Ps P"  "Delete `Ps` characters (default=1)."
-   * As characters are deleted, the remaining characters between the cursor and right margin move to the left.
-   * Character attributes move with the characters. The terminal adds blank characters at the right margin.
+   * As characters are deleted, the remaining characters between the cursor and right margin move to
+   * the left. Character attributes move with the characters. The terminal adds blank characters at
+   * the right margin.
    *
    *
    * FIXME: check against xterm - should not work outside of scroll margins (see VT520 manual)
@@ -1444,10 +1391,9 @@ export class InputHandler extends Disposable implements IInputHandler {
       line.deleteCells(
         this._activeBuffer.x,
         params.params[0] || 1,
-        this._activeBuffer.getNullCell(this._eraseAttrData()),
-        this._eraseAttrData()
+        this._activeBuffer.getNullCell(this._eraseAttrData())
       );
-      this._dirtyRowService.markDirty(this._activeBuffer.y);
+      this._dirtyRowTracker.markDirty(this._activeBuffer.y);
     }
     return true;
   }
@@ -1467,7 +1413,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       this._activeBuffer.lines.splice(this._activeBuffer.ybase + this._activeBuffer.scrollTop, 1);
       this._activeBuffer.lines.splice(this._activeBuffer.ybase + this._activeBuffer.scrollBottom, 0, this._activeBuffer.getBlankLine(this._eraseAttrData()));
     }
-    this._dirtyRowService.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
+    this._dirtyRowTracker.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
     return true;
   }
 
@@ -1483,7 +1429,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       this._activeBuffer.lines.splice(this._activeBuffer.ybase + this._activeBuffer.scrollBottom, 1);
       this._activeBuffer.lines.splice(this._activeBuffer.ybase + this._activeBuffer.scrollTop, 0, this._activeBuffer.getBlankLine(DEFAULT_ATTR_DATA));
     }
-    this._dirtyRowService.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
+    this._dirtyRowTracker.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
     return true;
   }
 
@@ -1512,10 +1458,10 @@ export class InputHandler extends Disposable implements IInputHandler {
     const param = params.params[0] || 1;
     for (let y = this._activeBuffer.scrollTop; y <= this._activeBuffer.scrollBottom; ++y) {
       const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + y)!;
-      line.deleteCells(0, param, this._activeBuffer.getNullCell(this._eraseAttrData()), this._eraseAttrData());
+      line.deleteCells(0, param, this._activeBuffer.getNullCell(this._eraseAttrData()));
       line.isWrapped = false;
     }
-    this._dirtyRowService.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
+    this._dirtyRowTracker.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
     return true;
   }
 
@@ -1545,10 +1491,10 @@ export class InputHandler extends Disposable implements IInputHandler {
     const param = params.params[0] || 1;
     for (let y = this._activeBuffer.scrollTop; y <= this._activeBuffer.scrollBottom; ++y) {
       const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + y)!;
-      line.insertCells(0, param, this._activeBuffer.getNullCell(this._eraseAttrData()), this._eraseAttrData());
+      line.insertCells(0, param, this._activeBuffer.getNullCell(this._eraseAttrData()));
       line.isWrapped = false;
     }
-    this._dirtyRowService.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
+    this._dirtyRowTracker.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
     return true;
   }
 
@@ -1557,9 +1503,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Insert Ps Column(s) (default = 1) (DECIC), VT420 and up.
    *
    * @vt: #Y CSI DECIC "Insert Columns"  "CSI Ps ' }"  "Insert `Ps` columns at cursor position."
-   * DECIC inserts `Ps` times blank columns at the cursor position for all lines with the scroll margins,
-   * moving content to the right. Content at the right margin is lost.
-   * DECIC has no effect outside the scrolling margins.
+   * DECIC inserts `Ps` times blank columns at the cursor position for all lines with the scroll
+   * margins, moving content to the right. Content at the right margin is lost. DECIC has no effect
+   * outside the scrolling margins.
    */
   public insertColumns(params: IParams): boolean {
     if (this._activeBuffer.y > this._activeBuffer.scrollBottom || this._activeBuffer.y < this._activeBuffer.scrollTop) {
@@ -1568,10 +1514,10 @@ export class InputHandler extends Disposable implements IInputHandler {
     const param = params.params[0] || 1;
     for (let y = this._activeBuffer.scrollTop; y <= this._activeBuffer.scrollBottom; ++y) {
       const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + y)!;
-      line.insertCells(this._activeBuffer.x, param, this._activeBuffer.getNullCell(this._eraseAttrData()), this._eraseAttrData());
+      line.insertCells(this._activeBuffer.x, param, this._activeBuffer.getNullCell(this._eraseAttrData()));
       line.isWrapped = false;
     }
-    this._dirtyRowService.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
+    this._dirtyRowTracker.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
     return true;
   }
 
@@ -1591,10 +1537,10 @@ export class InputHandler extends Disposable implements IInputHandler {
     const param = params.params[0] || 1;
     for (let y = this._activeBuffer.scrollTop; y <= this._activeBuffer.scrollBottom; ++y) {
       const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + y)!;
-      line.deleteCells(this._activeBuffer.x, param, this._activeBuffer.getNullCell(this._eraseAttrData()), this._eraseAttrData());
+      line.deleteCells(this._activeBuffer.x, param, this._activeBuffer.getNullCell(this._eraseAttrData()));
       line.isWrapped = false;
     }
-    this._dirtyRowService.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
+    this._dirtyRowTracker.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
     return true;
   }
 
@@ -1613,10 +1559,9 @@ export class InputHandler extends Disposable implements IInputHandler {
       line.replaceCells(
         this._activeBuffer.x,
         this._activeBuffer.x + (params.params[0] || 1),
-        this._activeBuffer.getNullCell(this._eraseAttrData()),
-        this._eraseAttrData()
+        this._activeBuffer.getNullCell(this._eraseAttrData())
       );
-      this._dirtyRowService.markDirty(this._activeBuffer.y);
+      this._dirtyRowTracker.markDirty(this._activeBuffer.y);
     }
     return true;
   }
@@ -1633,32 +1578,44 @@ export class InputHandler extends Disposable implements IInputHandler {
    *    If the character preceding REP is a control function or part of a control function,
    *    the effect of REP is not defined by this Standard.
    *
-   * Since we propagate the terminal as xterm-256color we have to follow xterm's behavior:
-   *    - fullwidth + surrogate chars are ignored
-   *    - for combining chars only the base char gets repeated
+   * We extend xterm's behavior to allow repeating entire grapheme clusters.
+   * This isn't 100% xterm-compatible, but it seems saner and more useful.
    *    - text attrs are applied normally
    *    - wrap around is respected
    *    - any valid sequence resets the carried forward char
    *
-   * Note: To get reset on a valid sequence working correctly without much runtime penalty,
-   * the preceding codepoint is stored on the parser in `this.print` and reset during `parser.parse`.
+   * Note: To get reset on a valid sequence working correctly without much runtime penalty, the
+   * preceding codepoint is stored on the parser in `this.print` and reset during `parser.parse`.
    *
    * @vt: #Y CSI REP   "Repeat Preceding Character"    "CSI Ps b"  "Repeat preceding character `Ps` times (default=1)."
-   * REP repeats the previous character `Ps` times advancing the cursor, also wrapping if DECAWM is set.
-   * REP has no effect if the sequence does not follow a printable ASCII character
+   * REP repeats the previous character `Ps` times advancing the cursor, also wrapping if DECAWM is
+   * set. REP has no effect if the sequence does not follow a printable ASCII character
    * (NOOP for any other sequence in between or NON ASCII characters).
    */
   public repeatPrecedingCharacter(params: IParams): boolean {
-    if (!this._parser.precedingCodepoint) {
+    const joinState = this._parser.precedingJoinState;
+    if (!joinState) {
       return true;
     }
     // call print to insert the chars and handle correct wrapping
     const length = params.params[0] || 1;
-    const data = new Uint32Array(length);
-    for (let i = 0; i < length; ++i) {
-      data[i] = this._parser.precedingCodepoint;
+    const chWidth = UnicodeService.extractWidth(joinState);
+    const x = this._activeBuffer.x - chWidth;
+    const bufferRow = this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)!;
+    const text = bufferRow.getString(x);
+    const data = new Uint32Array(text.length * length);
+    let idata = 0;
+    for (let itext = 0; itext < text.length; ) {
+      const ch = text.codePointAt(itext) || 0;
+      data[idata++] = ch;
+      itext += ch > 0xffff ? 2 : 1;
     }
-    this.print(data, 0, data.length);
+    let tlength = idata;
+    for (let i = 1; i < length; ++i) {
+      data.copyWithin(tlength, 0, idata);
+      tlength += idata;
+    }
+    this.print(data, 0, tlength);
     return true;
   }
 
@@ -1749,7 +1706,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @param term The terminal name to evaluate
    */
   private _is(term: string): boolean {
-    return (this._optionsService.options.termName + '').indexOf(term) === 0;
+    return (this._optionsService.rawOptions.termName + '').indexOf(term) === 0;
   }
 
   /**
@@ -1767,7 +1724,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 2     | Keyboard Action Mode (KAM). Always on. | #N      |
    * | 4     | Insert Mode (IRM).                     | #Y      |
    * | 12    | Send/receive (SRM). Always off.        | #N      |
-   * | 20    | Automatic Newline (LNM). Always off.   | #N      |
+   * | 20    | Automatic Newline (LNM).               | #Y      |
    */
   public setMode(params: IParams): boolean {
     for (let i = 0; i < params.length; i++) {
@@ -1776,7 +1733,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._coreService.modes.insertMode = true;
           break;
         case 20:
-          // this._t.convertEol = true;
+          this._optionsService.options.convertEol = true;
           break;
       }
     }
@@ -1888,6 +1845,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 1005  | Enable UTF-8 Mouse Mode.                                | #N      |
    * | 1006  | Enable SGR Mouse Mode.                                  | #Y      |
    * | 1015  | Enable urxvt Mouse Mode.                                | #N      |
+   * | 1016  | Enable SGR-Pixels Mouse Mode.                           | #Y      |
    * | 1047  | Use Alternate Screen Buffer.                            | #Y      |
    * | 1048  | Save cursor as in DECSC.                                | #Y      |
    * | 1049  | Save cursor and switch to alternate buffer clearing it. | #P[Does not clear the alternate buffer.] |
@@ -1915,7 +1873,7 @@ export class InputHandler extends Disposable implements IInputHandler {
            * This is only active if 'SetWinLines' (24) is enabled
            * through `options.windowsOptions`.
            */
-          if (this._optionsService.options.windowOptions.setWinLines) {
+          if (this._optionsService.rawOptions.windowOptions.setWinLines) {
             this._bufferService.resize(132, this._bufferService.rows);
             this._onRequestReset.fire();
           }
@@ -1928,7 +1886,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._coreService.decPrivateModes.wraparound = true;
           break;
         case 12:
-          // this.cursorBlink = true;
+          this._optionsService.options.cursorBlink = true;
           break;
         case 45:
           this._coreService.decPrivateModes.reverseWraparound = true;
@@ -1969,6 +1927,9 @@ export class InputHandler extends Disposable implements IInputHandler {
         case 1015: // urxvt ext mode mouse - removed in #2507
           this._logService.debug('DECSET 1015 not supported (see #2507)');
           break;
+        case 1016: // sgr pixels mode mouse
+          this._coreMouseService.activeEncoding = 'SGR_PIXELS';
+          break;
         case 25: // show cursor
           this._coreService.isCursorHidden = false;
           break;
@@ -1977,7 +1938,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           break;
         case 1049: // alt screen buffer cursor
           this.saveCursor();
-          // FALL-THROUGH
+        // FALL-THROUGH
         case 47: // alt screen buffer
         case 1047: // alt screen buffer
           this._bufferService.buffers.activateAltBuffer(this._eraseAttrData());
@@ -2009,7 +1970,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 2     | Keyboard Action Mode (KAM). Always on. | #N      |
    * | 4     | Replace Mode (IRM). (default)          | #Y      |
    * | 12    | Send/receive (SRM). Always off.        | #N      |
-   * | 20    | Normal Linefeed (LNM). Always off.     | #N      |
+   * | 20    | Normal Linefeed (LNM).                 | #Y      |
    *
    *
    * FIXME: why is LNM commented out?
@@ -2021,7 +1982,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._coreService.modes.insertMode = false;
           break;
         case 20:
-          // this._t.convertEol = false;
+          this._optionsService.options.convertEol = false;
           break;
       }
     }
@@ -2129,6 +2090,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 1005  | Disable UTF-8 Mouse Mode.                               | #N      |
    * | 1006  | Disable SGR Mouse Mode.                                 | #Y      |
    * | 1015  | Disable urxvt Mouse Mode.                               | #N      |
+   * | 1016  | Disable SGR-Pixels Mouse Mode.                          | #Y      |
    * | 1047  | Use Normal Screen Buffer (clearing screen if in alt).   | #Y      |
    * | 1048  | Restore cursor as in DECRC.                             | #Y      |
    * | 1049  | Use Normal Screen Buffer and restore cursor.            | #Y      |
@@ -2149,7 +2111,7 @@ export class InputHandler extends Disposable implements IInputHandler {
            * This is only active if 'SetWinLines' (24) is enabled
            * through `options.windowsOptions`.
            */
-          if (this._optionsService.options.windowOptions.setWinLines) {
+          if (this._optionsService.rawOptions.windowOptions.setWinLines) {
             this._bufferService.resize(80, this._bufferService.rows);
             this._onRequestReset.fire();
           }
@@ -2162,7 +2124,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._coreService.decPrivateModes.wraparound = false;
           break;
         case 12:
-          // this.cursorBlink = false;
+          this._optionsService.options.cursorBlink = false;
           break;
         case 45:
           this._coreService.decPrivateModes.reverseWraparound = false;
@@ -2190,6 +2152,9 @@ export class InputHandler extends Disposable implements IInputHandler {
         case 1015: // urxvt ext mode mouse - removed in #2507
           this._logService.debug('DECRST 1015 not supported (see #2507)');
           break;
+        case 1016: // sgr pixels mode mouse
+          this._coreMouseService.activeEncoding = 'DEFAULT';
+          break;
         case 25: // hide cursor
           this._coreService.isCursorHidden = true;
           break;
@@ -2197,7 +2162,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           this.restoreCursor();
           break;
         case 1049: // alt screen buffer cursor
-          // FALL-THROUGH
+        // FALL-THROUGH
         case 47: // normal screen buffer
         case 1047: // normal screen buffer - clearing it first
           // Ensure the selection manager has the correct buffer
@@ -2215,6 +2180,98 @@ export class InputHandler extends Disposable implements IInputHandler {
       }
     }
     return true;
+  }
+
+  /**
+   * CSI Ps $ p Request ANSI Mode (DECRQM).
+   *
+   * Reports CSI Ps; Pm $ y (DECRPM), where Ps is the mode number as in SM/RM,
+   * and Pm is the mode value:
+   *    0 - not recognized
+   *    1 - set
+   *    2 - reset
+   *    3 - permanently set
+   *    4 - permanently reset
+   *
+   * @vt: #Y  CSI   DECRQM  "Request Mode"  "CSI Ps $p"  "Request mode state."
+   * Returns a report as `CSI Ps; Pm $ y` (DECRPM), where `Ps` is the mode number as in SM/RM
+   * or DECSET/DECRST, and `Pm` is the mode value:
+   * - 0: not recognized
+   * - 1: set
+   * - 2: reset
+   * - 3: permanently set
+   * - 4: permanently reset
+   *
+   * For modes not understood xterm.js always returns `notRecognized`. In general this means,
+   * that a certain operation mode is not implemented and cannot be used.
+   *
+   * Modes changing the active terminal buffer (47, 1047, 1049) are not subqueried
+   * and only report, whether the alternate buffer is set.
+   *
+   * Mouse encodings and mouse protocols are handled mutual exclusive,
+   * thus only one of each of those can be set at a given time.
+   *
+   * There is a chance, that some mode reports are not fully in line with xterm.js' behavior,
+   * e.g. if the default implementation already exposes a certain behavior. If you find
+   * discrepancies in the mode reports, please file a bug.
+   */
+  public requestMode(params: IParams, ansi: boolean): boolean {
+    // return value as in DECRPM
+    const enum V {
+      NOT_RECOGNIZED = 0,
+      SET = 1,
+      RESET = 2,
+      PERMANENTLY_SET = 3,
+      PERMANENTLY_RESET = 4
+    }
+
+    // access helpers
+    const dm = this._coreService.decPrivateModes;
+    const { activeProtocol: mouseProtocol, activeEncoding: mouseEncoding } = this._coreMouseService;
+    const cs = this._coreService;
+    const { buffers, cols } = this._bufferService;
+    const { active, alt } = buffers;
+    const opts = this._optionsService.rawOptions;
+
+    const f = (m: number, v: V): boolean => {
+      cs.triggerDataEvent(`${C0.ESC}[${ansi ? '' : '?'}${m};${v}$y`);
+      return true;
+    };
+    const b2v = (value: boolean): V => value ? V.SET : V.RESET;
+
+    const p = params.params[0];
+
+    if (ansi) {
+      if (p === 2) return f(p, V.PERMANENTLY_RESET);
+      if (p === 4) return f(p, b2v(cs.modes.insertMode));
+      if (p === 12) return f(p, V.PERMANENTLY_SET);
+      if (p === 20) return f(p, b2v(opts.convertEol));
+      return f(p, V.NOT_RECOGNIZED);
+    }
+
+    if (p === 1) return f(p, b2v(dm.applicationCursorKeys));
+    if (p === 3) return f(p, opts.windowOptions.setWinLines ? (cols === 80 ? V.RESET : cols === 132 ? V.SET : V.NOT_RECOGNIZED) : V.NOT_RECOGNIZED);
+    if (p === 6) return f(p, b2v(dm.origin));
+    if (p === 7) return f(p, b2v(dm.wraparound));
+    if (p === 8) return f(p, V.PERMANENTLY_SET);
+    if (p === 9) return f(p, b2v(mouseProtocol === 'X10'));
+    if (p === 12) return f(p, b2v(opts.cursorBlink));
+    if (p === 25) return f(p, b2v(!cs.isCursorHidden));
+    if (p === 45) return f(p, b2v(dm.reverseWraparound));
+    if (p === 66) return f(p, b2v(dm.applicationKeypad));
+    if (p === 67) return f(p, V.PERMANENTLY_RESET);
+    if (p === 1000) return f(p, b2v(mouseProtocol === 'VT200'));
+    if (p === 1002) return f(p, b2v(mouseProtocol === 'DRAG'));
+    if (p === 1003) return f(p, b2v(mouseProtocol === 'ANY'));
+    if (p === 1004) return f(p, b2v(dm.sendFocus));
+    if (p === 1005) return f(p, V.PERMANENTLY_RESET);
+    if (p === 1006) return f(p, b2v(mouseEncoding === 'SGR'));
+    if (p === 1015) return f(p, V.PERMANENTLY_RESET);
+    if (p === 1016) return f(p, b2v(mouseEncoding === 'SGR_PIXELS'));
+    if (p === 1048) return f(p, V.SET); // xterm always returns SET here
+    if (p === 47 || p === 1047 || p === 1049) return f(p, b2v(active === alt));
+    if (p === 2004) return f(p, b2v(dm.bracketedPasteMode));
+    return f(p, V.NOT_RECOGNIZED);
   }
 
   /**
@@ -2264,7 +2321,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       }
       // exit early if can decide color mode with semicolons
       if ((accu[1] === 5 && advance + cSpace >= 2)
-          || (accu[1] === 2 && advance + cSpace >= 5)) {
+        || (accu[1] === 2 && advance + cSpace >= 5)) {
         break;
       }
       // offset colorSpace slot for semicolon mode
@@ -2326,6 +2383,17 @@ export class InputHandler extends Disposable implements IInputHandler {
     attr.updateExtended();
   }
 
+  private _processSGR0(attr: IAttributeData): void {
+    attr.fg = DEFAULT_ATTR_DATA.fg;
+    attr.bg = DEFAULT_ATTR_DATA.bg;
+    attr.extended = attr.extended.clone();
+    // Reset underline style and color. Note that we don't want to reset other
+    // fields such as the url id.
+    attr.extended.underlineStyle = UnderlineStyle.NONE;
+    attr.extended.underlineColor &= ~(Attributes.CM_MASK | Attributes.RGB_MASK);
+    attr.updateExtended();
+  }
+
   /**
    * CSI Pm m  Character Attributes (SGR).
    *
@@ -2349,7 +2417,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 7         | Inverse. Flips foreground and background color.          | #Y      |
    * | 8         | Invisible (hidden).                                      | #Y      |
    * | 9         | Crossed-out characters (strikethrough).                  | #Y      |
-   * | 21        | Doubly underlined.                                       | #P[Currently outputs a single underline.] |
+   * | 21        | Doubly underlined.                                       | #Y      |
    * | 22        | Normal (neither bold nor faint).                         | #Y      |
    * | 23        | No italic.                                               | #Y      |
    * | 24        | Not underlined.                                          | #Y      |
@@ -2377,6 +2445,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 47        | Background color: White.                                 | #Y      |
    * | 48        | Background color: Extended color.                        | #P[Support for RGB and indexed colors, see below.] |
    * | 49        | Background color: Default (original).                    | #Y      |
+   * | 53        | Overlined.                                               | #Y      |
+   * | 55        | Not Overlined.                                           | #Y      |
+   * | 58        | Underline color: Extended color.                         | #P[Support for RGB and indexed colors, see below.] |
    * | 90 - 97   | Bright foreground color (analogous to 30 - 37).          | #Y      |
    * | 100 - 107 | Bright background color (analogous to 40 - 47).          | #Y      |
    *
@@ -2386,13 +2457,14 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | ------ | ------------------------------------------------------------- | ------- |
    * | 0      | No underline. Same as `SGR 24 m`.                             | #Y      |
    * | 1      | Single underline. Same as `SGR 4 m`.                          | #Y      |
-   * | 2      | Double underline.                                             | #P[Currently outputs a single underline.] |
-   * | 3      | Curly underline.                                              | #P[Currently outputs a single underline.] |
-   * | 4      | Dotted underline.                                             | #P[Currently outputs a single underline.] |
-   * | 5      | Dashed underline.                                             | #P[Currently outputs a single underline.] |
+   * | 2      | Double underline.                                             | #Y      |
+   * | 3      | Curly underline.                                              | #Y      |
+   * | 4      | Dotted underline.                                             | #Y      |
+   * | 5      | Dashed underline.                                             | #Y      |
    * | other  | Single underline. Same as `SGR 4 m`.                          | #Y      |
    *
-   * Extended colors are supported for foreground (Ps=38) and background (Ps=48) as follows:
+   * Extended colors are supported for foreground (Ps=38), background (Ps=48) and underline (Ps=58)
+   * as follows:
    *
    * | Ps + 1 | Meaning                                                       | Support |
    * | ------ | ------------------------------------------------------------- | ------- |
@@ -2410,8 +2482,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   public charAttributes(params: IParams): boolean {
     // Optimize a single SGR0.
     if (params.length === 1 && params.params[0] === 0) {
-      this._curAttrData.fg = DEFAULT_ATTR_DATA.fg;
-      this._curAttrData.bg = DEFAULT_ATTR_DATA.bg;
+      this._processSGR0(this._curAttrData);
       return true;
     }
 
@@ -2439,8 +2510,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         attr.bg |= Attributes.CM_P16 | (p - 100) | 8;
       } else if (p === 0) {
         // default
-        attr.fg = DEFAULT_ATTR_DATA.fg;
-        attr.bg = DEFAULT_ATTR_DATA.bg;
+        this._processSGR0(attr);
       } else if (p === 1) {
         // bold text
         attr.fg |= FgFlags.BOLD;
@@ -2480,6 +2550,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       } else if (p === 24) {
         // not underlined
         attr.fg &= ~FgFlags.UNDERLINE;
+        this._processUnderline(UnderlineStyle.NONE, attr);
       } else if (p === 25) {
         // not blink
         attr.fg &= ~FgFlags.BLINK;
@@ -2503,6 +2574,12 @@ export class InputHandler extends Disposable implements IInputHandler {
       } else if (p === 38 || p === 48 || p === 58) {
         // fg color 256 and RGB
         i += this._extractColor(params, i, attr);
+      } else if (p === 53) {
+        // overline
+        attr.bg |= BgFlags.OVERLINE;
+      } else if (p === 55) {
+        // not overline
+        attr.bg &= ~BgFlags.OVERLINE;
       } else if (p === 59) {
         attr.extended = attr.extended.clone();
         attr.extended.underlineColor = -1;
@@ -2597,8 +2674,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    * http://vt100.net/docs/vt220-rm/table4-10.html
    *
    * @vt: #Y CSI DECSTR  "Soft Terminal Reset"   "CSI ! p"   "Reset several terminal attributes to initial state."
-   * There are two terminal reset sequences - RIS and DECSTR. While RIS performs almost a full terminal bootstrap,
-   * DECSTR only resets certain attributes. For most needs DECSTR should be sufficient.
+   * There are two terminal reset sequences - RIS and DECSTR. While RIS performs almost a full
+   * terminal bootstrap, DECSTR only resets certain attributes. For most needs DECSTR should be
+   * sufficient.
    *
    * The following terminal attributes are reset to default values:
    * - IRM is reset (dafault = false)
@@ -2683,7 +2761,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     const top = params.params[0] || 1;
     let bottom: number;
 
-    if (params.length < 2 || (bottom = params.params[1]) >  this._bufferService.rows || bottom === 0) {
+    if (params.length < 2 || (bottom = params.params[1]) > this._bufferService.rows || bottom === 0) {
       bottom = this._bufferService.rows;
     }
 
@@ -2726,7 +2804,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *    Ps >= 24                                                          not implemented
    */
   public windowOptions(params: IParams): boolean {
-    if (!paramToWindowOption(params.params[0], this._optionsService.options.windowOptions)) {
+    if (!paramToWindowOption(params.params[0], this._optionsService.rawOptions.windowOptions)) {
       return true;
     }
     const second = (params.length > 1) ? params.params[1] : 0;
@@ -2823,7 +2901,8 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Icon name is not supported. For Window Title see below.
    *
    * @vt: #Y     OSC    2   "Set Windows Title"  "OSC 2 ; Pt BEL"  "Set window title."
-   * xterm.js does not manipulate the title directly, instead exposes changes via the event `Terminal.onTitleChange`.
+   * xterm.js does not manipulate the title directly, instead exposes changes via the event
+   * `Terminal.onTitleChange`.
    */
   public setTitle(data: string): boolean {
     this._windowTitle = data;
@@ -2840,43 +2919,220 @@ export class InputHandler extends Disposable implements IInputHandler {
     return true;
   }
 
-  protected _parseAnsiColorChange(data: string): IAnsiColorChangeEvent | null {
-    const result: IAnsiColorChangeEvent = { colors: [] };
-    // example data: 5;rgb:aa/bb/cc
-    const regex = /(\d+);rgb:([\da-f]{2})\/([\da-f]{2})\/([\da-f]{2})/gi;
-    let match;
-
-    while ((match = regex.exec(data)) !== null) {
-      result.colors.push({
-        colorIndex: parseInt(match[1]),
-        red: parseInt(match[2], 16),
-        green: parseInt(match[3], 16),
-        blue: parseInt(match[4], 16)
-      });
-    }
-
-    if (result.colors.length === 0) {
-      return null;
-    }
-
-    return result;
-  }
-
   /**
    * OSC 4; <num> ; <text> ST (set ANSI color <num> to <text>)
    *
    * @vt: #Y    OSC    4    "Set ANSI color"   "OSC 4 ; c ; spec BEL" "Change color number `c` to the color specified by `spec`."
-   * `c` is the color index between 0 and 255. `spec` color format is 'rgb:hh/hh/hh' where `h` are hexadecimal digits.
-   * There may be multipe c ; spec elements present in the same instruction, e.g. 1;rgb:10/20/30;2;rgb:a0/b0/c0.
+   * `c` is the color index between 0 and 255. The color format of `spec` is derived from
+   * `XParseColor` (see OSC 10 for supported formats). There may be multipe `c ; spec` pairs present
+   * in the same instruction. If `spec` contains `?` the terminal returns a sequence with the
+   * currently set color.
    */
-  public setAnsiColor(data: string): boolean {
-    const event = this._parseAnsiColorChange(data);
-    if (event) {
-      this._onAnsiColorChange.fire(event);
+  public setOrReportIndexedColor(data: string): boolean {
+    const event: IColorEvent = [];
+    const slots = data.split(';');
+    while (slots.length > 1) {
+      const idx = slots.shift() as string;
+      const spec = slots.shift() as string;
+      if (/^\d+$/.exec(idx)) {
+        const index = parseInt(idx);
+        if (isValidColorIndex(index)) {
+          if (spec === '?') {
+            event.push({ type: ColorRequestType.REPORT, index });
+          } else {
+            const color = parseColor(spec);
+            if (color) {
+              event.push({ type: ColorRequestType.SET, index, color });
+            }
+          }
+        }
+      }
     }
-    else {
-      this._logService.warn(`Expected format <num>;rgb:<rr>/<gg>/<bb> but got data: ${data}`);
+    if (event.length) {
+      this._onColor.fire(event);
     }
+    return true;
+  }
+
+  /**
+   * OSC 8 ; <params> ; <uri> ST - create hyperlink
+   * OSC 8 ; ; ST - finish hyperlink
+   *
+   * Test case:
+   *
+   * ```sh
+   * printf '\e]8;;http://example.com\e\\This is a link\e]8;;\e\\\n'
+   * ```
+   *
+   * @vt: #Y    OSC    8    "Create hyperlink"   "OSC 8 ; params ; uri BEL" "Create a hyperlink to `uri` using `params`."
+   * `uri` is a hyperlink starting with `http://`, `https://`, `ftp://`, `file://` or `mailto://`. `params` is an
+   * optional list of key=value assignments, separated by the : character.
+   * Example: `id=xyz123:foo=bar:baz=quux`.
+   * Currently only the id key is defined. Cells that share the same ID and URI share hover
+   * feedback. Use `OSC 8 ; ; BEL` to finish the current hyperlink.
+   */
+  public setHyperlink(data: string): boolean {
+    const args = data.split(';');
+    if (args.length < 2) {
+      return false;
+    }
+    if (args[1]) {
+      return this._createHyperlink(args[0], args[1]);
+    }
+    if (args[0]) {
+      return false;
+    }
+    return this._finishHyperlink();
+  }
+
+  private _createHyperlink(params: string, uri: string): boolean {
+    // It's legal to open a new hyperlink without explicitly finishing the previous one
+    if (this._getCurrentLinkId()) {
+      this._finishHyperlink();
+    }
+    const parsedParams = params.split(':');
+    let id: string | undefined;
+    const idParamIndex = parsedParams.findIndex(e => e.startsWith('id='));
+    if (idParamIndex !== -1) {
+      id = parsedParams[idParamIndex].slice(3) || undefined;
+    }
+    this._curAttrData.extended = this._curAttrData.extended.clone();
+    this._curAttrData.extended.urlId = this._oscLinkService.registerLink({ id, uri });
+    this._curAttrData.updateExtended();
+    return true;
+  }
+
+  private _finishHyperlink(): boolean {
+    this._curAttrData.extended = this._curAttrData.extended.clone();
+    this._curAttrData.extended.urlId = 0;
+    this._curAttrData.updateExtended();
+    return true;
+  }
+
+  // special colors - OSC 10 | 11 | 12
+  private _specialColors = [SpecialColorIndex.FOREGROUND, SpecialColorIndex.BACKGROUND, SpecialColorIndex.CURSOR];
+
+  /**
+   * Apply colors requests for special colors in OSC 10 | 11 | 12.
+   * Since these commands are stacking from multiple parameters,
+   * we handle them in a loop with an entry offset to `_specialColors`.
+   */
+  private _setOrReportSpecialColor(data: string, offset: number): boolean {
+    const slots = data.split(';');
+    for (let i = 0; i < slots.length; ++i, ++offset) {
+      if (offset >= this._specialColors.length) break;
+      if (slots[i] === '?') {
+        this._onColor.fire([{ type: ColorRequestType.REPORT, index: this._specialColors[offset] }]);
+      } else {
+        const color = parseColor(slots[i]);
+        if (color) {
+          this._onColor.fire([{ type: ColorRequestType.SET, index: this._specialColors[offset], color }]);
+        }
+      }
+    }
+    return true;
+  }
+
+  /**
+   * OSC 10 ; <xcolor name>|<?> ST - set or query default foreground color
+   *
+   * @vt: #Y  OSC   10    "Set or query default foreground color"   "OSC 10 ; Pt BEL"  "Set or query default foreground color."
+   * To set the color, the following color specification formats are supported:
+   * - `rgb:<red>/<green>/<blue>` for  `<red>, <green>, <blue>` in `h | hh | hhh | hhhh`, where
+   *   `h` is a single hexadecimal digit (case insignificant). The different widths scale
+   *   from 4 bit (`h`) to 16 bit (`hhhh`) and get converted to 8 bit (`hh`).
+   * - `#RGB` - 4 bits per channel, expanded to `#R0G0B0`
+   * - `#RRGGBB` - 8 bits per channel
+   * - `#RRRGGGBBB` - 12 bits per channel, truncated to `#RRGGBB`
+   * - `#RRRRGGGGBBBB` - 16 bits per channel, truncated to `#RRGGBB`
+   *
+   * **Note:** X11 named colors are currently unsupported.
+   *
+   * If `Pt` contains `?` instead of a color specification, the terminal
+   * returns a sequence with the current default foreground color
+   * (use that sequence to restore the color after changes).
+   *
+   * **Note:** Other than xterm, xterm.js does not support OSC 12 - 19.
+   * Therefore stacking multiple `Pt` separated by `;` only works for the first two entries.
+   */
+  public setOrReportFgColor(data: string): boolean {
+    return this._setOrReportSpecialColor(data, 0);
+  }
+
+  /**
+   * OSC 11 ; <xcolor name>|<?> ST - set or query default background color
+   *
+   * @vt: #Y  OSC   11    "Set or query default background color"   "OSC 11 ; Pt BEL"  "Same as OSC 10, but for default background."
+   */
+  public setOrReportBgColor(data: string): boolean {
+    return this._setOrReportSpecialColor(data, 1);
+  }
+
+  /**
+   * OSC 12 ; <xcolor name>|<?> ST - set or query default cursor color
+   *
+   * @vt: #Y  OSC   12    "Set or query default cursor color"   "OSC 12 ; Pt BEL"  "Same as OSC 10, but for default cursor color."
+   */
+  public setOrReportCursorColor(data: string): boolean {
+    return this._setOrReportSpecialColor(data, 2);
+  }
+
+  /**
+   * OSC 104 ; <num> ST - restore ANSI color <num>
+   *
+   * @vt: #Y  OSC   104    "Reset ANSI color"   "OSC 104 ; c BEL" "Reset color number `c` to themed color."
+   * `c` is the color index between 0 and 255. This function restores the default color for `c` as
+   * specified by the loaded theme. Any number of `c` parameters may be given.
+   * If no parameters are given, the entire indexed color table will be reset.
+   */
+  public restoreIndexedColor(data: string): boolean {
+    if (!data) {
+      this._onColor.fire([{ type: ColorRequestType.RESTORE }]);
+      return true;
+    }
+    const event: IColorEvent = [];
+    const slots = data.split(';');
+    for (let i = 0; i < slots.length; ++i) {
+      if (/^\d+$/.exec(slots[i])) {
+        const index = parseInt(slots[i]);
+        if (isValidColorIndex(index)) {
+          event.push({ type: ColorRequestType.RESTORE, index });
+        }
+      }
+    }
+    if (event.length) {
+      this._onColor.fire(event);
+    }
+    return true;
+  }
+
+  /**
+   * OSC 110 ST - restore default foreground color
+   *
+   * @vt: #Y  OSC   110    "Restore default foreground color"   "OSC 110 BEL"  "Restore default foreground to themed color."
+   */
+  public restoreFgColor(data: string): boolean {
+    this._onColor.fire([{ type: ColorRequestType.RESTORE, index: SpecialColorIndex.FOREGROUND }]);
+    return true;
+  }
+
+  /**
+   * OSC 111 ST - restore default background color
+   *
+   * @vt: #Y  OSC   111    "Restore default background color"   "OSC 111 BEL"  "Restore default background to themed color."
+   */
+  public restoreBgColor(data: string): boolean {
+    this._onColor.fire([{ type: ColorRequestType.RESTORE, index: SpecialColorIndex.BACKGROUND }]);
+    return true;
+  }
+
+  /**
+   * OSC 112 ST - restore default cursor color
+   *
+   * @vt: #Y  OSC   112    "Restore default cursor color"   "OSC 112 BEL"  "Restore default cursor to themed color."
+   */
+  public restoreCursorColor(data: string): boolean {
+    this._onColor.fire([{ type: ColorRequestType.RESTORE, index: SpecialColorIndex.CURSOR }]);
     return true;
   }
 
@@ -3014,7 +3270,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       const scrollRegionHeight = this._activeBuffer.scrollBottom - this._activeBuffer.scrollTop;
       this._activeBuffer.lines.shiftElements(this._activeBuffer.ybase + this._activeBuffer.y, scrollRegionHeight, 1);
       this._activeBuffer.lines.set(this._activeBuffer.ybase + this._activeBuffer.y, this._activeBuffer.getBlankLine(this._eraseAttrData()));
-      this._dirtyRowService.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
+      this._dirtyRowTracker.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
     } else {
       this._activeBuffer.y--;
       this._restrictCursor(); // quickfix to not run out of bounds
@@ -3087,8 +3343,115 @@ export class InputHandler extends Disposable implements IInputHandler {
         line.isWrapped = false;
       }
     }
-    this._dirtyRowService.markAllDirty();
+    this._dirtyRowTracker.markAllDirty();
     this._setCursor(0, 0);
     return true;
   }
+
+
+  /**
+   * DCS $ q Pt ST
+   *   DECRQSS (https://vt100.net/docs/vt510-rm/DECRQSS.html)
+   *   Request Status String (DECRQSS), VT420 and up.
+   *   Response: DECRPSS (https://vt100.net/docs/vt510-rm/DECRPSS.html)
+   *
+   * @vt: #P[Limited support, see below.]  DCS   DECRQSS   "Request Selection or Setting"  "DCS $ q Pt ST"   "Request several terminal settings."
+   * Response is in the form `ESC P 1 $ r Pt ST` for valid requests, where `Pt` contains the
+   * corresponding CSI string, `ESC P 0 ST` for invalid requests.
+   *
+   * Supported requests and responses:
+   *
+   * | Type                             | Request           | Response (`Pt`)                                       |
+   * | -------------------------------- | ----------------- | ----------------------------------------------------- |
+   * | Graphic Rendition (SGR)          | `DCS $ q m ST`    | always reporting `0m` (currently broken)              |
+   * | Top and Bottom Margins (DECSTBM) | `DCS $ q r ST`    | `Ps ; Ps r`                                           |
+   * | Cursor Style (DECSCUSR)          | `DCS $ q SP q ST` | `Ps SP q`                                             |
+   * | Protection Attribute (DECSCA)    | `DCS $ q " q ST`  | `Ps " q` (DECSCA 2 is reported as Ps = 0)             |
+   * | Conformance Level (DECSCL)       | `DCS $ q " p ST`  | always reporting `61 ; 1 " p` (DECSCL is unsupported) |
+   *
+   *
+   * TODO:
+   * - fix SGR report
+   * - either check which conformance is better suited or remove the report completely
+   *   --> we are currently a mixture of all up to VT400 but dont follow anyone strictly
+   */
+  public requestStatusString(data: string, params: IParams): boolean {
+    const f = (s: string): boolean => {
+      this._coreService.triggerDataEvent(`${C0.ESC}${s}${C0.ESC}\\`);
+      return true;
+    };
+
+    // access helpers
+    const b = this._bufferService.buffer;
+    const opts = this._optionsService.rawOptions;
+    const STYLES: { [key: string]: number } = { 'block': 2, 'underline': 4, 'bar': 6 };
+
+    if (data === '"q') return f(`P1$r${this._curAttrData.isProtected() ? 1 : 0}"q`);
+    if (data === '"p') return f(`P1$r61;1"p`);
+    if (data === 'r') return f(`P1$r${b.scrollTop + 1};${b.scrollBottom + 1}r`);
+    // FIXME: report real SGR settings instead of 0m
+    if (data === 'm') return f(`P1$r0m`);
+    if (data === ' q') return f(`P1$r${STYLES[opts.cursorStyle] - (opts.cursorBlink ? 1 : 0)} q`);
+    return f(`P0$r`);
+  }
+
+  public markRangeDirty(y1: number, y2: number): void {
+    this._dirtyRowTracker.markRangeDirty(y1, y2);
+  }
+}
+
+export interface IDirtyRowTracker {
+  readonly start: number;
+  readonly end: number;
+
+  clearRange(): void;
+  markDirty(y: number): void;
+  markRangeDirty(y1: number, y2: number): void;
+  markAllDirty(): void;
+}
+
+class DirtyRowTracker implements IDirtyRowTracker {
+  public start!: number;
+  public end!: number;
+
+  constructor(
+    @IBufferService private readonly _bufferService: IBufferService
+  ) {
+    this.clearRange();
+  }
+
+  public clearRange(): void {
+    this.start = this._bufferService.buffer.y;
+    this.end = this._bufferService.buffer.y;
+  }
+
+  public markDirty(y: number): void {
+    if (y < this.start) {
+      this.start = y;
+    } else if (y > this.end) {
+      this.end = y;
+    }
+  }
+
+  public markRangeDirty(y1: number, y2: number): void {
+    if (y1 > y2) {
+      $temp = y1;
+      y1 = y2;
+      y2 = $temp;
+    }
+    if (y1 < this.start) {
+      this.start = y1;
+    }
+    if (y2 > this.end) {
+      this.end = y2;
+    }
+  }
+
+  public markAllDirty(): void {
+    this.markRangeDirty(0, this._bufferService.rows - 1);
+  }
+}
+
+function isValidColorIndex(value: number): value is ColorIndex {
+  return 0 <= value && value < 256;
 }
