@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Vortice.MediaFoundation;
 
 namespace OpenpilotToolkit.Stream
 {
@@ -24,6 +25,7 @@ namespace OpenpilotToolkit.Stream
             _length = new Lazy<long>(() => _streams.Sum(s => s.Length));
             _shouldDisposeStreams = shouldDisposeStreams;
         }
+        public IReadOnlyList<System.IO.Stream> Streams => _streams;
 
         public override bool CanRead => true;
 
@@ -38,6 +40,8 @@ namespace OpenpilotToolkit.Stream
             get => _position;
             set => Seek(value, SeekOrigin.Begin);
         }
+
+        public int CurrentStreamIndex => _currentStreamIndex;
 
         public override void Flush() { }
 
@@ -54,6 +58,10 @@ namespace OpenpilotToolkit.Stream
                     var bytesRead = currentStream.Read(buffer, offset, count);
                     if (bytesRead == 0)
                     {
+                        if (_currentStreamIndex == _streams.Count - 1)
+                        {
+                            break;
+                        }
                         _currentStreamIndex++;
                         continue;
                     }
@@ -82,9 +90,13 @@ namespace OpenpilotToolkit.Stream
                 while (count > 0 && _currentStreamIndex < _streams.Count)
                 {
                     var currentStream = _streams[_currentStreamIndex];
-                    var bytesRead = await currentStream.ReadAsync(buffer, offset, count, cancellationToken);
+                    var bytesRead = await currentStream.ReadAsync(buffer.AsMemory(offset, count), cancellationToken);
                     if (bytesRead == 0)
                     {
+                        if (_currentStreamIndex == _streams.Count - 1)
+                        {
+                            break;
+                        }
                         _currentStreamIndex++;
                         continue;
                     }
@@ -219,11 +231,39 @@ namespace OpenpilotToolkit.Stream
                     return false;
                 }
 
-                var currentPosition = _streams[_currentStreamIndex].Position;
+                var currentStreamPosition = _streams[_currentStreamIndex].Position;
                 _streams[_currentStreamIndex].Position = 0;
                 _currentStreamIndex--;
-                _position -= (_streams[_currentStreamIndex].Length + currentPosition);
+                _position -= (_streams[_currentStreamIndex].Length + currentStreamPosition);
                 _streams[_currentStreamIndex].Position = 0;
+                return true;
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
+        }
+
+        public async Task<bool> SeekToStreamAsync(int stream)
+        {
+            await _semaphore.WaitAsync();
+            try
+            {
+                if (stream > _streams.Count - 1 || stream < 0)
+                {
+                    throw new Exception("Invalid Index");
+                }
+
+                long position = 0;
+                for (int i = 0; i < stream; i++)
+                {
+                    position += _streams[i].Length;
+                }
+
+                _streams[_currentStreamIndex].Position = 0;
+                _currentStreamIndex = stream;
+                _position = position;
+                _streams[stream].Position = 0;
                 return true;
             }
             finally
