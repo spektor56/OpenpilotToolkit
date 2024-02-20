@@ -2,8 +2,8 @@
 {
     public sealed class ForkResult
     {
-        public bool Success { get; private set; }
-        public string Message { get; private set; }
+        public bool Success { get; }
+        public string Message { get; }
 
         public ForkResult(string message, bool success)
         {

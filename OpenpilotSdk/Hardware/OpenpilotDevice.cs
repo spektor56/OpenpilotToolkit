@@ -29,22 +29,22 @@ namespace OpenpilotSdk.Hardware
     {
         private const int SshPort = 8022;
 
-        protected virtual string NotConnectedMessage { get; set; } = "No connection has been made to the openpilot device";
+        protected virtual string NotConnectedMessage => "No connection has been made to the openpilot device";
 
         public bool IsAuthenticated { get; protected set; } = false;
         protected readonly string TempDirectory = Path.Combine(AppContext.BaseDirectory ?? Environment.GetFolderPath(Environment.SpecialFolder.Personal), "tmp");
         public int Port { get; set; } = 8022;
-        public IPAddress IpAddress { get; set; }
+        public IPAddress IpAddress { get; init; }
         protected SftpClient? SftpClient;
         protected SshClient? SshClient;
 
-        public virtual string DeviceName { get; protected set; } = "";
-        public virtual string StorageDirectory { get; protected set; } = @"/data/media/0/realdata/";
-        public virtual string RebootCommand { get; protected set; } = @"am start -a android.intent.action.REBOOT";
-        public virtual string ShutdownCommand { get; protected set; } = @"am start -n android/com.android.internal.app.ShutdownActivity";
-        public virtual string FlashCommand { get; protected set; } = @"pkill -f openpilot & cd /data/openpilot/panda/board && ./recover.sh";
-        public virtual string InstallEmuCommand { get; protected set; } = @"cd /data/openpilot && echo 'y' | bash <(curl -fsSL install.emu.sh) && source /data/community/.bashrc";
-        public virtual string GitCloneCommand { get; protected set; } = @"cd /data && rm -rf openpilot; git clone -b {1} --depth 1 --single-branch --progress --recurse-submodules --shallow-submodules {0} openpilot";
+        public virtual string DeviceName => "";
+        public virtual string StorageDirectory => @"/data/media/0/realdata/";
+        public virtual string RebootCommand => @"am start -a android.intent.action.REBOOT";
+        public virtual string ShutdownCommand => @"am start -n android/com.android.internal.app.ShutdownActivity";
+        public virtual string FlashCommand => @"pkill -f openpilot & cd /data/openpilot/panda/board && ./recover.sh";
+        public virtual string InstallEmuCommand => @"cd /data/openpilot && echo 'y' | bash <(curl -fsSL install.emu.sh) && source /data/community/.bashrc";
+        public virtual string GitCloneCommand => @"cd /data && rm -rf openpilot; git clone -b {1} --depth 1 --single-branch --progress --recurse-submodules --shallow-submodules {0} openpilot";
 
         public abstract IReadOnlyDictionary<CameraType,Camera> Cameras { get; }
 
@@ -1248,17 +1248,14 @@ namespace OpenpilotSdk.Hardware
         public async Task<ShellStream> GetShellStreamAsync()
         {
             await ConnectAsync();
-            var client = SshClient.CreateShellStream(this.ToString(), 0, 0, 0, 0, 1024);
-
-            await client.WriteAsync(new ReadOnlyMemory<byte>(Encoding.UTF8.GetBytes("export TERM='xterm-256color'\n")));
-            await client.FlushAsync();
+            var client = SshClient.CreateShellStream("xterm-256color", 0, 0, 0, 0, 1024);
             return client;
         }
 
         public ShellStream GetShellStream()
         {
             Connect();
-            var client = SshClient.CreateShellStream(this.ToString(), 0, 0, 0, 0, 1024);
+            var client = SshClient.CreateShellStream("xterm-256color", 0, 0, 0, 0, 1024);
             return client;
         }
 
@@ -1284,8 +1281,8 @@ namespace OpenpilotSdk.Hardware
                     SftpClient = new SftpClient(connectionInfo);
                     SshClient = new SshClient(connectionInfo);
 
-                    SftpClient.KeepAliveInterval = TimeSpan.FromSeconds(20);
-                    SshClient.KeepAliveInterval = TimeSpan.FromSeconds(20);
+                    SftpClient.KeepAliveInterval = TimeSpan.FromSeconds(10);
+                    SshClient.KeepAliveInterval = TimeSpan.FromSeconds(10);
 
                     SftpClient.Connect();
                     SshClient.Connect();
@@ -1324,8 +1321,8 @@ namespace OpenpilotSdk.Hardware
                     SftpClient = new SftpClient(connectionInfo);
                     SshClient = new SshClient(connectionInfo);
 
-                    SftpClient.KeepAliveInterval = TimeSpan.FromSeconds(20);
-                    SshClient.KeepAliveInterval = TimeSpan.FromSeconds(20);
+                    SftpClient.KeepAliveInterval = TimeSpan.FromSeconds(10);
+                    SshClient.KeepAliveInterval = TimeSpan.FromSeconds(10);
 
                     await _maxConcurrentConnectionLock.WaitAsync(cancellationToken);
                     try
