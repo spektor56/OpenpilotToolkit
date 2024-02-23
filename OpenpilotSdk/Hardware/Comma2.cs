@@ -6,9 +6,9 @@ namespace OpenpilotSdk.Hardware
     {
         protected override string NotConnectedMessage => "No connection has been made to the Comma2";
 
-        public static string OpenSettingsCommand => @"am start -a android.settings.SETTINGS";
-        public static string CloseSettingsCommand => @"kill $(pgrep com.android.settings)";
-        public override string DeviceName => @"Comma2";
+        public static string OpenSettingsCommand => "am start -a android.settings.SETTINGS";
+        public static string CloseSettingsCommand => "kill $(pgrep com.android.settings)";
+        public override string DeviceName => "Comma2";
 
         private readonly Lazy<IReadOnlyDictionary<CameraType, Camera>> _cameras = new Lazy<IReadOnlyDictionary<CameraType, Camera>>(() => new Dictionary<CameraType, Camera>
         {
@@ -28,12 +28,18 @@ namespace OpenpilotSdk.Hardware
         {
             await ConnectAsync();
 
-            using (var command = SshClient.CreateCommand(commandString))
+            if (SshClient != null)
             {
-                var result = await Task.Factory.FromAsync(command.BeginExecute(), command.EndExecute).ConfigureAwait(false);
-                var success = command.ExitStatus == 0;
-                return success;
+                using (var command = SshClient.CreateCommand(commandString))
+                {
+                    var result = await Task.Factory.FromAsync(command.BeginExecute(), command.EndExecute)
+                        .ConfigureAwait(false);
+                    var success = command.ExitStatus == 0;
+                    return success;
+                }
             }
+
+            return false; 
         }
 
         public Task<bool> OpenSettingsAsync() => ExecuteCommandAsync(OpenSettingsCommand);

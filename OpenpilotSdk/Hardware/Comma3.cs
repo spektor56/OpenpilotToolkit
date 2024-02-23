@@ -15,11 +15,10 @@ namespace OpenpilotSdk.Hardware
 
         protected override string NotConnectedMessage => "No connection has been made to the Comma3";
 
-        public override string StorageDirectory => @"/data/media/0/realdata/";
-        public override string RebootCommand => @"sudo reboot";
-        public override string ShutdownCommand => @"sudo shutdown";
+        public override string RebootCommand => "sudo reboot";
+        public override string ShutdownCommand => "sudo shutdown";
 
-        public override string DeviceName => @"Comma3";
+        public override string DeviceName => "Comma3";
 
         public Comma3(IPAddress hostAddress, bool isAuthenticated = true)
         {

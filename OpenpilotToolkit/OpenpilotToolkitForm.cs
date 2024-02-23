@@ -1,6 +1,5 @@
 ﻿using CefSharp;
 using CefSharp.WinForms;
-using LibVLCSharp.Shared;
 using MaterialSkin;
 using MaterialSkin.Controls;
 using NetTopologySuite.IO;
@@ -35,7 +34,9 @@ using Exception = System.Exception;
 using FileMode = System.IO.FileMode;
 using OpenpilotDevice = OpenpilotSdk.Hardware.OpenpilotDevice;
 using MethodInvoker = System.Windows.Forms.MethodInvoker;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.TreeView;
+using FlyleafLib.MediaPlayer;
+using FlyleafLib;
+using OpenpilotToolkit.Stream;
 
 namespace OpenpilotToolkit
 {
@@ -50,11 +51,11 @@ namespace OpenpilotToolkit
         BindingList<OpenpilotDevice> _devices = new BindingList<OpenpilotDevice>();
         BindingList<Renci.SshNet.Sftp.SftpFile> _fileList = new BindingList<Renci.SshNet.Sftp.SftpFile>();
         private Stack<string> _workingDirectory = new Stack<string>();
-        private LibVLC _libVlc = null;
         private ShellStream _shellStream = null;
         private StreamReader _streamReader = null;
         private SemaphoreSlim terminalLock = new SemaphoreSlim(1, 1);
         private ChromiumWebBrowser sshTerminal;
+        private Player _flyPlayer;
 
         public System.Drawing.Color ToColor(int argb)
         {
@@ -123,9 +124,50 @@ namespace OpenpilotToolkit
 
             this.tableLayoutPanel1.Controls.Add(sshTerminal, 0, 0);
 
-            _libVlc = new LibVLC();
-            vlcVideoPlayer.Initialize(_libVlc);
-            vlcVideoPlayer.vlcVideoView1.MediaPlayer.TimeChanged += MediaPlayerOnTimeChanged;
+            // Initializes Engine (Specifies FFmpeg libraries path which is required)
+            Engine.Start(new EngineConfig()
+            {
+#if DEBUG
+                LogOutput = ":debug",
+                LogLevel = FlyleafLib.LogLevel.Debug,
+                FFmpegLogLevel = FFmpegLogLevel.Warning,
+#endif
+
+                UIRefresh = true, // For Activity Mode usage
+                PluginsPath = ":Plugins",
+                FFmpegPath = ":FFmpeg",
+            });
+
+            var config = new Config
+            {
+                Player =
+                {
+                    MaxLatency = TimeSpan.FromMilliseconds(500).Ticks,
+                    MinBufferDuration = 0
+                },
+                Audio =
+                {
+                    Enabled = false
+                },
+                Subtitles =
+                {
+                    Enabled = false
+                },
+                Demuxer =
+                {
+                    BufferDuration = TimeSpan.FromSeconds(1).Ticks,
+                    AllowFindStreamInfo = false,
+                    
+                },
+                Decoder =
+                {
+                    MaxVideoFrames = 2,
+                    ShowCorrupted = true
+                }
+            };
+
+            _flyPlayer = new Player(config);
+            flyleafVideoPlayer1.Initialize(_flyPlayer);
 
             var source = new AutoCompleteStringCollection
             {
@@ -321,29 +363,17 @@ namespace OpenpilotToolkit
             }
         }
 
-        private void MediaPlayerOnTimeChanged(object sender, MediaPlayerTimeChangedEventArgs e)
-        {
-            if (vlcVideoPlayer.Parent.Controls.GetChildIndex(vlcVideoPlayer) != 0 && e.Time > 100)
-            {
-                BeginInvoke(new MethodInvoker(() => { vlcVideoPlayer.BringToFront(); }));
-            }
-        }
-
         private async Task ScanDevices()
         {
             _devices.Clear();
             lbDrives.Items.Clear();
             Task.Run(() =>
             {
-                vlcVideoPlayer.vlcVideoView1.MediaPlayer.Stop();
-                vlcVideoPlayer.vlcVideoView2.MediaPlayer.Stop();
+                flyleafVideoPlayer1.flyleafHost1.Player.Stop();
             });
             dgvDriveInfo.DataSource = null;
-            pbPreview.Image = null;
-            pbPreview.BringToFront();
             wifiConnected.SetEnabled(false);
             btnScan.Enabled = false;
-            BeginInvoke(new MethodInvoker(() => { vlcVideoPlayer.BringToFront(); }));
 
             try
             {
@@ -531,78 +561,58 @@ namespace OpenpilotToolkit
             }
         }
 
+        private readonly SemaphoreSlim _driverSemaphoreSlim = new SemaphoreSlim(1, 1);
+        private CancellationTokenSource _driveVideo;
         private async void lbDrives_SelectedIndexChanged(object sender, EventArgs e)
         {
             cmbDevices.Enabled = false;
-
             dgvDriveInfo.DataSource = null;
-            Task.Run(() =>
-            {
-                vlcVideoPlayer.vlcVideoView1.MediaPlayer.Stop();
-                vlcVideoPlayer.vlcVideoView2.MediaPlayer.Stop();
-            });
-            pbPreview.Image = null;
-            pbPreview.BringToFront();
-            BeginInvoke(new MethodInvoker(() => { vlcVideoPlayer.BringToFront(); }));
-
+            
             try
             {
                 if (cmbDevices.SelectedItem is OpenpilotDevice openpilotDevice)
                 {
                     if (lbDrives.SelectedItems.Count < 2 && lbDrives.SelectedItem is Drive drive)
                     {
-                        var driveInfo = new Dictionary<string, string>();
-                        driveInfo.Add("Segments", drive.Segments.Count.ToString());
-                        driveInfo.Add("Start Date", drive.Date.ToShortDateString());
-                        driveInfo.Add("Start Time", drive.Date.ToLongTimeString());
+                        var driveInfo = new Dictionary<string, string>
+                        {
+                            { "Segments", drive.Segments.Count.ToString() },
+                            { "Start Date", drive.Date.ToShortDateString() },
+                            { "Start Time", drive.Date.ToLongTimeString() }
+                        };
 
                         dgvDriveInfo.DataSource = driveInfo.ToArray();
                         try
                         {
-                            var firstSegment = drive.Segments.FirstOrDefault();
-
-                            if (firstSegment != null)
+                            if (drive.Segments.Any(segment => segment.FrontVideo != null))
                             {
-                                var videoFile = firstSegment.FrontVideoQuick ?? firstSegment.FrontVideo;
-
-                                if (videoFile != null)
+                                var cts = new CancellationTokenSource();
+                                await _driverSemaphoreSlim.WaitAsync();
+                                try
                                 {
-                                    await Task.Run(async () =>
+                                    if (_driveVideo != null)
                                     {
-                                        var thumbnailTask = openpilotDevice.GetThumbnailAsync(drive);
-
-                                        Task<Renci.SshNet.Sftp.SftpFileStream> videoStreamTask = null;
-                                        List<SftpFileStream> videoStreams;
-                                        if (firstSegment.FrontVideoQuick != null)
-                                        {
-                                            videoStreams = drive.Segments.Select(async (segment) =>
-                                                await openpilotDevice.OpenReadAsync(segment.FrontVideoQuick.File
-                                                    .FullName)).Select(t => t.Result).ToList();
-                                        }
-                                        else
-                                        {
-                                            videoStreams = drive.Segments.Select(async (segment) =>
-                                                await openpilotDevice.OpenReadAsync(segment.FrontVideo.File
-                                                    .FullName)).Select(t => t.Result).ToList();
-                                        }
-                                        vlcVideoPlayer.Play(videoStreams);
-                                        System.Drawing.Bitmap thumbnail = await thumbnailTask;
-                                        BeginInvoke(new MethodInvoker(() => { pbPreview.Image = thumbnail; }));
-                                    });
+                                        await _driveVideo.CancelAsync();
+                                    }
+                                    
+                                    _driveVideo = cts;
                                 }
+                                finally
+                                {
+                                    _driverSemaphoreSlim.Release();
+                                }
+                                await flyleafVideoPlayer1.PlayDriveAsync(openpilotDevice, drive, cts.Token);
+                                
                             }
                         }
                         catch (Exception exception)
                         {
-                            Serilog.Log.Error(exception, "Error getting drive preview");
+                            Serilog.Log.Error(exception, "Error playing video");
                             ToolkitMessageDialog.ShowDialog(exception.Message);
                             cmbDevices.Enabled = true;
                             return;
                         }
-
-
                     }
-
                 }
             }
             finally

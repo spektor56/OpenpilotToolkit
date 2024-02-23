@@ -21,6 +21,7 @@ using Renci.SshNet.Common;
 using Serilog;
 using System.Globalization;
 using System.Runtime.CompilerServices;
+using OpenpilotSdk.Exceptions;
 using OpenpilotSdk.OpenPilot.Segment;
 
 namespace OpenpilotSdk.Hardware
@@ -52,19 +53,30 @@ namespace OpenpilotSdk.Hardware
         {
             get
             {
-                return SftpClient.WorkingDirectory;
+                if (SftpClient != null)
+                {
+                    return SftpClient.WorkingDirectory;
+                }
+                else
+                {
+                    return "";
+                }
             }
         }
 
         public async Task UploadFileAsync(string source, string destination)
         {
             await ConnectAsync();
-
-            await using (var fileStream = File.Open(source, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            if (SftpClient != null)
             {
-                await Task.Factory.FromAsync(
-                    SftpClient.BeginUploadFile(fileStream, destination),
-                    SftpClient.EndUploadFile);
+                await using (var fileStream = File.Open(source, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                {
+
+                    await Task.Factory.FromAsync(
+                        SftpClient.BeginUploadFile(fileStream, destination),
+                        SftpClient.EndUploadFile);
+
+                }
             }
         }
 
@@ -72,24 +84,39 @@ namespace OpenpilotSdk.Hardware
         {
             await ConnectAsync();
 
-            return await SftpClient.OpenAsync(path, FileMode.Open, FileAccess.Read, CancellationToken.None);
+            if (SftpClient != null)
+            {
+                return await SftpClient.OpenAsync(path, FileMode.Open, FileAccess.Read, CancellationToken.None);
+            }
+
+            throw new NotConnectedException("SftpClient is not connected");
         }
 
         public async Task<SftpFileStream> OpenWriteAsync(string path)
         {
             await ConnectAsync();
 
-            return await SftpClient.OpenAsync(path, FileMode.Create, FileAccess.Write, CancellationToken.None);
+            if (SftpClient != null)
+            {
+                return await SftpClient.OpenAsync(path, FileMode.Create, FileAccess.Write, CancellationToken.None);
+            }
+
+            throw new NotConnectedException("SftpClient is not connected");
         }
 
         public SftpFileStream OpenRead(string path)
         {
             Connect();
-            
-            return SftpClient.OpenRead(path);
+
+            if (SftpClient != null)
+            {
+                return SftpClient.OpenRead(path);
+            }
+
+            throw new NotConnectedException("SftpClient is not connected");
         }
         
-        public async Task<Bitmap> GetThumbnailAsync(Drive drive)
+        public async Task<Bitmap?> GetThumbnailAsync(Drive drive)
         {
             await ConnectAsync();
 
@@ -105,25 +132,33 @@ namespace OpenpilotSdk.Hardware
         public async Task DeleteFile(SftpFile file)
         {
             await ConnectAsync();
-                
-            using (var command = SshClient.CreateCommand("rm -rf '" + file.FullName + "'"))
+
+            if (SshClient != null)
             {
-                await Task.Factory.FromAsync(command.BeginExecute(), command.EndExecute);
+                using (var command = SshClient.CreateCommand("rm -rf '" + file.FullName + "'"))
+                {
+                    await Task.Factory.FromAsync(command.BeginExecute(), command.EndExecute);
+                }
             }
         }
 
         public async Task DeleteDriveAsync(Drive drive)
         {
             await ConnectAsync();
-
-            var deleteTasks = drive.Segments.Select(async segment =>
+            if (SshClient != null)
             {
-                using (var command = SshClient.CreateCommand("rm -rf " + segment.Path))
+                var deleteTasks = drive.Segments.Select(async segment =>
                 {
-                    return await Task.Factory.FromAsync(command.BeginExecute(), command.EndExecute);
-                }
-            });
-            await Task.WhenAll(deleteTasks);
+
+                    using (var command = SshClient.CreateCommand("rm -rf " + segment.Path))
+                    {
+                        return await Task.Factory.FromAsync(command.BeginExecute(), command.EndExecute);
+                    }
+                });
+                await Task.WhenAll(deleteTasks);
+            }
+
+
         }
 
         public async Task ExportDriveAsync(string exportPath, Drive drive, Camera camera, bool combineSegments = false, IProgress<OpenPilot.Camera.Progress>? progress = null)
@@ -243,7 +278,7 @@ namespace OpenpilotSdk.Hardware
         {
             var segmentProgress = new Progress(driveSegment.Index);
 
-            Video video = null;
+            Video? video = null;
             switch (camera.Type)
             {
                 case CameraType.Wide:
@@ -304,9 +339,9 @@ namespace OpenpilotSdk.Hardware
                                         int totalBytesRead = 0;
                                         int previousProgress = 0;
 
-                                        while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length).ConfigureAwait(false)) > 0)
+                                        while ((bytesRead = await stream.ReadAsync(buffer).ConfigureAwait(false)) > 0)
                                         {
-                                            await outputFile.WriteAsync(buffer, 0, bytesRead).ConfigureAwait(false);
+                                            await outputFile.WriteAsync(buffer.AsMemory(0, bytesRead)).ConfigureAwait(false);
 
                                             if (progress != null)
                                             {
@@ -368,11 +403,11 @@ namespace OpenpilotSdk.Hardware
             return newFileName;
         }
 
-        public async Task<Bitmap> GetThumbnailAsync(DriveSegment driveSegment)
+        public async Task<Bitmap?> GetThumbnailAsync(DriveSegment driveSegment)
         {
             await ConnectAsync();
 
-            Bitmap thumbnail = null;
+            Bitmap? thumbnail = null;
             var videoFile = driveSegment.FrontVideoQuick ?? driveSegment.FrontVideo;
             var drive = new DirectoryInfo(Path.GetDirectoryName(videoFile.File.FullName)).Name;
             var cachedThumbnail = Path.Combine(TempDirectory, drive + ".jpg");
@@ -645,7 +680,7 @@ namespace OpenpilotSdk.Hardware
             await using (var fileStream = await SftpClient.OpenAsync(driveSegment.QuickLog.FullName, FileMode.Open,
                              FileAccess.Read, CancellationToken.None))
             {
-                return await OpenPilot.Logging.LogFile.GetWaypointsAsync(fileStream);
+                return await OpenPilot.Logging.LogFile.GetWaypointsAsync(fileStream, driveSegment.QuickLogCompressed);
             }
         }
 

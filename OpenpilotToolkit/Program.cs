@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using CefSharp.WinForms;
 using FFMpegCore;
-using LibVLCSharp.Shared;
 using OpenpilotToolkit.Controls;
 using OpenpilotToolkit.Properties;
 using Serilog;
@@ -86,8 +85,6 @@ namespace OpenpilotToolkit
                 Log.Error((Exception)args.ExceptionObject, "Unhandled Exception");
                 ToolkitMessageDialog.ShowDialog(((Exception)args.ExceptionObject).Message, openpilotToolkitForm);
             };
-
-            Core.Initialize();
 
             var tempPath = Path.Combine(AppContext.BaseDirectory, "tmp");
 

@@ -1,5 +1,4 @@
 ﻿
-using LibVLCSharp.Shared;
 using MaterialSkin.Controls;
 using OpenpilotToolkit.Controls.Wizards;
 
@@ -22,7 +21,6 @@ namespace OpenpilotToolkit
             if (disposing && (components != null))
             {
                 components.Dispose();
-                this._libVlc?.Dispose();
             }
             base.Dispose(disposing);
         }
@@ -43,7 +41,6 @@ namespace OpenpilotToolkit
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle4 = new System.Windows.Forms.DataGridViewCellStyle();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle5 = new System.Windows.Forms.DataGridViewCellStyle();
             lbDrives = new System.Windows.Forms.ListBox();
-            pbPreview = new System.Windows.Forms.PictureBox();
             fbdExportFolder = new System.Windows.Forms.FolderBrowserDialog();
             btnBrowse = new MaterialButton();
             btnRefreshVideos = new MaterialButton();
@@ -69,7 +66,7 @@ namespace OpenpilotToolkit
             panel2 = new System.Windows.Forms.Panel();
             btnOsmUpload = new MaterialButton();
             btnDeleteDrives = new MaterialButton();
-            vlcVideoPlayer = new Controls.Media.VideoPlayer();
+            flyleafVideoPlayer1 = new Controls.Media.FlyleafVideoPlayer();
             tpRemote = new System.Windows.Forms.TabPage();
             btnUpdate = new MaterialButton();
             materialButton1 = new MaterialButton();
@@ -128,7 +125,6 @@ namespace OpenpilotToolkit
             wifiConnected = new MaterialButton();
             cmbDevices = new MaterialComboBox();
             lblActiveDevice = new System.Windows.Forms.Label();
-            ((System.ComponentModel.ISupportInitialize)pbPreview).BeginInit();
             tcSettings.SuspendLayout();
             tpExport.SuspendLayout();
             groupBox3.SuspendLayout();
@@ -169,17 +165,6 @@ namespace OpenpilotToolkit
             lbDrives.TabIndex = 4;
             lbDrives.SelectedIndexChanged += lbDrives_SelectedIndexChanged;
             lbDrives.PreviewKeyDown += lbDrives_PreviewKeyDown;
-            // 
-            // pbPreview
-            // 
-            pbPreview.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
-            pbPreview.Location = new System.Drawing.Point(368, 123);
-            pbPreview.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            pbPreview.Name = "pbPreview";
-            pbPreview.Size = new System.Drawing.Size(532, 373);
-            pbPreview.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
-            pbPreview.TabIndex = 8;
-            pbPreview.TabStop = false;
             // 
             // btnBrowse
             // 
@@ -438,8 +423,7 @@ namespace OpenpilotToolkit
             tpExport.Controls.Add(groupBox3);
             tpExport.Controls.Add(groupBox2);
             tpExport.Controls.Add(panel2);
-            tpExport.Controls.Add(pbPreview);
-            tpExport.Controls.Add(vlcVideoPlayer);
+            tpExport.Controls.Add(flyleafVideoPlayer1);
             tpExport.Controls.Add(txtExportFolder);
             tpExport.Controls.Add(lbDrives);
             tpExport.Controls.Add(btnBrowse);
@@ -662,13 +646,13 @@ namespace OpenpilotToolkit
             btnDeleteDrives.UseVisualStyleBackColor = true;
             btnDeleteDrives.Click += btnDeleteDrives_Click;
             // 
-            // vlcVideoPlayer
+            // flyleafVideoPlayer1
             // 
-            vlcVideoPlayer.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
-            vlcVideoPlayer.Location = new System.Drawing.Point(367, 123);
-            vlcVideoPlayer.Name = "vlcVideoPlayer";
-            vlcVideoPlayer.Size = new System.Drawing.Size(533, 373);
-            vlcVideoPlayer.TabIndex = 5;
+            flyleafVideoPlayer1.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
+            flyleafVideoPlayer1.Location = new System.Drawing.Point(368, 123);
+            flyleafVideoPlayer1.Name = "flyleafVideoPlayer1";
+            flyleafVideoPlayer1.Size = new System.Drawing.Size(532, 373);
+            flyleafVideoPlayer1.TabIndex = 17;
             // 
             // tpRemote
             // 
@@ -1293,6 +1277,7 @@ namespace OpenpilotToolkit
             txtRepositoryName.ShortcutsEnabled = true;
             txtRepositoryName.Size = new System.Drawing.Size(341, 48);
             txtRepositoryName.TabIndex = 33;
+            txtRepositoryName.TabStop = false;
             txtRepositoryName.Text = "openpilot";
             txtRepositoryName.TextAlign = System.Windows.Forms.HorizontalAlignment.Left;
             txtRepositoryName.TrailingIcon = null;
@@ -1326,6 +1311,7 @@ namespace OpenpilotToolkit
             txtForkBranch.ShortcutsEnabled = true;
             txtForkBranch.Size = new System.Drawing.Size(341, 48);
             txtForkBranch.TabIndex = 34;
+            txtForkBranch.TabStop = false;
             txtForkBranch.TextAlign = System.Windows.Forms.HorizontalAlignment.Left;
             txtForkBranch.TrailingIcon = null;
             txtForkBranch.UseSystemPasswordChar = false;
@@ -1357,6 +1343,7 @@ namespace OpenpilotToolkit
             txtForkUsername.ShortcutsEnabled = true;
             txtForkUsername.Size = new System.Drawing.Size(341, 48);
             txtForkUsername.TabIndex = 32;
+            txtForkUsername.TabStop = false;
             txtForkUsername.TextAlign = System.Windows.Forms.HorizontalAlignment.Left;
             txtForkUsername.TrailingIcon = null;
             txtForkUsername.UseSystemPasswordChar = false;
@@ -1745,7 +1732,6 @@ namespace OpenpilotToolkit
             FormClosing += ExportDrivesForm_FormClosing;
             FormClosed += OpenpilotToolkitForm_FormClosed;
             Load += Form1_Load;
-            ((System.ComponentModel.ISupportInitialize)pbPreview).EndInit();
             tcSettings.ResumeLayout(false);
             tpExport.ResumeLayout(false);
             tpExport.PerformLayout();
@@ -1782,7 +1768,6 @@ namespace OpenpilotToolkit
         #endregion
 
         private System.Windows.Forms.ListBox lbDrives;
-        private System.Windows.Forms.PictureBox pbPreview;
         private System.Windows.Forms.FolderBrowserDialog fbdExportFolder;
         private MaterialButton btnBrowse;
         private MaterialButton btnRefreshVideos;
@@ -1821,7 +1806,6 @@ namespace OpenpilotToolkit
         private MaterialButton btnPaypal;
         private MaterialButton btnKofi;
         private MaterialButton btnBuyMeCoffee;
-        private Controls.Media.VideoPlayer vlcVideoPlayer;
         private MaterialMultiLineTextBox txtFingerprint;
         private System.Windows.Forms.TabPage tpFork;
         private MaterialTextBox2 txtForkBranch;
@@ -1867,6 +1851,7 @@ namespace OpenpilotToolkit
         private System.Windows.Forms.DataGridViewTextBoxColumn colType;
         private System.Windows.Forms.DataGridViewTextBoxColumn colChanged;
         private MaterialTextBox2 txtRepositoryName;
+        private Controls.Media.FlyleafVideoPlayer flyleafVideoPlayer1;
     }
 }
 
