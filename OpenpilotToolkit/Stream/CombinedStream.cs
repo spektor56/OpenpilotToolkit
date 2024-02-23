@@ -4,27 +4,42 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Vortice.MediaFoundation;
 
 namespace OpenpilotToolkit.Stream
 {
     public class CombinedStream : System.IO.Stream
     {
-        private readonly List<System.IO.Stream> _streams;
+        private readonly System.IO.Stream[] _streams;
         private long _position;
         private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
-        private int _currentStreamIndex = 0;
         private readonly Lazy<long> _length;
         private readonly bool _shouldDisposeStreams;
 
+        public event Action<int> CurrentStreamIndexChanged;
+
+        private int _currentStreamIndex;
+        public int CurrentStreamIndex
+        {
+            get => _currentStreamIndex;
+            private set
+            {
+                if (_currentStreamIndex != value)
+                {
+                    _currentStreamIndex = value;
+                    CurrentStreamIndexChanged?.Invoke(_currentStreamIndex);
+                }
+            }
+        }
+
         public CombinedStream(IEnumerable<System.IO.Stream> streams, bool shouldDisposeStreams = true)
         {
-            _streams = new List<System.IO.Stream>(streams);
+            _streams = streams.ToArray();
             if (_streams.Any(s => !s.CanSeek))
                 throw new ArgumentException("All streams must be seekable.");
             _length = new Lazy<long>(() => _streams.Sum(s => s.Length));
             _shouldDisposeStreams = shouldDisposeStreams;
         }
+
         public IReadOnlyList<System.IO.Stream> Streams => _streams;
 
         public override bool CanRead => true;
@@ -41,8 +56,6 @@ namespace OpenpilotToolkit.Stream
             set => Seek(value, SeekOrigin.Begin);
         }
 
-        public int CurrentStreamIndex => _currentStreamIndex;
-
         public override void Flush() { }
 
         public override int Read(byte[] buffer, int offset, int count)
@@ -52,17 +65,17 @@ namespace OpenpilotToolkit.Stream
             {
                 var totalBytesRead = 0;
 
-                while (count > 0 && _currentStreamIndex < _streams.Count)
+                while (count > 0 && _currentStreamIndex < _streams.Length)
                 {
                     var currentStream = _streams[_currentStreamIndex];
                     var bytesRead = currentStream.Read(buffer, offset, count);
                     if (bytesRead == 0)
                     {
-                        if (_currentStreamIndex == _streams.Count - 1)
+                        if (_currentStreamIndex == _streams.Length - 1)
                         {
                             break;
                         }
-                        _currentStreamIndex++;
+                        CurrentStreamIndex++;
                         continue;
                     }
 
@@ -82,22 +95,23 @@ namespace OpenpilotToolkit.Stream
 
         public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {
-            await _semaphore.WaitAsync(cancellationToken);
+            await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 var totalBytesRead = 0;
 
-                while (count > 0 && _currentStreamIndex < _streams.Count)
+                while (count > 0 && _currentStreamIndex < _streams.Length)
                 {
                     var currentStream = _streams[_currentStreamIndex];
-                    var bytesRead = await currentStream.ReadAsync(buffer.AsMemory(offset, count), cancellationToken);
+                    var bytesRead = await currentStream.ReadAsync(buffer.AsMemory(offset, count), cancellationToken).ConfigureAwait(false);
                     if (bytesRead == 0)
                     {
-                        if (_currentStreamIndex == _streams.Count - 1)
+                        if (_currentStreamIndex == _streams.Length - 1)
                         {
+                            _position = _length.Value;
                             break;
                         }
-                        _currentStreamIndex++;
+                        CurrentStreamIndex++;
                         continue;
                     }
 
@@ -120,39 +134,44 @@ namespace OpenpilotToolkit.Stream
             _semaphore.Wait();
             try
             {
+                long position;
+
                 switch (origin)
                 {
                     case SeekOrigin.Begin:
-                        _position = offset;
+                        position = Math.Max(0, Math.Min(_length.Value, offset));
                         break;
                     case SeekOrigin.Current:
-                        _position += offset;
+                        position = Math.Max(0, Math.Min(_length.Value, _position + offset));
                         break;
                     case SeekOrigin.End:
-                        _position = _length.Value + offset;
+                        position = Math.Max(0, Math.Min(_length.Value, _length.Value + offset));
                         break;
+                    default:
+                        throw new ArgumentException("Invalid seek origin.");
                 }
 
-                var remainingOffset = _position;
+                var remainingOffset = position;
 
-                for (_currentStreamIndex = 0; _currentStreamIndex < _streams.Count; _currentStreamIndex++)
+                for (CurrentStreamIndex = 0; _currentStreamIndex < _streams.Length; CurrentStreamIndex++)
                 {
                     if (remainingOffset < _streams[_currentStreamIndex].Length)
                     {
                         _streams[_currentStreamIndex].Position = remainingOffset;
-                        for (int i = _currentStreamIndex + 1; i < _streams.Count; i++)
+                        for (int i = _currentStreamIndex + 1; i < _streams.Length; i++)
                         {
                             _streams[i].Position = 0;
                         }
+                        _position = position;
                         return _position;
                     }
 
                     remainingOffset -= _streams[_currentStreamIndex].Length;
                 }
 
-                if (_streams.Count > 0)
+                if (_streams.Length > 0)
                 {
-                    var lastStream = _streams[_streams.Count - 1];
+                    var lastStream = _streams[_streams.Length - 1];
                     lastStream.Position = lastStream.Length;
                 }
 
@@ -176,21 +195,19 @@ namespace OpenpilotToolkit.Stream
 
         public override async Task CopyToAsync(System.IO.Stream destination, int bufferSize, CancellationToken cancellationToken)
         {
-            await _semaphore.WaitAsync(cancellationToken);
+            await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
-                // Seek to the beginning of the CombinedStream.
                 _position = 0;
-                _currentStreamIndex = 0;
+                CurrentStreamIndex = 0;
                 foreach (var stream in _streams)
                 {
                     stream.Position = 0;
                 }
 
-                // Copy the data.
-                for (int i = _currentStreamIndex; i < _streams.Count; i++)
+                for (int i = _currentStreamIndex; i < _streams.Length; i++)
                 {
-                    await _streams[i].CopyToAsync(destination, bufferSize, cancellationToken);
+                    await _streams[i].CopyToAsync(destination, bufferSize, cancellationToken).ConfigureAwait(false);
                 }
             }
             finally
@@ -199,20 +216,27 @@ namespace OpenpilotToolkit.Stream
             }
         }
 
+        /// <summary>
+        /// Seeks to the next stream in the CombinedStream.
+        /// </summary>
+        /// <returns>True if the next stream is successfully selected, false if there are no more streams.</returns>
         public async Task<bool> SeekToNextStreamAsync()
         {
-            await _semaphore.WaitAsync();
+            await _semaphore.WaitAsync().ConfigureAwait(false);
             try
             {
-                if (_currentStreamIndex >= _streams.Count - 1)
+                if (_currentStreamIndex >= _streams.Length - 1)
                 {
                     return false;
                 }
 
+                _position += _streams[_currentStreamIndex].Length - _streams[_currentStreamIndex].Position;
+
                 _streams[_currentStreamIndex].Position = 0;
-                _currentStreamIndex++;
-                _position += _streams[_currentStreamIndex - 1].Length - _streams[_currentStreamIndex - 1].Position;
-                _streams[_currentStreamIndex].Position = 0;
+                _streams[_currentStreamIndex + 1].Position = 0;
+
+                CurrentStreamIndex++;
+
                 return true;
             }
             finally
@@ -221,9 +245,13 @@ namespace OpenpilotToolkit.Stream
             }
         }
 
+        /// <summary>
+        /// Seeks to the previous stream in the CombinedStream.
+        /// </summary>
+        /// <returns>True if the previous stream is successfully selected, false if there are no previous streams.</returns>
         public async Task<bool> SeekToPreviousStreamAsync()
         {
-            await _semaphore.WaitAsync();
+            await _semaphore.WaitAsync().ConfigureAwait(false);
             try
             {
                 if (_currentStreamIndex <= 0)
@@ -231,11 +259,13 @@ namespace OpenpilotToolkit.Stream
                     return false;
                 }
 
-                var currentStreamPosition = _streams[_currentStreamIndex].Position;
+                _position -= (_streams[_currentStreamIndex].Position + _streams[_currentStreamIndex - 1].Length);
+
                 _streams[_currentStreamIndex].Position = 0;
-                _currentStreamIndex--;
-                _position -= (_streams[_currentStreamIndex].Length + currentStreamPosition);
-                _streams[_currentStreamIndex].Position = 0;
+                _streams[_currentStreamIndex - 1].Position = 0;
+
+                CurrentStreamIndex--;
+
                 return true;
             }
             finally
@@ -246,12 +276,12 @@ namespace OpenpilotToolkit.Stream
 
         public async Task<bool> SeekToStreamAsync(int stream)
         {
-            await _semaphore.WaitAsync();
+            await _semaphore.WaitAsync().ConfigureAwait(false);
             try
             {
-                if (stream > _streams.Count - 1 || stream < 0)
+                if (stream > _streams.Length - 1 || stream < 0)
                 {
-                    throw new Exception("Invalid Index");
+                    throw new IndexOutOfRangeException("Invalid Index");
                 }
 
                 long position = 0;
@@ -261,9 +291,11 @@ namespace OpenpilotToolkit.Stream
                 }
 
                 _streams[_currentStreamIndex].Position = 0;
-                _currentStreamIndex = stream;
-                _position = position;
                 _streams[stream].Position = 0;
+                
+                _position = position;
+                CurrentStreamIndex = stream;
+
                 return true;
             }
             finally
@@ -281,7 +313,14 @@ namespace OpenpilotToolkit.Stream
                 {
                     foreach (var stream in _streams)
                     {
-                        stream.Dispose();
+                        try
+                        {
+                            stream.Dispose();
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"Error disposing stream: {ex}");
+                        }
                     }
                 }
                 finally
@@ -297,18 +336,25 @@ namespace OpenpilotToolkit.Stream
         {
             if (_shouldDisposeStreams)
             {
-                await _semaphore.WaitAsync();
+                await _semaphore.WaitAsync().ConfigureAwait(false);
                 try
                 {
                     foreach (var stream in _streams)
                     {
-                        if (stream is IAsyncDisposable asyncDisposable)
+                        try
                         {
-                            await asyncDisposable.DisposeAsync();
+                            if (stream is IAsyncDisposable asyncDisposable)
+                            {
+                                await asyncDisposable.DisposeAsync().ConfigureAwait(false);
+                            }
+                            else
+                            {
+                                stream.Dispose();
+                            }
                         }
-                        else
+                        catch (Exception ex)
                         {
-                            stream.Dispose();
+                            System.Diagnostics.Debug.WriteLine($"Error disposing stream: {ex}");
                         }
                     }
                 }
@@ -317,6 +363,8 @@ namespace OpenpilotToolkit.Stream
                     _semaphore.Release();
                 }
             }
+
+            await base.DisposeAsync().ConfigureAwait(false);
         }
     }
 }
