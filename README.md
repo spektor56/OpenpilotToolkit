@@ -4,9 +4,9 @@
 
 Class library and toolkit for interacting with your openpilot / comma devices.
 
-<a href='https://github.com/spektor56/OpenpilotToolkit/releases/download/1.8.0/OpenpilotToolkit.7z' target='_blank'>Download for Windows</a>
+<a href='https://github.com/spektor56/OpenpilotToolkit/releases/download/1.9.0/OpenpilotToolkit.zip' target='_blank'>Download for Windows</a>
 
-<a href='https://github.com/spektor56/OpenpilotToolkit/releases/download/1.1.0/com.spektor56.openpilottoolkitandroid-Signed.apk' target='_blank'>Download For Android</a>
+<a href='https://github.com/spektor56/OpenpilotToolkit/releases/download/1.8.1/com.spektor56.openpilottoolkitandroid.apk' target='_blank'>Download For Android</a>
 
 Current Features
 ------
