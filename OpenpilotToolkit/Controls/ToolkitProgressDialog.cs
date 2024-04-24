@@ -35,7 +35,7 @@ namespace OpenpilotToolkit.Controls
             {
                 _overlayForm = new OverlayForm(parent);
             }
-            this.Icon = Properties.Resources.ic_launcher_web;
+            Icon = Properties.Resources.ic_launcher_web;
             var materialSkinManager = MaterialSkinManager.Instance;
             materialSkinManager.EnforceBackcolorOnAllComponents = false;
             materialSkinManager.AddFormToManage(this);
@@ -45,7 +45,7 @@ namespace OpenpilotToolkit.Controls
             progressBar1.Style = ProgressBarStyle.Marquee;
             
             lblText.Text = text;
-            this.Show(parent);
+            Show(parent);
 
             if (progress != null)
             {
@@ -55,7 +55,7 @@ namespace OpenpilotToolkit.Controls
 
         private void ToolkitProgressDialog_LostFocus(object sender, EventArgs e)
         {
-            this.Focus();
+            Focus();
         }
 
         private void ProgressOnProgressChanged(object sender, InstallProgress e)
@@ -106,7 +106,7 @@ namespace OpenpilotToolkit.Controls
         private void ToolkitProgressDialog_Deactivate(object sender, EventArgs e)
         {
             
-            this.Focus();
+            Focus();
         }
     }
 }

@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net9.0-windows7.0</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
 	<DebugType>embedded</DebugType>
 	<ApplicationIcon>Resources\ic_launcher-web.ico</ApplicationIcon>
@@ -11,6 +11,7 @@
 	<StartupObject>OpenpilotToolkit.Program</StartupObject>
 	<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
 	<ApplicationManifest>app.manifest</ApplicationManifest>
+	<EnableUnsafeBinaryFormatterSerialization>true</EnableUnsafeBinaryFormatterSerialization>
   </PropertyGroup>
 
 	<PropertyGroup Condition="'$(PlatformTarget)' == 'x86'">
@@ -581,24 +582,24 @@
 	</ItemGroup>
 
   <ItemGroup>
-	<PackageReference Include="CefSharp.WinForms.NETCore" Version="121.3.70" />
-	<PackageReference Include="chromiumembeddedframework.runtime.win-arm64" Version="121.3.7" />
-	<PackageReference Include="chromiumembeddedframework.runtime.win-x64" Version="121.3.7" />
-	<PackageReference Include="chromiumembeddedframework.runtime.win-x86" Version="121.3.7" />
-	<PackageReference Include="FlyleafLib" Version="3.7.45" />
+	<PackageReference Include="CefSharp.WinForms.NETCore" Version="123.0.60" />
+	<PackageReference Include="FFMpegCore" Version="5.1.0" />
+	<PackageReference Include="FlyleafLib" Version="3.7.46" />
 	<PackageReference Include="LibUsbDotNet" Version="2.2.29" />
-    <PackageReference Include="Microsoft.Windows.Compatibility" Version="8.0.2" />
+    <PackageReference Include="Microsoft.Windows.Compatibility" Version="9.0.0-preview.3.24175.3" />
     <PackageReference Include="Nito.AsyncEx.Coordination" Version="5.1.2" />
-    <PackageReference Include="Octokit" Version="9.1.2" />
-    <PackageReference Include="Serilog" Version="3.1.2-dev-02097" />
+    <PackageReference Include="Octokit" Version="11.0.1" />
+    <PackageReference Include="Serilog" Version="4.0.0-dev-02149" />
+    <PackageReference Include="Serilog.Sinks.Async" Version="1.5.0" />
+    <PackageReference Include="Serilog.Sinks.Debug" Version="2.0.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="5.0.1-dev-00972" />
-    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.2" />
-    <PackageReference Include="SshKeyGenerator" Version="1.1.51" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.4" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\MaterialSkin\MaterialSkin\MaterialSkinCore.csproj" />
     <ProjectReference Include="..\OpenpilotSdk\OpenpilotSdk.csproj" />
+    <ProjectReference Include="..\SshNet.Keygen\SshNet.Keygen\SshNet.Keygen.csproj" />
   </ItemGroup>
 
   <ItemGroup>

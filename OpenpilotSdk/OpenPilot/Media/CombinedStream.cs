@@ -1,21 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using Serilog;
 
-namespace OpenpilotToolkit.Stream
+namespace OpenpilotSdk.OpenPilot.Media
 {
-    public class CombinedStream : System.IO.Stream
+    public class CombinedStream : Stream
     {
-        private readonly System.IO.Stream[] _streams;
+        private readonly Stream[] _streams;
         private long _position;
         private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
         private readonly Lazy<long> _length;
+        private readonly double _duration;
         private readonly bool _shouldDisposeStreams;
 
-        public event Action<int> CurrentStreamIndexChanged;
+        public event Action<int>? CurrentStreamIndexChanged;
 
         private int _currentStreamIndex;
         public int CurrentStreamIndex
@@ -31,7 +27,7 @@ namespace OpenpilotToolkit.Stream
             }
         }
 
-        public CombinedStream(IEnumerable<System.IO.Stream> streams, bool shouldDisposeStreams = true)
+        public CombinedStream(IEnumerable<Stream> streams, bool shouldDisposeStreams = true)
         {
             _streams = streams.ToArray();
             if (_streams.Any(s => !s.CanSeek))
@@ -40,7 +36,7 @@ namespace OpenpilotToolkit.Stream
             _shouldDisposeStreams = shouldDisposeStreams;
         }
 
-        public IReadOnlyList<System.IO.Stream> Streams => _streams;
+        public IReadOnlyList<Stream> Streams => _streams;
 
         public override bool CanRead => true;
 
@@ -53,13 +49,18 @@ namespace OpenpilotToolkit.Stream
         public override long Position
         {
             get => _position;
-            set => Seek(value, SeekOrigin.Begin);
+            set
+            {
+                Seek(value, SeekOrigin.Begin);
+                Log.Debug(string.Format("Position Set to: {0:#0.#}%", (decimal)value / Length * 100));
+            }
         }
 
         public override void Flush() { }
 
         public override int Read(byte[] buffer, int offset, int count)
         {
+            Log.Debug(string.Format("Reading from offset: {0} count: {1}", offset, count));
             _semaphore.Wait();
             try
             {
@@ -95,6 +96,7 @@ namespace OpenpilotToolkit.Stream
 
         public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {
+            Log.Debug(string.Format("Reading async from offset: {0} count: {1}", offset, count));
             await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
@@ -131,6 +133,7 @@ namespace OpenpilotToolkit.Stream
 
         public override long Seek(long offset, SeekOrigin origin)
         {
+            Log.Debug(string.Format("Seeking to: {0:#0.#}%", (decimal)offset / Length * 100));
             _semaphore.Wait();
             try
             {
@@ -193,7 +196,7 @@ namespace OpenpilotToolkit.Stream
             return Task.CompletedTask; // No-op since this stream is read-only.
         }
 
-        public override async Task CopyToAsync(System.IO.Stream destination, int bufferSize, CancellationToken cancellationToken)
+        public override async Task CopyToAsync(Stream destination, int bufferSize, CancellationToken cancellationToken)
         {
             await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
@@ -259,7 +262,7 @@ namespace OpenpilotToolkit.Stream
                     return false;
                 }
 
-                _position -= (_streams[_currentStreamIndex].Position + _streams[_currentStreamIndex - 1].Length);
+                _position -= _streams[_currentStreamIndex].Position + _streams[_currentStreamIndex - 1].Length;
 
                 _streams[_currentStreamIndex].Position = 0;
                 _streams[_currentStreamIndex - 1].Position = 0;
@@ -292,7 +295,7 @@ namespace OpenpilotToolkit.Stream
 
                 _streams[_currentStreamIndex].Position = 0;
                 _streams[stream].Position = 0;
-                
+
                 _position = position;
                 CurrentStreamIndex = stream;
 

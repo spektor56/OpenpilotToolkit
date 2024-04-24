@@ -2,9 +2,9 @@
 
 namespace OpenpilotSdk.OpenPilot
 {
-    public sealed class Drive
+    public sealed class Route
     {
-        protected bool Equals(Drive other)
+        private bool Equals(Route other)
         {
             return Date.Equals(other.Date);
         }
@@ -26,7 +26,7 @@ namespace OpenpilotSdk.OpenPilot
                 return false;
             }
 
-            return Equals((Drive)obj);
+            return Equals((Route)obj);
         }
 
         public override int GetHashCode()
@@ -34,23 +34,23 @@ namespace OpenpilotSdk.OpenPilot
             return Date.GetHashCode();
         }
 
-        public static bool operator ==(Drive left, Drive right)
+        public static bool operator ==(Route left, Route right)
         {
             return Equals(left, right);
         }
 
-        public static bool operator !=(Drive left, Drive right)
+        public static bool operator !=(Route left, Route right)
         {
             return !Equals(left, right);
         }
 
-        public ReadOnlyCollection<DriveSegment> Segments { get; }
+        public ReadOnlyCollection<RouteSegment> Segments { get; }
         public DateTime Date { get; }
 
-        public Drive(DateTime date, IList<DriveSegment> driveSegments)
+        public Route(DateTime date, IList<RouteSegment> routeSegments)
         {
             Date = date;
-            Segments = new ReadOnlyCollection<DriveSegment>(driveSegments);
+            Segments = new ReadOnlyCollection<RouteSegment>(routeSegments);
         }
 
         public override string ToString()

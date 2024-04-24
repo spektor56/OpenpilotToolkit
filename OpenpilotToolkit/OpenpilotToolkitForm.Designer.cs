@@ -1,5 +1,4 @@
-﻿
-using MaterialSkin.Controls;
+﻿using MaterialSkin.Controls;
 using OpenpilotToolkit.Controls.Wizards;
 
 namespace OpenpilotToolkit
@@ -40,7 +39,7 @@ namespace OpenpilotToolkit
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle4 = new System.Windows.Forms.DataGridViewCellStyle();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle5 = new System.Windows.Forms.DataGridViewCellStyle();
-            lbDrives = new System.Windows.Forms.ListBox();
+            lbRoutes = new System.Windows.Forms.ListBox();
             fbdExportFolder = new System.Windows.Forms.FolderBrowserDialog();
             btnBrowse = new MaterialButton();
             btnRefreshVideos = new MaterialButton();
@@ -56,7 +55,7 @@ namespace OpenpilotToolkit
             tpExport = new System.Windows.Forms.TabPage();
             tlpTasks = new System.Windows.Forms.TableLayoutPanel();
             groupBox3 = new System.Windows.Forms.GroupBox();
-            dgvDriveInfo = new Controls.MaterialSkinDataGridView();
+            dgvRouteInfo = new Controls.MaterialSkinDataGridView();
             colProperty = new System.Windows.Forms.DataGridViewTextBoxColumn();
             colValue = new System.Windows.Forms.DataGridViewTextBoxColumn();
             groupBox2 = new System.Windows.Forms.GroupBox();
@@ -65,8 +64,8 @@ namespace OpenpilotToolkit
             cbWideCamera = new MaterialCheckbox();
             panel2 = new System.Windows.Forms.Panel();
             btnOsmUpload = new MaterialButton();
-            btnDeleteDrives = new MaterialButton();
-            flyleafVideoPlayer1 = new Controls.Media.FlyleafVideoPlayer();
+            btnDeleteRoutes = new MaterialButton();
+            flyleafVideoPlayer = new Controls.Media.FlyleafVideoPlayer();
             tpRemote = new System.Windows.Forms.TabPage();
             btnUpdate = new MaterialButton();
             materialButton1 = new MaterialButton();
@@ -128,7 +127,7 @@ namespace OpenpilotToolkit
             tcSettings.SuspendLayout();
             tpExport.SuspendLayout();
             groupBox3.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)dgvDriveInfo).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)dgvRouteInfo).BeginInit();
             groupBox2.SuspendLayout();
             panel2.SuspendLayout();
             tpRemote.SuspendLayout();
@@ -152,19 +151,18 @@ namespace OpenpilotToolkit
             themePanel.SuspendLayout();
             SuspendLayout();
             // 
-            // lbDrives
+            // lbRoutes
             // 
-            lbDrives.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
-            lbDrives.FormattingEnabled = true;
-            lbDrives.ItemHeight = 15;
-            lbDrives.Location = new System.Drawing.Point(217, 123);
-            lbDrives.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            lbDrives.Name = "lbDrives";
-            lbDrives.SelectionMode = System.Windows.Forms.SelectionMode.MultiExtended;
-            lbDrives.Size = new System.Drawing.Size(143, 364);
-            lbDrives.TabIndex = 4;
-            lbDrives.SelectedIndexChanged += lbDrives_SelectedIndexChanged;
-            lbDrives.PreviewKeyDown += lbDrives_PreviewKeyDown;
+            lbRoutes.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
+            lbRoutes.FormattingEnabled = true;
+            lbRoutes.Location = new System.Drawing.Point(217, 123);
+            lbRoutes.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            lbRoutes.Name = "lbRoutes";
+            lbRoutes.SelectionMode = System.Windows.Forms.SelectionMode.MultiExtended;
+            lbRoutes.Size = new System.Drawing.Size(143, 364);
+            lbRoutes.TabIndex = 4;
+            lbRoutes.SelectedIndexChanged += LbRoutesSelectedIndexChanged;
+            lbRoutes.PreviewKeyDown += LbRoutesPreviewKeyDown;
             // 
             // btnBrowse
             // 
@@ -205,7 +203,7 @@ namespace OpenpilotToolkit
             btnRefreshVideos.NoAccentTextColor = System.Drawing.Color.FromArgb(63, 81, 181);
             btnRefreshVideos.Size = new System.Drawing.Size(196, 36);
             btnRefreshVideos.TabIndex = 0;
-            btnRefreshVideos.Text = "&Refresh Drive List";
+            btnRefreshVideos.Text = "&Refresh Route List";
             btnRefreshVideos.Type = MaterialButton.MaterialButtonType.Contained;
             btnRefreshVideos.UseAccentColor = true;
             btnRefreshVideos.UseVisualStyleBackColor = true;
@@ -275,7 +273,7 @@ namespace OpenpilotToolkit
             btnExport.NoAccentTextColor = System.Drawing.Color.FromArgb(63, 81, 181);
             btnExport.Size = new System.Drawing.Size(194, 36);
             btnExport.TabIndex = 1;
-            btnExport.Text = "&Export Selected Drive(s)";
+            btnExport.Text = "&Export Selected Route(s)";
             btnExport.Type = MaterialButton.MaterialButtonType.Contained;
             btnExport.UseAccentColor = true;
             btnExport.UseVisualStyleBackColor = true;
@@ -285,6 +283,7 @@ namespace OpenpilotToolkit
             // 
             btnScan.AccentTextColor = System.Drawing.Color.FromArgb(255, 64, 129);
             btnScan.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
+            btnScan.AutoSize = false;
             btnScan.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             btnScan.Density = MaterialButton.MaterialButtonDensity.Dense;
             btnScan.Depth = 0;
@@ -302,6 +301,7 @@ namespace OpenpilotToolkit
             btnScan.UseAccentColor = false;
             btnScan.UseVisualStyleBackColor = true;
             btnScan.Click += btnScan_Click;
+            btnScan.MouseDown += btnScan_MouseDown;
             // 
             // txtExportFolder
             // 
@@ -423,9 +423,9 @@ namespace OpenpilotToolkit
             tpExport.Controls.Add(groupBox3);
             tpExport.Controls.Add(groupBox2);
             tpExport.Controls.Add(panel2);
-            tpExport.Controls.Add(flyleafVideoPlayer1);
+            tpExport.Controls.Add(flyleafVideoPlayer);
             tpExport.Controls.Add(txtExportFolder);
-            tpExport.Controls.Add(lbDrives);
+            tpExport.Controls.Add(lbRoutes);
             tpExport.Controls.Add(btnBrowse);
             tpExport.ImageKey = "outline_file_download_white_24dp.png";
             tpExport.Location = new System.Drawing.Point(4, 31);
@@ -453,25 +453,25 @@ namespace OpenpilotToolkit
             // groupBox3
             // 
             groupBox3.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
-            groupBox3.Controls.Add(dgvDriveInfo);
+            groupBox3.Controls.Add(dgvRouteInfo);
             groupBox3.Location = new System.Drawing.Point(908, 123);
             groupBox3.Name = "groupBox3";
             groupBox3.Size = new System.Drawing.Size(187, 110);
             groupBox3.TabIndex = 6;
             groupBox3.TabStop = false;
-            groupBox3.Text = "Drive Info";
+            groupBox3.Text = "Route Info";
             // 
-            // dgvDriveInfo
+            // dgvRouteInfo
             // 
-            dgvDriveInfo.AllowUserToAddRows = false;
-            dgvDriveInfo.AllowUserToDeleteRows = false;
-            dgvDriveInfo.AllowUserToResizeRows = false;
-            dgvDriveInfo.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
-            dgvDriveInfo.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill;
-            dgvDriveInfo.BackgroundColor = System.Drawing.Color.FromArgb(255, 255, 255);
-            dgvDriveInfo.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            dgvDriveInfo.CellBorderStyle = System.Windows.Forms.DataGridViewCellBorderStyle.SingleHorizontal;
-            dgvDriveInfo.ColumnHeadersBorderStyle = System.Windows.Forms.DataGridViewHeaderBorderStyle.Custom;
+            dgvRouteInfo.AllowUserToAddRows = false;
+            dgvRouteInfo.AllowUserToDeleteRows = false;
+            dgvRouteInfo.AllowUserToResizeRows = false;
+            dgvRouteInfo.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
+            dgvRouteInfo.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill;
+            dgvRouteInfo.BackgroundColor = System.Drawing.Color.FromArgb(255, 255, 255);
+            dgvRouteInfo.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            dgvRouteInfo.CellBorderStyle = System.Windows.Forms.DataGridViewCellBorderStyle.SingleHorizontal;
+            dgvRouteInfo.ColumnHeadersBorderStyle = System.Windows.Forms.DataGridViewHeaderBorderStyle.Custom;
             dataGridViewCellStyle1.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
             dataGridViewCellStyle1.BackColor = System.Drawing.Color.FromArgb(255, 255, 255);
             dataGridViewCellStyle1.Font = new System.Drawing.Font("Segoe UI", 9F);
@@ -479,10 +479,10 @@ namespace OpenpilotToolkit
             dataGridViewCellStyle1.SelectionBackColor = System.Drawing.Color.FromArgb(30, 0, 0, 0);
             dataGridViewCellStyle1.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
             dataGridViewCellStyle1.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
-            dgvDriveInfo.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle1;
-            dgvDriveInfo.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dgvDriveInfo.ColumnHeadersVisible = false;
-            dgvDriveInfo.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] { colProperty, colValue });
+            dgvRouteInfo.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle1;
+            dgvRouteInfo.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            dgvRouteInfo.ColumnHeadersVisible = false;
+            dgvRouteInfo.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] { colProperty, colValue });
             dataGridViewCellStyle3.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
             dataGridViewCellStyle3.BackColor = System.Drawing.Color.FromArgb(255, 255, 255);
             dataGridViewCellStyle3.Font = new System.Drawing.Font("Segoe UI", 9F);
@@ -490,20 +490,20 @@ namespace OpenpilotToolkit
             dataGridViewCellStyle3.SelectionBackColor = System.Drawing.Color.FromArgb(30, 0, 0, 0);
             dataGridViewCellStyle3.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
             dataGridViewCellStyle3.WrapMode = System.Windows.Forms.DataGridViewTriState.False;
-            dgvDriveInfo.DefaultCellStyle = dataGridViewCellStyle3;
-            dgvDriveInfo.Depth = 0;
-            dgvDriveInfo.EnableHeadersVisualStyles = false;
-            dgvDriveInfo.Font = new System.Drawing.Font("Segoe UI", 9F);
-            dgvDriveInfo.GridColor = System.Drawing.Color.FromArgb(225, 225, 225);
-            dgvDriveInfo.Location = new System.Drawing.Point(6, 22);
-            dgvDriveInfo.MouseState = MaterialSkin.MouseState.HOVER;
-            dgvDriveInfo.Name = "dgvDriveInfo";
-            dgvDriveInfo.ReadOnly = true;
-            dgvDriveInfo.RowHeadersVisible = false;
-            dgvDriveInfo.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
-            dgvDriveInfo.ShowCellToolTips = false;
-            dgvDriveInfo.Size = new System.Drawing.Size(175, 78);
-            dgvDriveInfo.TabIndex = 0;
+            dgvRouteInfo.DefaultCellStyle = dataGridViewCellStyle3;
+            dgvRouteInfo.Depth = 0;
+            dgvRouteInfo.EnableHeadersVisualStyles = false;
+            dgvRouteInfo.Font = new System.Drawing.Font("Segoe UI", 9F);
+            dgvRouteInfo.GridColor = System.Drawing.Color.FromArgb(225, 225, 225);
+            dgvRouteInfo.Location = new System.Drawing.Point(6, 22);
+            dgvRouteInfo.MouseState = MaterialSkin.MouseState.HOVER;
+            dgvRouteInfo.Name = "dgvRouteInfo";
+            dgvRouteInfo.ReadOnly = true;
+            dgvRouteInfo.RowHeadersVisible = false;
+            dgvRouteInfo.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
+            dgvRouteInfo.ShowCellToolTips = false;
+            dgvRouteInfo.Size = new System.Drawing.Size(175, 78);
+            dgvRouteInfo.TabIndex = 0;
             // 
             // colProperty
             // 
@@ -590,7 +590,7 @@ namespace OpenpilotToolkit
             // panel2
             // 
             panel2.Controls.Add(btnOsmUpload);
-            panel2.Controls.Add(btnDeleteDrives);
+            panel2.Controls.Add(btnDeleteRoutes);
             panel2.Controls.Add(btnRefreshVideos);
             panel2.Controls.Add(btnExportMapillary);
             panel2.Controls.Add(btnExportGpx);
@@ -599,6 +599,7 @@ namespace OpenpilotToolkit
             panel2.Name = "panel2";
             panel2.Size = new System.Drawing.Size(204, 434);
             panel2.TabIndex = 2;
+            panel2.Paint += panel2_Paint;
             // 
             // btnOsmUpload
             // 
@@ -623,36 +624,36 @@ namespace OpenpilotToolkit
             btnOsmUpload.UseVisualStyleBackColor = true;
             btnOsmUpload.Click += btnOsmUpload_Click;
             // 
-            // btnDeleteDrives
+            // btnDeleteRoutes
             // 
-            btnDeleteDrives.AccentTextColor = System.Drawing.Color.FromArgb(255, 64, 129);
-            btnDeleteDrives.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
-            btnDeleteDrives.AutoSize = false;
-            btnDeleteDrives.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            btnDeleteDrives.Density = MaterialButton.MaterialButtonDensity.Default;
-            btnDeleteDrives.Depth = 0;
-            btnDeleteDrives.HighEmphasis = true;
-            btnDeleteDrives.Icon = null;
-            btnDeleteDrives.Location = new System.Drawing.Point(4, 102);
-            btnDeleteDrives.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
-            btnDeleteDrives.MouseState = MaterialSkin.MouseState.HOVER;
-            btnDeleteDrives.Name = "btnDeleteDrives";
-            btnDeleteDrives.NoAccentTextColor = System.Drawing.Color.FromArgb(63, 81, 181);
-            btnDeleteDrives.Size = new System.Drawing.Size(194, 36);
-            btnDeleteDrives.TabIndex = 2;
-            btnDeleteDrives.Text = "&Delete Selected Drive(s)";
-            btnDeleteDrives.Type = MaterialButton.MaterialButtonType.Contained;
-            btnDeleteDrives.UseAccentColor = true;
-            btnDeleteDrives.UseVisualStyleBackColor = true;
-            btnDeleteDrives.Click += btnDeleteDrives_Click;
+            btnDeleteRoutes.AccentTextColor = System.Drawing.Color.FromArgb(255, 64, 129);
+            btnDeleteRoutes.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
+            btnDeleteRoutes.AutoSize = false;
+            btnDeleteRoutes.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            btnDeleteRoutes.Density = MaterialButton.MaterialButtonDensity.Default;
+            btnDeleteRoutes.Depth = 0;
+            btnDeleteRoutes.HighEmphasis = true;
+            btnDeleteRoutes.Icon = null;
+            btnDeleteRoutes.Location = new System.Drawing.Point(4, 102);
+            btnDeleteRoutes.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+            btnDeleteRoutes.MouseState = MaterialSkin.MouseState.HOVER;
+            btnDeleteRoutes.Name = "btnDeleteRoutes";
+            btnDeleteRoutes.NoAccentTextColor = System.Drawing.Color.FromArgb(63, 81, 181);
+            btnDeleteRoutes.Size = new System.Drawing.Size(194, 36);
+            btnDeleteRoutes.TabIndex = 2;
+            btnDeleteRoutes.Text = "&Delete Selected Route(s)";
+            btnDeleteRoutes.Type = MaterialButton.MaterialButtonType.Contained;
+            btnDeleteRoutes.UseAccentColor = true;
+            btnDeleteRoutes.UseVisualStyleBackColor = true;
+            btnDeleteRoutes.Click += BtnDeleteRoutesClick;
             // 
-            // flyleafVideoPlayer1
+            // flyleafVideoPlayer
             // 
-            flyleafVideoPlayer1.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
-            flyleafVideoPlayer1.Location = new System.Drawing.Point(368, 123);
-            flyleafVideoPlayer1.Name = "flyleafVideoPlayer1";
-            flyleafVideoPlayer1.Size = new System.Drawing.Size(532, 373);
-            flyleafVideoPlayer1.TabIndex = 17;
+            flyleafVideoPlayer.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
+            flyleafVideoPlayer.Location = new System.Drawing.Point(368, 123);
+            flyleafVideoPlayer.Name = "flyleafVideoPlayer";
+            flyleafVideoPlayer.Size = new System.Drawing.Size(532, 373);
+            flyleafVideoPlayer.TabIndex = 17;
             // 
             // tpRemote
             // 
@@ -854,7 +855,7 @@ namespace OpenpilotToolkit
             groupBox1.Size = new System.Drawing.Size(479, 308);
             groupBox1.TabIndex = 0;
             groupBox1.TabStop = false;
-            groupBox1.Text = "Drive Exporter";
+            groupBox1.Text = "Route Exporter";
             // 
             // groupBox4
             // 
@@ -1736,7 +1737,7 @@ namespace OpenpilotToolkit
             tpExport.ResumeLayout(false);
             tpExport.PerformLayout();
             groupBox3.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)dgvDriveInfo).EndInit();
+            ((System.ComponentModel.ISupportInitialize)dgvRouteInfo).EndInit();
             groupBox2.ResumeLayout(false);
             groupBox2.PerformLayout();
             panel2.ResumeLayout(false);
@@ -1761,13 +1762,12 @@ namespace OpenpilotToolkit
             tpDonate.PerformLayout();
             tabPage1.ResumeLayout(false);
             themePanel.ResumeLayout(false);
-            themePanel.PerformLayout();
             ResumeLayout(false);
         }
 
         #endregion
 
-        private System.Windows.Forms.ListBox lbDrives;
+        private System.Windows.Forms.ListBox lbRoutes;
         private System.Windows.Forms.FolderBrowserDialog fbdExportFolder;
         private MaterialButton btnBrowse;
         private MaterialButton btnRefreshVideos;
@@ -1829,10 +1829,10 @@ namespace OpenpilotToolkit
         private MaterialButton materialButton1;
         private MaterialButton btnUpdate;
         private System.Windows.Forms.GroupBox groupBox3;
-        private Controls.MaterialSkinDataGridView dgvDriveInfo;
+        private Controls.MaterialSkinDataGridView dgvRouteInfo;
         private System.Windows.Forms.DataGridViewTextBoxColumn colProperty;
         private System.Windows.Forms.DataGridViewTextBoxColumn colValue;
-        private MaterialButton btnDeleteDrives;
+        private MaterialButton btnDeleteRoutes;
         private System.Windows.Forms.GroupBox groupBox4;
         private MaterialTextBox2 txtOsmPassword;
         private MaterialTextBox2 txtOsmUsername;
@@ -1851,7 +1851,7 @@ namespace OpenpilotToolkit
         private System.Windows.Forms.DataGridViewTextBoxColumn colType;
         private System.Windows.Forms.DataGridViewTextBoxColumn colChanged;
         private MaterialTextBox2 txtRepositoryName;
-        private Controls.Media.FlyleafVideoPlayer flyleafVideoPlayer1;
+        private Controls.Media.FlyleafVideoPlayer flyleafVideoPlayer;
     }
 }
 

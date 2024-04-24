@@ -31,290 +31,315 @@ namespace OpenpilotToolkit.Controls.Wizards
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ucSshWizard));
-            this.tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
-            this.mtcSSHWizard = new MaterialSkin.Controls.MaterialTabControl();
-            this.tpGithubLogin = new System.Windows.Forms.TabPage();
-            this.txtUsername = new MaterialSkin.Controls.MaterialTextBox();
-            this.btnLogin = new MaterialSkin.Controls.MaterialButton();
-            this.tpGenerateKey = new System.Windows.Forms.TabPage();
-            this.btnGenerateSSHKey = new MaterialSkin.Controls.MaterialButton();
-            this.tpSettings = new System.Windows.Forms.TabPage();
-            this.tableLayoutPanel2 = new System.Windows.Forms.TableLayoutPanel();
-            this.pictureBox1 = new System.Windows.Forms.PictureBox();
-            this.label1 = new System.Windows.Forms.Label();
-            this.panel1 = new System.Windows.Forms.Panel();
-            this.flowLayoutPanel1 = new System.Windows.Forms.FlowLayoutPanel();
-            this.btnNext = new MaterialSkin.Controls.MaterialButton();
-            this.btnPrevious = new MaterialSkin.Controls.MaterialButton();
-            this.tableLayoutPanel1.SuspendLayout();
-            this.mtcSSHWizard.SuspendLayout();
-            this.tpGithubLogin.SuspendLayout();
-            this.tpGenerateKey.SuspendLayout();
-            this.tpSettings.SuspendLayout();
-            this.tableLayoutPanel2.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
-            this.panel1.SuspendLayout();
-            this.flowLayoutPanel1.SuspendLayout();
-            this.SuspendLayout();
+            tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
+            mtcSSHWizard = new MaterialSkin.Controls.MaterialTabControl();
+            tpGithubLogin = new System.Windows.Forms.TabPage();
+            txtUsername = new MaterialSkin.Controls.MaterialTextBox();
+            btnLogin = new MaterialSkin.Controls.MaterialButton();
+            tpGenerateKey = new System.Windows.Forms.TabPage();
+            cmbKeyAlgorithm = new MaterialSkin.Controls.MaterialComboBox();
+            btnGenerateSSHKey = new MaterialSkin.Controls.MaterialButton();
+            tpSettings = new System.Windows.Forms.TabPage();
+            tableLayoutPanel2 = new System.Windows.Forms.TableLayoutPanel();
+            pictureBox1 = new System.Windows.Forms.PictureBox();
+            label1 = new System.Windows.Forms.Label();
+            panel1 = new System.Windows.Forms.Panel();
+            flowLayoutPanel1 = new System.Windows.Forms.FlowLayoutPanel();
+            btnNext = new MaterialSkin.Controls.MaterialButton();
+            btnPrevious = new MaterialSkin.Controls.MaterialButton();
+            tableLayoutPanel1.SuspendLayout();
+            mtcSSHWizard.SuspendLayout();
+            tpGithubLogin.SuspendLayout();
+            tpGenerateKey.SuspendLayout();
+            tpSettings.SuspendLayout();
+            tableLayoutPanel2.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
+            panel1.SuspendLayout();
+            flowLayoutPanel1.SuspendLayout();
+            SuspendLayout();
             // 
             // tableLayoutPanel1
             // 
-            this.tableLayoutPanel1.ColumnCount = 1;
-            this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
-            this.tableLayoutPanel1.Controls.Add(this.mtcSSHWizard, 0, 0);
-            this.tableLayoutPanel1.Controls.Add(this.panel1, 0, 1);
-            this.tableLayoutPanel1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.tableLayoutPanel1.Location = new System.Drawing.Point(0, 0);
-            this.tableLayoutPanel1.Name = "tableLayoutPanel1";
-            this.tableLayoutPanel1.RowCount = 2;
-            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
-            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 56F));
-            this.tableLayoutPanel1.Size = new System.Drawing.Size(553, 367);
-            this.tableLayoutPanel1.TabIndex = 0;
+            tableLayoutPanel1.ColumnCount = 1;
+            tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
+            tableLayoutPanel1.Controls.Add(mtcSSHWizard, 0, 0);
+            tableLayoutPanel1.Controls.Add(panel1, 0, 1);
+            tableLayoutPanel1.Dock = System.Windows.Forms.DockStyle.Fill;
+            tableLayoutPanel1.Location = new System.Drawing.Point(0, 0);
+            tableLayoutPanel1.Name = "tableLayoutPanel1";
+            tableLayoutPanel1.RowCount = 2;
+            tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 56F));
+            tableLayoutPanel1.Size = new System.Drawing.Size(553, 367);
+            tableLayoutPanel1.TabIndex = 0;
             // 
             // mtcSSHWizard
             // 
-            this.mtcSSHWizard.Controls.Add(this.tpGithubLogin);
-            this.mtcSSHWizard.Controls.Add(this.tpGenerateKey);
-            this.mtcSSHWizard.Controls.Add(this.tpSettings);
-            this.mtcSSHWizard.Depth = 0;
-            this.mtcSSHWizard.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.mtcSSHWizard.Location = new System.Drawing.Point(3, 3);
-            this.mtcSSHWizard.MouseState = MaterialSkin.MouseState.HOVER;
-            this.mtcSSHWizard.Multiline = true;
-            this.mtcSSHWizard.Name = "mtcSSHWizard";
-            this.mtcSSHWizard.SelectedIndex = 0;
-            this.mtcSSHWizard.Size = new System.Drawing.Size(550, 305);
-            this.mtcSSHWizard.TabIndex = 0;
-            this.mtcSSHWizard.TabStop = false;
-            this.mtcSSHWizard.Selected += new System.Windows.Forms.TabControlEventHandler(this.mtcSSHWizard_Selected);
-            this.mtcSSHWizard.TabIndexChanged += new System.EventHandler(this.materialTabControl1_TabIndexChanged);
+            mtcSSHWizard.Controls.Add(tpGithubLogin);
+            mtcSSHWizard.Controls.Add(tpGenerateKey);
+            mtcSSHWizard.Controls.Add(tpSettings);
+            mtcSSHWizard.Depth = 0;
+            mtcSSHWizard.Dock = System.Windows.Forms.DockStyle.Fill;
+            mtcSSHWizard.Location = new System.Drawing.Point(3, 3);
+            mtcSSHWizard.MouseState = MaterialSkin.MouseState.HOVER;
+            mtcSSHWizard.Multiline = true;
+            mtcSSHWizard.Name = "mtcSSHWizard";
+            mtcSSHWizard.SelectedIndex = 0;
+            mtcSSHWizard.Size = new System.Drawing.Size(550, 305);
+            mtcSSHWizard.TabIndex = 0;
+            mtcSSHWizard.TabStop = false;
+            mtcSSHWizard.Selected += mtcSSHWizard_Selected;
+            mtcSSHWizard.TabIndexChanged += materialTabControl1_TabIndexChanged;
             // 
             // tpGithubLogin
             // 
-            this.tpGithubLogin.BackColor = System.Drawing.Color.White;
-            this.tpGithubLogin.Controls.Add(this.txtUsername);
-            this.tpGithubLogin.Controls.Add(this.btnLogin);
-            this.tpGithubLogin.Location = new System.Drawing.Point(4, 24);
-            this.tpGithubLogin.Name = "tpGithubLogin";
-            this.tpGithubLogin.Padding = new System.Windows.Forms.Padding(3);
-            this.tpGithubLogin.Size = new System.Drawing.Size(542, 277);
-            this.tpGithubLogin.TabIndex = 0;
-            this.tpGithubLogin.Text = "Github Login";
+            tpGithubLogin.BackColor = System.Drawing.Color.White;
+            tpGithubLogin.Controls.Add(txtUsername);
+            tpGithubLogin.Controls.Add(btnLogin);
+            tpGithubLogin.Location = new System.Drawing.Point(4, 24);
+            tpGithubLogin.Name = "tpGithubLogin";
+            tpGithubLogin.Padding = new System.Windows.Forms.Padding(3);
+            tpGithubLogin.Size = new System.Drawing.Size(542, 277);
+            tpGithubLogin.TabIndex = 0;
+            tpGithubLogin.Text = "Github Login";
             // 
             // txtUsername
             // 
-            this.txtUsername.Anchor = System.Windows.Forms.AnchorStyles.None;
-            this.txtUsername.AnimateReadOnly = false;
-            this.txtUsername.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            this.txtUsername.Depth = 0;
-            this.txtUsername.Font = new System.Drawing.Font("Roboto", 16F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel);
-            this.txtUsername.Hint = "Github Username";
-            this.txtUsername.LeadingIcon = null;
-            this.txtUsername.Location = new System.Drawing.Point(99, 91);
-            this.txtUsername.MaxLength = 50;
-            this.txtUsername.MouseState = MaterialSkin.MouseState.OUT;
-            this.txtUsername.Multiline = false;
-            this.txtUsername.Name = "txtUsername";
-            this.txtUsername.Size = new System.Drawing.Size(341, 50);
-            this.txtUsername.TabIndex = 0;
-            this.txtUsername.Text = "";
-            this.txtUsername.TrailingIcon = null;
-            this.txtUsername.TextChanged += new System.EventHandler(this.txtUsername_TextChanged);
+            txtUsername.Anchor = System.Windows.Forms.AnchorStyles.None;
+            txtUsername.AnimateReadOnly = false;
+            txtUsername.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            txtUsername.Depth = 0;
+            txtUsername.Font = new System.Drawing.Font("Roboto", 16F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel);
+            txtUsername.Hint = "Github Username";
+            txtUsername.LeadingIcon = null;
+            txtUsername.Location = new System.Drawing.Point(99, 91);
+            txtUsername.MaxLength = 50;
+            txtUsername.MouseState = MaterialSkin.MouseState.OUT;
+            txtUsername.Multiline = false;
+            txtUsername.Name = "txtUsername";
+            txtUsername.Size = new System.Drawing.Size(341, 50);
+            txtUsername.TabIndex = 0;
+            txtUsername.Text = "";
+            txtUsername.TrailingIcon = null;
+            txtUsername.TextChanged += txtUsername_TextChanged;
             // 
             // btnLogin
             // 
-            this.btnLogin.AccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(64)))), ((int)(((byte)(129)))));
-            this.btnLogin.Anchor = System.Windows.Forms.AnchorStyles.None;
-            this.btnLogin.AutoSize = false;
-            this.btnLogin.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.btnLogin.Density = MaterialSkin.Controls.MaterialButton.MaterialButtonDensity.Default;
-            this.btnLogin.Depth = 0;
-            this.btnLogin.Enabled = false;
-            this.btnLogin.HighEmphasis = true;
-            this.btnLogin.Icon = null;
-            this.btnLogin.Location = new System.Drawing.Point(99, 150);
-            this.btnLogin.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
-            this.btnLogin.MouseState = MaterialSkin.MouseState.HOVER;
-            this.btnLogin.Name = "btnLogin";
-            this.btnLogin.NoAccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(81)))), ((int)(((byte)(181)))));
-            this.btnLogin.Size = new System.Drawing.Size(341, 36);
-            this.btnLogin.TabIndex = 1;
-            this.btnLogin.Text = "Login";
-            this.btnLogin.Type = MaterialSkin.Controls.MaterialButton.MaterialButtonType.Contained;
-            this.btnLogin.UseAccentColor = true;
-            this.btnLogin.UseVisualStyleBackColor = true;
-            this.btnLogin.Click += new System.EventHandler(this.btnLogin_Click);
+            btnLogin.AccentTextColor = System.Drawing.Color.FromArgb(255, 64, 129);
+            btnLogin.Anchor = System.Windows.Forms.AnchorStyles.None;
+            btnLogin.AutoSize = false;
+            btnLogin.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            btnLogin.Density = MaterialSkin.Controls.MaterialButton.MaterialButtonDensity.Default;
+            btnLogin.Depth = 0;
+            btnLogin.Enabled = false;
+            btnLogin.HighEmphasis = true;
+            btnLogin.Icon = null;
+            btnLogin.Location = new System.Drawing.Point(99, 150);
+            btnLogin.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+            btnLogin.MouseState = MaterialSkin.MouseState.HOVER;
+            btnLogin.Name = "btnLogin";
+            btnLogin.NoAccentTextColor = System.Drawing.Color.FromArgb(63, 81, 181);
+            btnLogin.Size = new System.Drawing.Size(341, 36);
+            btnLogin.TabIndex = 1;
+            btnLogin.Text = "Login";
+            btnLogin.Type = MaterialSkin.Controls.MaterialButton.MaterialButtonType.Contained;
+            btnLogin.UseAccentColor = true;
+            btnLogin.UseVisualStyleBackColor = true;
+            btnLogin.Click += btnLogin_Click;
             // 
             // tpGenerateKey
             // 
-            this.tpGenerateKey.BackColor = System.Drawing.Color.White;
-            this.tpGenerateKey.Controls.Add(this.btnGenerateSSHKey);
-            this.tpGenerateKey.Location = new System.Drawing.Point(4, 24);
-            this.tpGenerateKey.Name = "tpGenerateKey";
-            this.tpGenerateKey.Padding = new System.Windows.Forms.Padding(3);
-            this.tpGenerateKey.Size = new System.Drawing.Size(542, 277);
-            this.tpGenerateKey.TabIndex = 1;
-            this.tpGenerateKey.Text = "Generate Key";
+            tpGenerateKey.BackColor = System.Drawing.Color.White;
+            tpGenerateKey.Controls.Add(cmbKeyAlgorithm);
+            tpGenerateKey.Controls.Add(btnGenerateSSHKey);
+            tpGenerateKey.Location = new System.Drawing.Point(4, 24);
+            tpGenerateKey.Name = "tpGenerateKey";
+            tpGenerateKey.Padding = new System.Windows.Forms.Padding(3);
+            tpGenerateKey.Size = new System.Drawing.Size(542, 277);
+            tpGenerateKey.TabIndex = 1;
+            tpGenerateKey.Text = "Generate Key";
+            // 
+            // cmbKeyAlgorithm
+            // 
+            cmbKeyAlgorithm.Anchor = System.Windows.Forms.AnchorStyles.None;
+            cmbKeyAlgorithm.AutoResize = false;
+            cmbKeyAlgorithm.BackColor = System.Drawing.Color.FromArgb(255, 255, 255);
+            cmbKeyAlgorithm.Depth = 0;
+            cmbKeyAlgorithm.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawVariable;
+            cmbKeyAlgorithm.DropDownHeight = 174;
+            cmbKeyAlgorithm.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            cmbKeyAlgorithm.DropDownWidth = 121;
+            cmbKeyAlgorithm.Font = new System.Drawing.Font("Microsoft Sans Serif", 14F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Pixel);
+            cmbKeyAlgorithm.ForeColor = System.Drawing.Color.FromArgb(222, 0, 0, 0);
+            cmbKeyAlgorithm.FormattingEnabled = true;
+            cmbKeyAlgorithm.Hint = "Key Algorithm";
+            cmbKeyAlgorithm.IntegralHeight = false;
+            cmbKeyAlgorithm.ItemHeight = 43;
+            cmbKeyAlgorithm.Location = new System.Drawing.Point(99, 62);
+            cmbKeyAlgorithm.MaxDropDownItems = 4;
+            cmbKeyAlgorithm.MouseState = MaterialSkin.MouseState.OUT;
+            cmbKeyAlgorithm.Name = "cmbKeyAlgorithm";
+            cmbKeyAlgorithm.Size = new System.Drawing.Size(341, 49);
+            cmbKeyAlgorithm.StartIndex = 0;
+            cmbKeyAlgorithm.TabIndex = 1;
             // 
             // btnGenerateSSHKey
             // 
-            this.btnGenerateSSHKey.AccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(64)))), ((int)(((byte)(129)))));
-            this.btnGenerateSSHKey.Anchor = System.Windows.Forms.AnchorStyles.None;
-            this.btnGenerateSSHKey.AutoSize = false;
-            this.btnGenerateSSHKey.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.btnGenerateSSHKey.Density = MaterialSkin.Controls.MaterialButton.MaterialButtonDensity.Default;
-            this.btnGenerateSSHKey.Depth = 0;
-            this.btnGenerateSSHKey.HighEmphasis = true;
-            this.btnGenerateSSHKey.Icon = null;
-            this.btnGenerateSSHKey.Location = new System.Drawing.Point(99, 120);
-            this.btnGenerateSSHKey.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
-            this.btnGenerateSSHKey.MouseState = MaterialSkin.MouseState.HOVER;
-            this.btnGenerateSSHKey.Name = "btnGenerateSSHKey";
-            this.btnGenerateSSHKey.NoAccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(81)))), ((int)(((byte)(181)))));
-            this.btnGenerateSSHKey.Size = new System.Drawing.Size(341, 36);
-            this.btnGenerateSSHKey.TabIndex = 0;
-            this.btnGenerateSSHKey.Text = "Generate new SSH Key";
-            this.btnGenerateSSHKey.Type = MaterialSkin.Controls.MaterialButton.MaterialButtonType.Contained;
-            this.btnGenerateSSHKey.UseAccentColor = true;
-            this.btnGenerateSSHKey.UseVisualStyleBackColor = true;
-            this.btnGenerateSSHKey.Click += new System.EventHandler(this.btnGenerateSSHKey_Click);
+            btnGenerateSSHKey.AccentTextColor = System.Drawing.Color.FromArgb(255, 64, 129);
+            btnGenerateSSHKey.Anchor = System.Windows.Forms.AnchorStyles.None;
+            btnGenerateSSHKey.AutoSize = false;
+            btnGenerateSSHKey.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            btnGenerateSSHKey.Density = MaterialSkin.Controls.MaterialButton.MaterialButtonDensity.Default;
+            btnGenerateSSHKey.Depth = 0;
+            btnGenerateSSHKey.HighEmphasis = true;
+            btnGenerateSSHKey.Icon = null;
+            btnGenerateSSHKey.Location = new System.Drawing.Point(99, 120);
+            btnGenerateSSHKey.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+            btnGenerateSSHKey.MouseState = MaterialSkin.MouseState.HOVER;
+            btnGenerateSSHKey.Name = "btnGenerateSSHKey";
+            btnGenerateSSHKey.NoAccentTextColor = System.Drawing.Color.FromArgb(63, 81, 181);
+            btnGenerateSSHKey.Size = new System.Drawing.Size(341, 36);
+            btnGenerateSSHKey.TabIndex = 0;
+            btnGenerateSSHKey.Text = "Generate new SSH Key";
+            btnGenerateSSHKey.Type = MaterialSkin.Controls.MaterialButton.MaterialButtonType.Contained;
+            btnGenerateSSHKey.UseAccentColor = true;
+            btnGenerateSSHKey.UseVisualStyleBackColor = true;
+            btnGenerateSSHKey.Click += btnGenerateSSHKey_Click;
             // 
             // tpSettings
             // 
-            this.tpSettings.BackColor = System.Drawing.Color.White;
-            this.tpSettings.Controls.Add(this.tableLayoutPanel2);
-            this.tpSettings.Location = new System.Drawing.Point(4, 24);
-            this.tpSettings.Name = "tpSettings";
-            this.tpSettings.Size = new System.Drawing.Size(542, 277);
-            this.tpSettings.TabIndex = 2;
-            this.tpSettings.Text = "Settings";
+            tpSettings.BackColor = System.Drawing.Color.White;
+            tpSettings.Controls.Add(tableLayoutPanel2);
+            tpSettings.Location = new System.Drawing.Point(4, 24);
+            tpSettings.Name = "tpSettings";
+            tpSettings.Size = new System.Drawing.Size(542, 277);
+            tpSettings.TabIndex = 2;
+            tpSettings.Text = "Settings";
             // 
             // tableLayoutPanel2
             // 
-            this.tableLayoutPanel2.ColumnCount = 1;
-            this.tableLayoutPanel2.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
-            this.tableLayoutPanel2.Controls.Add(this.pictureBox1, 0, 1);
-            this.tableLayoutPanel2.Controls.Add(this.label1, 0, 0);
-            this.tableLayoutPanel2.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.tableLayoutPanel2.Location = new System.Drawing.Point(0, 0);
-            this.tableLayoutPanel2.Name = "tableLayoutPanel2";
-            this.tableLayoutPanel2.RowCount = 2;
-            this.tableLayoutPanel2.RowStyles.Add(new System.Windows.Forms.RowStyle());
-            this.tableLayoutPanel2.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
-            this.tableLayoutPanel2.Size = new System.Drawing.Size(542, 277);
-            this.tableLayoutPanel2.TabIndex = 0;
+            tableLayoutPanel2.ColumnCount = 1;
+            tableLayoutPanel2.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            tableLayoutPanel2.Controls.Add(pictureBox1, 0, 1);
+            tableLayoutPanel2.Controls.Add(label1, 0, 0);
+            tableLayoutPanel2.Dock = System.Windows.Forms.DockStyle.Fill;
+            tableLayoutPanel2.Location = new System.Drawing.Point(0, 0);
+            tableLayoutPanel2.Name = "tableLayoutPanel2";
+            tableLayoutPanel2.RowCount = 2;
+            tableLayoutPanel2.RowStyles.Add(new System.Windows.Forms.RowStyle());
+            tableLayoutPanel2.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            tableLayoutPanel2.Size = new System.Drawing.Size(542, 277);
+            tableLayoutPanel2.TabIndex = 0;
             // 
             // pictureBox1
             // 
-            this.pictureBox1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.pictureBox1.Image = global::OpenpilotToolkit.Properties.Resources.ssh;
-            this.pictureBox1.Location = new System.Drawing.Point(3, 108);
-            this.pictureBox1.Name = "pictureBox1";
-            this.pictureBox1.Size = new System.Drawing.Size(536, 166);
-            this.pictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
-            this.pictureBox1.TabIndex = 2;
-            this.pictureBox1.TabStop = false;
+            pictureBox1.Dock = System.Windows.Forms.DockStyle.Fill;
+            pictureBox1.Image = Properties.Resources.ssh;
+            pictureBox1.Location = new System.Drawing.Point(3, 108);
+            pictureBox1.Name = "pictureBox1";
+            pictureBox1.Size = new System.Drawing.Size(536, 166);
+            pictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
+            pictureBox1.TabIndex = 2;
+            pictureBox1.TabStop = false;
             // 
             // label1
             // 
-            this.label1.AutoSize = true;
-            this.label1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.label1.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.label1.Location = new System.Drawing.Point(3, 0);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(536, 105);
-            this.label1.TabIndex = 0;
-            this.label1.Text = resources.GetString("label1.Text");
-            this.label1.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            label1.AutoSize = true;
+            label1.Dock = System.Windows.Forms.DockStyle.Fill;
+            label1.Font = new System.Drawing.Font("Segoe UI", 12F);
+            label1.Location = new System.Drawing.Point(3, 0);
+            label1.Name = "label1";
+            label1.Size = new System.Drawing.Size(536, 105);
+            label1.TabIndex = 0;
+            label1.Text = resources.GetString("label1.Text");
+            label1.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // panel1
             // 
-            this.panel1.Controls.Add(this.flowLayoutPanel1);
-            this.panel1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.panel1.Location = new System.Drawing.Point(3, 314);
-            this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(550, 50);
-            this.panel1.TabIndex = 1;
+            panel1.Controls.Add(flowLayoutPanel1);
+            panel1.Dock = System.Windows.Forms.DockStyle.Fill;
+            panel1.Location = new System.Drawing.Point(3, 314);
+            panel1.Name = "panel1";
+            panel1.Size = new System.Drawing.Size(550, 50);
+            panel1.TabIndex = 1;
             // 
             // flowLayoutPanel1
             // 
-            this.flowLayoutPanel1.Controls.Add(this.btnNext);
-            this.flowLayoutPanel1.Controls.Add(this.btnPrevious);
-            this.flowLayoutPanel1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.flowLayoutPanel1.FlowDirection = System.Windows.Forms.FlowDirection.RightToLeft;
-            this.flowLayoutPanel1.Location = new System.Drawing.Point(0, 0);
-            this.flowLayoutPanel1.Name = "flowLayoutPanel1";
-            this.flowLayoutPanel1.Size = new System.Drawing.Size(550, 50);
-            this.flowLayoutPanel1.TabIndex = 0;
+            flowLayoutPanel1.Controls.Add(btnNext);
+            flowLayoutPanel1.Controls.Add(btnPrevious);
+            flowLayoutPanel1.Dock = System.Windows.Forms.DockStyle.Fill;
+            flowLayoutPanel1.FlowDirection = System.Windows.Forms.FlowDirection.RightToLeft;
+            flowLayoutPanel1.Location = new System.Drawing.Point(0, 0);
+            flowLayoutPanel1.Name = "flowLayoutPanel1";
+            flowLayoutPanel1.Size = new System.Drawing.Size(550, 50);
+            flowLayoutPanel1.TabIndex = 0;
             // 
             // btnNext
             // 
-            this.btnNext.AccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(64)))), ((int)(((byte)(129)))));
-            this.btnNext.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnNext.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.btnNext.Density = MaterialSkin.Controls.MaterialButton.MaterialButtonDensity.Default;
-            this.btnNext.Depth = 0;
-            this.btnNext.HighEmphasis = true;
-            this.btnNext.Icon = null;
-            this.btnNext.Location = new System.Drawing.Point(478, 6);
-            this.btnNext.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
-            this.btnNext.MouseState = MaterialSkin.MouseState.HOVER;
-            this.btnNext.Name = "btnNext";
-            this.btnNext.NoAccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(81)))), ((int)(((byte)(181)))));
-            this.btnNext.Size = new System.Drawing.Size(68, 36);
-            this.btnNext.TabIndex = 1;
-            this.btnNext.Text = "&Next";
-            this.btnNext.Type = MaterialSkin.Controls.MaterialButton.MaterialButtonType.Contained;
-            this.btnNext.UseAccentColor = true;
-            this.btnNext.UseVisualStyleBackColor = true;
-            this.btnNext.Visible = false;
-            this.btnNext.Click += new System.EventHandler(this.btnNext_Click);
+            btnNext.AccentTextColor = System.Drawing.Color.FromArgb(255, 64, 129);
+            btnNext.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
+            btnNext.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            btnNext.Density = MaterialSkin.Controls.MaterialButton.MaterialButtonDensity.Default;
+            btnNext.Depth = 0;
+            btnNext.HighEmphasis = true;
+            btnNext.Icon = null;
+            btnNext.Location = new System.Drawing.Point(478, 6);
+            btnNext.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+            btnNext.MouseState = MaterialSkin.MouseState.HOVER;
+            btnNext.Name = "btnNext";
+            btnNext.NoAccentTextColor = System.Drawing.Color.FromArgb(63, 81, 181);
+            btnNext.Size = new System.Drawing.Size(68, 36);
+            btnNext.TabIndex = 1;
+            btnNext.Text = "&Next";
+            btnNext.Type = MaterialSkin.Controls.MaterialButton.MaterialButtonType.Contained;
+            btnNext.UseAccentColor = true;
+            btnNext.UseVisualStyleBackColor = true;
+            btnNext.Visible = false;
+            btnNext.Click += btnNext_Click;
             // 
             // btnPrevious
             // 
-            this.btnPrevious.AccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(64)))), ((int)(((byte)(129)))));
-            this.btnPrevious.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnPrevious.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.btnPrevious.Density = MaterialSkin.Controls.MaterialButton.MaterialButtonDensity.Default;
-            this.btnPrevious.Depth = 0;
-            this.btnPrevious.HighEmphasis = true;
-            this.btnPrevious.Icon = null;
-            this.btnPrevious.Location = new System.Drawing.Point(370, 6);
-            this.btnPrevious.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
-            this.btnPrevious.MouseState = MaterialSkin.MouseState.HOVER;
-            this.btnPrevious.Name = "btnPrevious";
-            this.btnPrevious.NoAccentTextColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(81)))), ((int)(((byte)(181)))));
-            this.btnPrevious.Size = new System.Drawing.Size(100, 36);
-            this.btnPrevious.TabIndex = 0;
-            this.btnPrevious.Text = "&Previous";
-            this.btnPrevious.Type = MaterialSkin.Controls.MaterialButton.MaterialButtonType.Contained;
-            this.btnPrevious.UseAccentColor = true;
-            this.btnPrevious.UseVisualStyleBackColor = true;
-            this.btnPrevious.Visible = false;
-            this.btnPrevious.Click += new System.EventHandler(this.btnPrevious_Click);
+            btnPrevious.AccentTextColor = System.Drawing.Color.FromArgb(255, 64, 129);
+            btnPrevious.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
+            btnPrevious.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            btnPrevious.Density = MaterialSkin.Controls.MaterialButton.MaterialButtonDensity.Default;
+            btnPrevious.Depth = 0;
+            btnPrevious.HighEmphasis = true;
+            btnPrevious.Icon = null;
+            btnPrevious.Location = new System.Drawing.Point(370, 6);
+            btnPrevious.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+            btnPrevious.MouseState = MaterialSkin.MouseState.HOVER;
+            btnPrevious.Name = "btnPrevious";
+            btnPrevious.NoAccentTextColor = System.Drawing.Color.FromArgb(63, 81, 181);
+            btnPrevious.Size = new System.Drawing.Size(100, 36);
+            btnPrevious.TabIndex = 0;
+            btnPrevious.Text = "&Previous";
+            btnPrevious.Type = MaterialSkin.Controls.MaterialButton.MaterialButtonType.Contained;
+            btnPrevious.UseAccentColor = true;
+            btnPrevious.UseVisualStyleBackColor = true;
+            btnPrevious.Visible = false;
+            btnPrevious.Click += btnPrevious_Click;
             // 
             // ucSshWizard
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.Controls.Add(this.tableLayoutPanel1);
-            this.Name = "ucSshWizard";
-            this.Size = new System.Drawing.Size(553, 367);
-            this.Load += new System.EventHandler(this.ucWizard_Load);
-            this.tableLayoutPanel1.ResumeLayout(false);
-            this.mtcSSHWizard.ResumeLayout(false);
-            this.tpGithubLogin.ResumeLayout(false);
-            this.tpGenerateKey.ResumeLayout(false);
-            this.tpSettings.ResumeLayout(false);
-            this.tableLayoutPanel2.ResumeLayout(false);
-            this.tableLayoutPanel2.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
-            this.panel1.ResumeLayout(false);
-            this.flowLayoutPanel1.ResumeLayout(false);
-            this.flowLayoutPanel1.PerformLayout();
-            this.ResumeLayout(false);
-
+            AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
+            AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            Controls.Add(tableLayoutPanel1);
+            Name = "ucSshWizard";
+            Size = new System.Drawing.Size(553, 367);
+            Load += ucWizard_Load;
+            tableLayoutPanel1.ResumeLayout(false);
+            mtcSSHWizard.ResumeLayout(false);
+            tpGithubLogin.ResumeLayout(false);
+            tpGenerateKey.ResumeLayout(false);
+            tpSettings.ResumeLayout(false);
+            tableLayoutPanel2.ResumeLayout(false);
+            tableLayoutPanel2.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)pictureBox1).EndInit();
+            panel1.ResumeLayout(false);
+            flowLayoutPanel1.ResumeLayout(false);
+            flowLayoutPanel1.PerformLayout();
+            ResumeLayout(false);
         }
 
         #endregion
@@ -334,5 +359,6 @@ namespace OpenpilotToolkit.Controls.Wizards
         private System.Windows.Forms.PictureBox pictureBox1;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.FlowLayoutPanel flowLayoutPanel1;
+        private MaterialSkin.Controls.MaterialComboBox cmbKeyAlgorithm;
     }
 }

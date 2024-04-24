@@ -29,14 +29,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Octokit;
-using Renci.SshNet.Sftp;
 using Exception = System.Exception;
 using FileMode = System.IO.FileMode;
 using OpenpilotDevice = OpenpilotSdk.Hardware.OpenpilotDevice;
 using MethodInvoker = System.Windows.Forms.MethodInvoker;
 using FlyleafLib.MediaPlayer;
 using FlyleafLib;
-using OpenpilotToolkit.Stream;
 
 namespace OpenpilotToolkit
 {
@@ -45,16 +43,15 @@ namespace OpenpilotToolkit
         private ConcurrentDictionary<string, DateTime?> _watchedFiles = new ConcurrentDictionary<string, DateTime?>();
         private readonly string _tempExplorerFiles = Path.Combine(AppContext.BaseDirectory, "tmp", "explorer");
         private readonly ConcurrentDictionary<string, Task> _activeTaskList = new ConcurrentDictionary<string, Task>();
-        private string _adbConnectedMessage = "Device in fastboot mode connected";
-        private string _adbDisconnectedMessage = "Device in fastboot mode disconnected";
+        private const string AdbConnectedMessage = "Device in fastboot mode connected";
+        private const string AdbDisconnectedMessage = "Device in fastboot mode disconnected";
         private int _connectedFastbootDevices = 0;
-        BindingList<OpenpilotDevice> _devices = new BindingList<OpenpilotDevice>();
-        BindingList<Renci.SshNet.Sftp.SftpFile> _fileList = new BindingList<Renci.SshNet.Sftp.SftpFile>();
+        readonly BindingList<OpenpilotDevice> _devices = new BindingList<OpenpilotDevice>();
         private Stack<string> _workingDirectory = new Stack<string>();
         private ShellStream _shellStream = null;
         private StreamReader _streamReader = null;
-        private SemaphoreSlim terminalLock = new SemaphoreSlim(1, 1);
-        private ChromiumWebBrowser sshTerminal;
+        private readonly SemaphoreSlim _terminalLock = new SemaphoreSlim(1, 1);
+        private ChromiumWebBrowser _sshTerminal;
         private Player _flyPlayer;
 
         public System.Drawing.Color ToColor(int argb)
@@ -68,8 +65,8 @@ namespace OpenpilotToolkit
         {
             InitializeComponent();
 
-            this.tcSettings.Controls.Remove(this.tpFlash);
-            this.tcSettings.Controls.Remove(this.tabPage1);
+            tcSettings.Controls.Remove(tpFlash);
+            tcSettings.Controls.Remove(tabPage1);
 
             var materialSkinManager = MaterialSkinManager.Instance;
             materialSkinManager.EnforceBackcolorOnAllComponents = false;
@@ -80,8 +77,8 @@ namespace OpenpilotToolkit
             themePanel.BackColor = materialSkinManager.ColorScheme.PrimaryColor;
 
             //tlpTasks.BackColor = MaterialSkinManager.Instance.BackgroundColor;
-            lbDrives.BackColor = MaterialSkinManager.Instance.BackgroundColor;
-            lbDrives.ForeColor = MaterialSkinManager.Instance.TextHighEmphasisColor;
+            lbRoutes.BackColor = MaterialSkinManager.Instance.BackgroundColor;
+            lbRoutes.ForeColor = MaterialSkinManager.Instance.TextHighEmphasisColor;
         }
 
         private FileSystemWatcher _explorerFileWatcher = null;
@@ -108,7 +105,7 @@ namespace OpenpilotToolkit
             tlpExplorerTasks.Padding = new Padding(0, 0, SystemInformation.VerticalScrollBarWidth - 1, 0);
 
             var terminalPath = Path.Combine(AppContext.BaseDirectory, @"Controls\Terminal\index.html");
-            sshTerminal =
+            _sshTerminal =
                 new ChromiumWebBrowser(terminalPath);
 
             //Terminal messages from C# instead of webbrowser
@@ -117,19 +114,19 @@ namespace OpenpilotToolkit
             //sshTerminal.KeyPress += txtSshCommand_KeyPress;
             //sshTerminal.KeyDown += txtSshCommand_KeyDown;
 
-            sshTerminal.JavascriptObjectRepository.Register("sshHost", this, BindingOptions.DefaultBinder);
-            sshTerminal.Dock = DockStyle.Fill;
-            sshTerminal.CreateControl();
-            sshTerminal.JavascriptMessageReceived += SshTerminal_JavascriptMessageReceived;
+            _sshTerminal.JavascriptObjectRepository.Register("sshHost", this, BindingOptions.DefaultBinder);
+            _sshTerminal.Dock = DockStyle.Fill;
+            _sshTerminal.CreateControl();
+            _sshTerminal.JavascriptMessageReceived += SshTerminal_JavascriptMessageReceived;
 
-            this.tableLayoutPanel1.Controls.Add(sshTerminal, 0, 0);
+            tableLayoutPanel1.Controls.Add(_sshTerminal, 0, 0);
 
             // Initializes Engine (Specifies FFmpeg libraries path which is required)
             Engine.Start(new EngineConfig()
             {
 #if DEBUG
                 LogOutput = ":debug",
-                LogLevel = FlyleafLib.LogLevel.Debug,
+                LogLevel = LogLevel.Debug,
                 FFmpegLogLevel = FFmpegLogLevel.Warning,
 #endif
 
@@ -142,8 +139,10 @@ namespace OpenpilotToolkit
             {
                 Player =
                 {
-                    MaxLatency = TimeSpan.FromMilliseconds(500).Ticks,
-                    MinBufferDuration = 0
+                    //MaxLatency = TimeSpan.FromMilliseconds(1).Ticks,
+                    MinBufferDuration = 0,
+                    AutoPlay = false
+
                 },
                 Audio =
                 {
@@ -157,17 +156,17 @@ namespace OpenpilotToolkit
                 {
                     BufferDuration = TimeSpan.FromSeconds(1).Ticks,
                     AllowFindStreamInfo = false,
-                    
+                    ForceFPS = 20,
                 },
                 Decoder =
                 {
                     MaxVideoFrames = 2,
-                    ShowCorrupted = true
+                    ShowCorrupted = true,
+                    LowDelay = true
                 }
             };
-
             _flyPlayer = new Player(config);
-            flyleafVideoPlayer1.Initialize(_flyPlayer);
+            flyleafVideoPlayer.Initialize(_flyPlayer);
 
             var source = new AutoCompleteStringCollection
             {
@@ -205,7 +204,7 @@ namespace OpenpilotToolkit
 
             cmbDevices.DataSource = _devices;
 
-            themePanel.Height = this.DrawerTabControl.Height;
+            themePanel.Height = DrawerTabControl.Height;
 
             SetTheme(Properties.Settings.Default.DarkMode);
             txtExportFolder.Text = Properties.Settings.Default.ExportFolder;
@@ -214,7 +213,7 @@ namespace OpenpilotToolkit
             _connectedFastbootDevices = devices.Length;
             if (devices.Any())
             {
-                var message = new MaterialSnackBar(_adbConnectedMessage, "OK", false);
+                var message = new MaterialSnackBar(AdbConnectedMessage, "OK", false);
                 message.Show(this);
                 adbConnected.SetEnabled(true);
             }
@@ -234,7 +233,7 @@ namespace OpenpilotToolkit
                     BeginInvoke(new MethodInvoker(() =>
                     {
                         adbConnected.SetEnabled(true);
-                        var message = new MaterialSnackBar(_adbConnectedMessage, "OK", false);
+                        var message = new MaterialSnackBar(AdbConnectedMessage, "OK", false);
                         message.Show(this);
                     }));
 
@@ -244,7 +243,7 @@ namespace OpenpilotToolkit
                     BeginInvoke(new MethodInvoker(() =>
                     {
                         adbConnected.SetEnabled(false);
-                        var message = new MaterialSnackBar(_adbDisconnectedMessage, "OK", false);
+                        var message = new MaterialSnackBar(AdbDisconnectedMessage, "OK", false);
                         message.Show(this);
                     }));
                 }
@@ -256,7 +255,7 @@ namespace OpenpilotToolkit
 
             //flowLayoutPanel1.HorizontalScroll.Visible = false;
 
-            await ScanDevices();
+            await ScanDevices().ConfigureAwait(false);
         }
 
         private async void FileWatcherOnChanged(object sender, FileSystemEventArgs e)
@@ -366,12 +365,12 @@ namespace OpenpilotToolkit
         private async Task ScanDevices()
         {
             _devices.Clear();
-            lbDrives.Items.Clear();
+            lbRoutes.Items.Clear();
             Task.Run(() =>
             {
-                flyleafVideoPlayer1.flyleafHost1.Player.Stop();
+                flyleafVideoPlayer.flyleafHost1.Player.Stop();
             });
-            dgvDriveInfo.DataSource = null;
+            dgvRouteInfo.DataSource = null;
             wifiConnected.SetEnabled(false);
             btnScan.Enabled = false;
 
@@ -380,23 +379,32 @@ namespace OpenpilotToolkit
                 int foundDevices = 0;
                 await Task.Run(async () =>
                 {
-                    await foreach (var device in OpenpilotDevice.DiscoverAsync())
+                    try
                     {
-                        foundDevices++;
-                        Invoke(new MethodInvoker(() =>
+                        await foreach (var device in OpenpilotDevice.DiscoverAsync())
                         {
-                            if (device.IsAuthenticated && !_devices.Contains(device))
+                            Debug.Print("Found a device");
+                            foundDevices++;
+                            Invoke(new MethodInvoker(() =>
                             {
-                                _devices.Add(device);
-                                if (_devices.Count == 1)
+                                if (device.IsAuthenticated && !_devices.Contains(device))
                                 {
-                                    wifiConnected.SetEnabled(true);
-                                    cmbDevices.SelectedIndex = -1;
-                                    cmbDevices.SelectedIndex = 0;
+                                    _devices.Add(device);
+                                    if (_devices.Count == 1)
+                                    {
+                                        wifiConnected.SetEnabled(true);
+                                        cmbDevices.SelectedIndex = -1;
+                                        cmbDevices.SelectedIndex = 0;
+                                    }
                                 }
-                            }
-                        }));
+                            }));
+                        }
                     }
+                    catch (TaskCanceledException)
+                    {
+                        Serilog.Log.Error("Discovery Timed Out.");
+                    }
+
                 });
 
                 if (foundDevices < 1)
@@ -422,7 +430,7 @@ namespace OpenpilotToolkit
 
         private async void btnScan_Click(object sender, EventArgs e)
         {
-            await ScanDevices();
+            await ScanDevices().ConfigureAwait(false);
         }
 
         private async void btnExport_Click(object sender, EventArgs e)
@@ -434,23 +442,23 @@ namespace OpenpilotToolkit
                 var cameras = new List<Camera>(3);
                 if (cbFrontCamera.Checked)
                 {
-                    if (openpilotDevice.Cameras.ContainsKey(CameraType.Front))
+                    if (openpilotDevice.Cameras.TryGetValue(CameraType.Front, out var camera))
                     {
-                        cameras.Add(openpilotDevice.Cameras[CameraType.Front]);
+                        cameras.Add(camera);
                     }
                 }
                 if (cbWideCamera.Checked)
                 {
-                    if (openpilotDevice.Cameras.ContainsKey(CameraType.Wide))
+                    if (openpilotDevice.Cameras.TryGetValue(CameraType.Wide, out var camera))
                     {
-                        cameras.Add(openpilotDevice.Cameras[CameraType.Wide]);
+                        cameras.Add(camera);
                     }
                 }
                 if (cbDriverCamera.Checked)
                 {
-                    if (openpilotDevice.Cameras.ContainsKey(CameraType.Driver))
+                    if (openpilotDevice.Cameras.TryGetValue(CameraType.Driver, out var camera))
                     {
-                        cameras.Add(openpilotDevice.Cameras[CameraType.Driver]);
+                        cameras.Add(camera);
                     }
                 }
 
@@ -460,21 +468,21 @@ namespace OpenpilotToolkit
                     return;
                 }
 
-                foreach (var selectedItem in lbDrives.SelectedItems)
+                foreach (var selectedItem in lbRoutes.SelectedItems)
                 {
-                    if (selectedItem is Drive drive)
+                    if (selectedItem is Route route)
                     {
-                        if (_activeTaskList.ContainsKey(drive.Date.ToString()))
+                        if (_activeTaskList.ContainsKey(route.Date.ToString()))
                         {
                             continue;
                         }
 
-                        var ucDrive = new ucTaskProgress(drive.ToString(), cameras.Count * 100)
+                        var ucRoute = new ucTaskProgress(route.ToString(), cameras.Count * 100)
                         {
                             Anchor = (AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top)
                         };
 
-                        tlpTasks.Controls.Add(ucDrive);
+                        tlpTasks.Controls.Add(ucRoute);
 
                         var progressDictionary = cameras.ToDictionary(cam => cam, cam => 0);
                         var progressLock = new SemaphoreSlim(1, 1);
@@ -488,9 +496,9 @@ namespace OpenpilotToolkit
                                     await progressLock.WaitAsync();
 
                                     var currentProgress = progressDictionary.Sum(progress => progress.Value);
-                                    if (currentProgress > ucDrive.Progress)
+                                    if (currentProgress > ucRoute.Progress)
                                     {
-                                        ucDrive.Progress = currentProgress;
+                                        ucRoute.Progress = currentProgress;
                                     }
                                 }
                                 finally
@@ -504,13 +512,13 @@ namespace OpenpilotToolkit
                         {
                             await Parallel.ForEachAsync(cameras, async (camera, token) =>
                             {
-                                await openpilotDevice.ExportDriveAsync(exportFolder, drive, camera, cbCombineSegments.Checked,
+                                await openpilotDevice.ExportRouteAsync(exportFolder, route, camera, cbCombineSegments.Checked,
                                     progress);
                             });
 
                         });
-                        exportTasks.Add(new Tuple<string, Task>(drive.Date.ToString(), task));
-                        _activeTaskList.TryAdd(drive.Date.ToString(), task);
+                        exportTasks.Add(new Tuple<string, Task>(route.Date.ToString(), task));
+                        _activeTaskList.TryAdd(route.Date.ToString(), task);
                     }
                 }
 
@@ -522,7 +530,7 @@ namespace OpenpilotToolkit
                     }
                     catch (Exception exception)
                     {
-                        Serilog.Log.Error(exception, "Error exporting drive.");
+                        Serilog.Log.Error(exception, "Error exporting route.");
                         ToolkitMessageDialog.ShowDialog(exception.Message);
                     }
 
@@ -536,73 +544,55 @@ namespace OpenpilotToolkit
 
         private async void btnRefreshVideos_Click(object sender, EventArgs e)
         {
-            var item = cmbDevices.SelectedItem;
-            if (item is OpenpilotDevice openpilotDevice)
-            {
-                lbDrives.Items.Clear();
-                lbDrives.Items.Add("Loading...");
-
-                await Task.Run(async () =>
-                {
-                    BeginInvoke(new MethodInvoker(() => { lbDrives.Items.Clear(); }));
-
-                    await foreach (var drive in openpilotDevice.GetDrivesAsync())
-                    {
-                        BeginInvoke(new MethodInvoker(() =>
-                        {
-                            lbDrives.Items.Add(drive);
-                            if (lbDrives.Items.Count == 1)
-                            {
-                                lbDrives.SelectedIndex = 0;
-                            }
-                        }));
-                    }
-                });
-            }
+            await LoadRoutesAsync().ConfigureAwait(false);
         }
 
-        private readonly SemaphoreSlim _driverSemaphoreSlim = new SemaphoreSlim(1, 1);
-        private CancellationTokenSource _driveVideo;
-        private async void lbDrives_SelectedIndexChanged(object sender, EventArgs e)
+        private readonly SemaphoreSlim _routeSemaphoreSlim = new SemaphoreSlim(1, 1);
+        private CancellationTokenSource _routeVideo;
+        private async void LbRoutesSelectedIndexChanged(object sender, EventArgs e)
         {
             cmbDevices.Enabled = false;
-            dgvDriveInfo.DataSource = null;
-            
+            dgvRouteInfo.DataSource = null;
+
             try
             {
                 if (cmbDevices.SelectedItem is OpenpilotDevice openpilotDevice)
                 {
-                    if (lbDrives.SelectedItems.Count < 2 && lbDrives.SelectedItem is Drive drive)
+                    if (lbRoutes.SelectedItems.Count < 2 && lbRoutes.SelectedItem is Route route)
                     {
-                        var driveInfo = new Dictionary<string, string>
+                        var routeInfo = new Dictionary<string, string>
                         {
-                            { "Segments", drive.Segments.Count.ToString() },
-                            { "Start Date", drive.Date.ToShortDateString() },
-                            { "Start Time", drive.Date.ToLongTimeString() }
+                            { "Segments", route.Segments.Count.ToString() },
+                            { "Start Date", route.Date.ToShortDateString() },
+                            { "Start Time", route.Date.ToLongTimeString() }
                         };
 
-                        dgvDriveInfo.DataSource = driveInfo.ToArray();
+                        dgvRouteInfo.DataSource = routeInfo.ToArray();
                         try
                         {
-                            if (drive.Segments.Any(segment => segment.FrontVideo != null))
+                            if (route.Segments.Any())
                             {
-                                var cts = new CancellationTokenSource();
-                                await _driverSemaphoreSlim.WaitAsync();
-                                try
+                                await Task.Run(async () =>
                                 {
-                                    if (_driveVideo != null)
-                                    {
-                                        await _driveVideo.CancelAsync();
-                                    }
-                                    
-                                    _driveVideo = cts;
-                                }
-                                finally
-                                {
-                                    _driverSemaphoreSlim.Release();
-                                }
-                                await flyleafVideoPlayer1.PlayDriveAsync(openpilotDevice, drive, cts.Token);
+                                    var cts = new CancellationTokenSource();
                                 
+                                    await _routeSemaphoreSlim.WaitAsync().ConfigureAwait(false);
+                                    try
+                                    {
+                                        if (_routeVideo != null)
+                                        {
+                                            await _routeVideo.CancelAsync().ConfigureAwait(false);
+                                        }
+
+                                        _routeVideo = cts;
+                                    }
+                                    finally
+                                    {
+                                        _routeSemaphoreSlim.Release();
+                                    }
+                                    await flyleafVideoPlayer.PlayRouteAsync(openpilotDevice, route, cts.Token).ConfigureAwait(false);
+                                
+                                });
                             }
                         }
                         catch (Exception exception)
@@ -651,18 +641,18 @@ namespace OpenpilotToolkit
             if (cmbDevices.SelectedItem is OpenpilotDevice openpilotDevice)
             {
                 var exportTasks = new List<Task>();
-                foreach (var selectedItem in lbDrives.SelectedItems)
+                foreach (var selectedItem in lbRoutes.SelectedItems)
                 {
-                    if (selectedItem is Drive drive)
+                    if (selectedItem is Route route)
                     {
                         var exportFolder = txtExportFolder.Text;
 
-                        var ucDrive = new ucTaskProgress(drive.ToString(), drive.Segments.Count)
+                        var ucRoute = new ucTaskProgress(route.ToString(), route.Segments.Count)
                         {
                             Anchor = (AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top)
                         };
 
-                        tlpTasks.Controls.Add(ucDrive);
+                        tlpTasks.Controls.Add(ucRoute);
 
                         var segmentsProcessed = 0;
 
@@ -671,14 +661,14 @@ namespace OpenpilotToolkit
                             if (!IsDisposed)
                             {
                                 Interlocked.Increment(ref segmentsProcessed);
-                                ucDrive.Progress = segmentsProcessed;
+                                ucRoute.Progress = segmentsProcessed;
                             }
                         });
 
                         exportTasks.Add(Task.Run(async () =>
                         {
-                            var fileName = Path.Combine(exportFolder, drive + ".gpx");
-                            var gpxFile = await openpilotDevice.GenerateGpxFileAsync(drive, progress);
+                            var fileName = Path.Combine(exportFolder, route + ".gpx");
+                            var gpxFile = await openpilotDevice.GenerateGpxFileAsync(route, progress);
                             var gpxString = gpxFile.BuildString(new GpxWriterSettings());
                             await File.WriteAllTextAsync(fileName, gpxString);
                         }));
@@ -703,10 +693,10 @@ namespace OpenpilotToolkit
             return new[] { new Rational(decimal_degrees), new Rational(minutes), new Rational(seconds) };
         }
 
-        private void ExportFrames(string exportFolder, Drive drive, string selectStatement, int startNumber)
+        private void ExportFrames(string exportFolder, Route route, string selectStatement, int startNumber)
         {
             var cmd = @" -framerate 20 -i " + '"' +
-                      Path.Combine(exportFolder, drive.Date.ToShortDateString() + ".hevc") + '"' +
+                      Path.Combine(exportFolder, route.Date.ToShortDateString() + ".hevc") + '"' +
                       " -vf select='" + selectStatement + @"' -vsync 0 -q:v 2 -start_number " + startNumber + " " + '"' + @"D:\openpilot\testf\mapillary-%03d.jpg" +
                       '"';
 
@@ -741,21 +731,21 @@ namespace OpenpilotToolkit
 
             if (cmbDevices.SelectedItem is OpenpilotDevice openpilotDevice)
             {
-                if (lbDrives.SelectedItem is Drive drive)
+                if (lbRoutes.SelectedItem is Route route)
                 {
-                    if (_activeTaskList.ContainsKey(drive.Date.ToString()))
+                    if (_activeTaskList.ContainsKey(route.Date.ToString()))
                     {
                         return;
                     }
-                    //MessageBox.Show("Exporting Drive: " + drive.Id);
+                    //MessageBox.Show("Exporting Route: " + drive.Id);
                     var exportFolder = txtExportFolder.Text;
 
-                    var ucDrive = new ucTaskProgress(drive.ToString(), drive.Segments.Count)
+                    var ucRoute = new ucTaskProgress(route.ToString(), route.Segments.Count)
                     {
                         Anchor = (AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top)
                     };
 
-                    tlpTasks.Controls.Add(ucDrive);
+                    tlpTasks.Controls.Add(ucRoute);
 
                     var segmentsProcessed = 0;
 
@@ -764,21 +754,21 @@ namespace OpenpilotToolkit
                         if (!IsDisposed)
                         {
                             Interlocked.Increment(ref segmentsProcessed);
-                            ucDrive.Progress = segmentsProcessed; ;
+                            ucRoute.Progress = segmentsProcessed; ;
                         }
                     });
 
                     var task = Task.Run(async () =>
                     {
                         //TODO:
-                        //await openpilotDevice.ExportDriveAsync(exportFolder, drive, cbCombineSegments.Checked, progress);
+                        //await openpilotDevice.ExportRouteAsync(exportFolder, drive, cbCombineSegments.Checked, progress);
                     });
 
-                    _activeTaskList.TryAdd(drive.Date.ToString(), task);
+                    _activeTaskList.TryAdd(route.Date.ToString(), task);
                     await task;
-                    _activeTaskList.TryRemove(drive.Date.ToString(), out _);
+                    _activeTaskList.TryRemove(route.Date.ToString(), out _);
 
-                    var waypoints = await openpilotDevice.MapillaryExportAsync(drive);
+                    var waypoints = await openpilotDevice.MapillaryExportAsync(route);
 
                     var firstTime = waypoints.First().TimestampUtc.Value;
 
@@ -788,7 +778,7 @@ namespace OpenpilotToolkit
                     var frames = string.Join("+",
                         waypoints.Select(wp =>
                             @"eq(n\," + (int)(((wp.TimestampUtc.Value - firstTime).TotalMilliseconds) / 50) + ")"));
-                    ExportFrames(exportFolder, drive, frames, 0);
+                    ExportFrames(exportFolder, route, frames, 0);
 
                     /*
                     foreach (var gpxWaypoint in waypoints)
@@ -874,8 +864,8 @@ namespace OpenpilotToolkit
                 MaterialSkinManager.Instance.Theme = MaterialSkinManager.Themes.LIGHT;
             }
 
-            lbDrives.BackColor = MaterialSkinManager.Instance.BackgroundColor;
-            lbDrives.ForeColor = MaterialSkinManager.Instance.TextHighEmphasisColor;
+            lbRoutes.BackColor = MaterialSkinManager.Instance.BackgroundColor;
+            lbRoutes.ForeColor = MaterialSkinManager.Instance.TextHighEmphasisColor;
             groupBox1.ForeColor = MaterialSkinManager.Instance.TextHighEmphasisColor;
             groupBox2.ForeColor = MaterialSkinManager.Instance.TextHighEmphasisColor;
             groupBox3.ForeColor = MaterialSkinManager.Instance.TextHighEmphasisColor;
@@ -981,14 +971,14 @@ namespace OpenpilotToolkit
                                 await _shellStream.DisposeAsync();
                             }
 
-                            await sshTerminal.EvaluateScriptAsync("ClearTerminal()");
+                            await _sshTerminal.EvaluateScriptAsync("ClearTerminal()");
 
                             await Task.Run(async () =>
                             {
                                 _shellStream = await openpilotDevice.GetShellStreamAsync();
                                 _streamReader = new StreamReader(_shellStream);
                             });
-                            await sshTerminal.EvaluateScriptAsync("resizeTerminal()");
+                            await _sshTerminal.EvaluateScriptAsync("resizeTerminal()");
                             _shellStream.DataReceived += ShellStreamOnDataReceived;
                         }
                         catch (Exception ex)
@@ -1002,7 +992,7 @@ namespace OpenpilotToolkit
 
         private async void ShellStreamOnDataReceived(object sender, ShellDataEventArgs e)
         {
-            await terminalLock.WaitAsync();
+            await _terminalLock.WaitAsync();
             try
             {
                 if (_shellStream.DataAvailable)
@@ -1010,13 +1000,13 @@ namespace OpenpilotToolkit
                     var terminalText = await _streamReader.ReadToEndAsync();
                     Invoke(new MethodInvoker(async () =>
                     {
-                        await sshTerminal.EvaluateScriptAsync("WriteText", new object[] { terminalText });
+                        await _sshTerminal.EvaluateScriptAsync("WriteText", new object[] { terminalText });
                     }));
                 }
             }
             finally
             {
-                terminalLock.Release();
+                _terminalLock.Release();
             }
         }
 
@@ -1447,52 +1437,42 @@ namespace OpenpilotToolkit
             //ScrollToBottom(txtTerminalText);
         }
         */
-        private async void cmbDevices_SelectedIndexChanged(object sender, EventArgs e)
+        private async Task LoadRoutesAsync()
         {
             var item = cmbDevices.SelectedItem;
             if (item is OpenpilotDevice openpilotDevice)
             {
-
                 try
                 {
-
+                    lbRoutes.Items.Clear();
 
                     await Task.Run(async () =>
                     {
-                        await openpilotDevice.ConnectAsync();
-
-                        BeginInvoke(new MethodInvoker(() =>
+                        await foreach (var route in openpilotDevice.GetRoutesAsync().ConfigureAwait(false))
                         {
-                            lbDrives.Items.Clear();
-                            lbDrives.Items.Add("Loading...");
-                        }));
-
-
-                        BeginInvoke(new MethodInvoker(() => { lbDrives.Items.Clear(); }));
-
-                        await foreach (var drive in openpilotDevice.GetDrivesAsync())
-                        {
-
                             BeginInvoke(new MethodInvoker(() =>
                             {
-                                lbDrives.Items.Add(drive);
-                                if (lbDrives.Items.Count == 1)
+                                lbRoutes.Items.Add(route);
+                                if (lbRoutes.Items.Count == 1)
                                 {
-                                    lbDrives.SelectedIndex = 0;
+                                    lbRoutes.SelectedIndex = 0;
                                 }
                             }));
-
                         }
                     });
                 }
                 catch (Exception exception)
                 {
-                    Serilog.Log.Error(exception, "Error retrieving drive");
+                    Serilog.Log.Error(exception, "Error retrieving routes");
                     ToolkitMessageDialog.ShowDialog(exception.Message);
                     return;
                 }
-
             }
+        }
+
+        private async void cmbDevices_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            await LoadRoutesAsync().ConfigureAwait(false);
         }
 
         private async void materialButton1_Click_1(object sender, EventArgs e)
@@ -1698,14 +1678,14 @@ namespace OpenpilotToolkit
             }
         }
 
-        private async void btnDeleteDrives_Click(object sender, EventArgs e)
+        private async void BtnDeleteRoutesClick(object sender, EventArgs e)
         {
             if (cmbDevices.SelectedItem is OpenpilotDevice openpilotDevice)
             {
-                var selectedItems = lbDrives.SelectedItems;
+                var selectedItems = lbRoutes.SelectedItems;
                 if (selectedItems.Count > 0)
                 {
-                    if (ToolkitMessageDialog.ShowDialog($"Are you sure you want to delete {selectedItems.Count} drives(s): {Environment.NewLine + string.Join(Environment.NewLine, selectedItems.Cast<object>().Where(item => item is Drive).Select(row => row.ToString()))}", this, MessageBoxButtons.YesNo) != DialogResult.Yes)
+                    if (ToolkitMessageDialog.ShowDialog($"Are you sure you want to delete {selectedItems.Count} routes(s): {Environment.NewLine + string.Join(Environment.NewLine, selectedItems.Cast<object>().Where(item => item is Route).Select(row => row.ToString()))}", this, MessageBoxButtons.YesNo) != DialogResult.Yes)
                     {
                         return;
                     }
@@ -1717,17 +1697,17 @@ namespace OpenpilotToolkit
 
                 await Task.Run(async () =>
                 {
-                    var deleteTasks = new Dictionary<Drive, Task>();
+                    var deleteTasks = new Dictionary<Route, Task>();
                     foreach (var selectedItem in selectedItems)
                     {
-                        if (selectedItem is Drive drive)
+                        if (selectedItem is Route route)
                         {
-                            if (_activeTaskList.ContainsKey(drive.Date.ToString()))
+                            if (_activeTaskList.ContainsKey(route.Date.ToString()))
                             {
                                 continue;
                             }
 
-                            deleteTasks.Add(drive, openpilotDevice.DeleteDriveAsync(drive));
+                            deleteTasks.Add(route, openpilotDevice.DeleteRouteAsync(route));
                         }
                     }
 
@@ -1736,23 +1716,23 @@ namespace OpenpilotToolkit
                         await deleteTask.Value;
                         BeginInvoke(new MethodInvoker(() =>
                         {
-                            lbDrives.Items.Remove(deleteTask.Key);
+                            lbRoutes.Items.Remove(deleteTask.Key);
                         }));
                     }
                 });
             }
         }
 
-        private async void lbDrives_PreviewKeyDown(object sender, PreviewKeyDownEventArgs e)
+        private async void LbRoutesPreviewKeyDown(object sender, PreviewKeyDownEventArgs e)
         {
             if (e.KeyCode == Keys.Delete)
             {
                 if (cmbDevices.SelectedItem is OpenpilotDevice openpilotDevice)
                 {
-                    var selectedItems = lbDrives.SelectedItems;
+                    var selectedItems = lbRoutes.SelectedItems;
                     if (selectedItems.Count > 0)
                     {
-                        if (ToolkitMessageDialog.ShowDialog($"Are you sure you want to delete {selectedItems.Count} drives(s): {Environment.NewLine + string.Join(Environment.NewLine, selectedItems.Cast<object>().Where(item => item is Drive).Select(row => row.ToString()))}", this, MessageBoxButtons.YesNo) != DialogResult.Yes)
+                        if (ToolkitMessageDialog.ShowDialog($"Are you sure you want to delete {selectedItems.Count} routes(s): {Environment.NewLine + string.Join(Environment.NewLine, selectedItems.Cast<object>().Where(item => item is Route).Select(row => row.ToString()))}", this, MessageBoxButtons.YesNo) != DialogResult.Yes)
                         {
                             return;
                         }
@@ -1764,17 +1744,17 @@ namespace OpenpilotToolkit
 
                     await Task.Run(async () =>
                     {
-                        var deleteTasks = new Dictionary<Drive, Task>();
+                        var deleteTasks = new Dictionary<Route, Task>();
                         foreach (var selectedItem in selectedItems)
                         {
-                            if (selectedItem is Drive drive)
+                            if (selectedItem is Route route)
                             {
-                                if (_activeTaskList.ContainsKey(drive.Date.ToString()))
+                                if (_activeTaskList.ContainsKey(route.Date.ToString()))
                                 {
                                     continue;
                                 }
 
-                                deleteTasks.Add(drive, openpilotDevice.DeleteDriveAsync(drive));
+                                deleteTasks.Add(route, openpilotDevice.DeleteRouteAsync(route));
                             }
                         }
 
@@ -1783,7 +1763,7 @@ namespace OpenpilotToolkit
                             await deleteTask.Value;
                             BeginInvoke(new MethodInvoker(() =>
                             {
-                                lbDrives.Items.Remove(deleteTask.Key);
+                                lbRoutes.Items.Remove(deleteTask.Key);
                             }));
                         }
                     });
@@ -1964,16 +1944,16 @@ namespace OpenpilotToolkit
                 }
 
                 var uploadTasks = new List<Task>();
-                foreach (var selectedItem in lbDrives.SelectedItems)
+                foreach (var selectedItem in lbRoutes.SelectedItems)
                 {
-                    if (selectedItem is Drive drive)
+                    if (selectedItem is Route route)
                     {
-                        var ucDrive = new ucTaskProgress(drive.ToString(), drive.Segments.Count)
+                        var ucRoute = new ucTaskProgress(route.ToString(), route.Segments.Count)
                         {
                             Anchor = (AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top)
                         };
 
-                        tlpTasks.Controls.Add(ucDrive);
+                        tlpTasks.Controls.Add(ucRoute);
 
                         var segmentsProcessed = 0;
 
@@ -1982,20 +1962,20 @@ namespace OpenpilotToolkit
                             if (!IsDisposed)
                             {
                                 Interlocked.Increment(ref segmentsProcessed);
-                                ucDrive.Progress = segmentsProcessed;
+                                ucRoute.Progress = segmentsProcessed;
                             }
                         });
 
                         uploadTasks.Add(Task.Run(async () =>
                         {
-                            var gpxFile = await openpilotDevice.GenerateGpxFileAsync(drive, progress);
+                            var gpxFile = await openpilotDevice.GenerateGpxFileAsync(route, progress);
                             var gpxString = gpxFile.BuildString(new GpxWriterSettings());
                             var binaryFile = Encoding.ASCII.GetBytes(gpxString);
 
                             using (var content = new MultipartFormDataContent())
                             {
-                                content.Add(new ByteArrayContent(binaryFile), "file", drive.ToString());
-                                content.Add(new StringContent(drive.ToString() + " openpilot drive"), @"description");
+                                content.Add(new ByteArrayContent(binaryFile), "file", route.ToString());
+                                content.Add(new StringContent(route.ToString() + " openpilot route"), @"description");
                                 content.Add(new StringContent("openpilottoolkit,optk,openpilot,commai,comma2,comma3"), @"tags");
                                 content.Add(new StringContent("1"), @"public");
                                 content.Add(new StringContent("identifiable"), @"visibility");
@@ -2074,7 +2054,7 @@ namespace OpenpilotToolkit
 
         private async void btnTmux_Click(object sender, EventArgs e)
         {
-            sshTerminal.Focus();
+            _sshTerminal.Focus();
             if (_shellStream != null)
             {
                 await _shellStream.WriteAsync(new ReadOnlyMemory<byte>(Encoding.UTF8.GetBytes("tmux a\n")));
@@ -2085,7 +2065,7 @@ namespace OpenpilotToolkit
 
         private async void btnExitTmux_Click(object sender, EventArgs e)
         {
-            sshTerminal.Focus();
+            _sshTerminal.Focus();
             if (_shellStream != null)
             {
                 await _shellStream.WriteAsync(new ReadOnlyMemory<byte>(Encoding.UTF8.GetBytes("`d")));
@@ -2116,7 +2096,7 @@ namespace OpenpilotToolkit
 
         private async void btnTmuxScroll_Click(object sender, EventArgs e)
         {
-            sshTerminal.Focus();
+            _sshTerminal.Focus();
             if (_shellStream != null)
             {
                 await _shellStream.WriteAsync(new ReadOnlyMemory<byte>(Encoding.UTF8.GetBytes("`[")));
@@ -2126,7 +2106,7 @@ namespace OpenpilotToolkit
 
         private async void btnTmuxEndScroll_Click(object sender, EventArgs e)
         {
-            sshTerminal.Focus();
+            _sshTerminal.Focus();
             if (_shellStream != null)
             {
                 await _shellStream.WriteAsync(new ReadOnlyMemory<byte>(Encoding.UTF8.GetBytes("q")));
@@ -2207,6 +2187,31 @@ namespace OpenpilotToolkit
             catch (Exception exception)
             {
                 Console.WriteLine(exception);
+            }
+        }
+
+        private void panel2_Paint(object sender, PaintEventArgs e)
+        {
+
+        }
+
+        private bool autoScan = false;
+        private void btnScan_MouseDown(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Right)
+            {
+                if (!autoScan)
+                {
+                    btnScan.Text = "Scanning";
+                    btnScan.EnableAnimation();
+                    autoScan = true;
+                }
+                else
+                {
+                    btnScan.Text = "Scan For OP Devices";
+                    btnScan.DisableAnimation();
+                    autoScan = false;
+                }
             }
         }
     }

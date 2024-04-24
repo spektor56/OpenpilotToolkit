@@ -1,7 +1,5 @@
 ﻿using System;
 using System.ComponentModel;
-using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,7 +7,7 @@ using System.Windows.Forms;
 using FlyleafLib.MediaPlayer;
 using OpenpilotSdk.Hardware;
 using OpenpilotSdk.OpenPilot;
-using OpenpilotToolkit.Stream;
+using OpenpilotSdk.OpenPilot.Media;
 
 namespace OpenpilotToolkit.Controls.Media;
 
@@ -53,10 +51,11 @@ public partial class FlyleafVideoPlayer : UserControl
         }
     }
 
-    private async Task<OpenCompletedArgs> PlayStreamAsync(CombinedStream stream)
+    private async Task<OpenCompletedArgs> OpenStreamAsync(CombinedStream stream)
     {
         var tcs = new TaskCompletionSource<OpenCompletedArgs>();
         EventHandler<OpenCompletedArgs> handler = null;
+        
         handler = (sender, args) =>
         {
             if (!args.Success)
@@ -68,17 +67,23 @@ public partial class FlyleafVideoPlayer : UserControl
 
                 return;
             }
-
-            Debug.Print("Stream Opened");
+            
+            Serilog.Log.Debug("Stream Opened");
+            _currentStream = stream;
             flyleafHost1.Player.OpenCompleted -= handler;
             _isOpening = false;
+
             tcs.SetResult(args);
         };
+        
         flyleafHost1.Player.OpenCompleted += handler;
 
-        Debug.Print("Opening New Stream");
-        flyleafHost1.Player.OpenAsync(stream);
+        Serilog.Log.Debug("Opening New Stream");
+        flyleafHost1.Player.OpenAsync(stream, true, true, false, false);
+
         var result = await tcs.Task.ConfigureAwait(false);
+
+
         return result;
     }
 
@@ -86,7 +91,7 @@ public partial class FlyleafVideoPlayer : UserControl
     {
         if (flyleafHost1.Player.Status == Status.Ended)
         {
-            await PlayStreamAsync(_currentStream).ConfigureAwait(false);
+            await OpenStreamAsync(_currentStream).ConfigureAwait(false);
             if (_currentStream.Streams.Count - 2 >= 0)
             {
                 await _currentStream.SeekToStreamAsync(_currentStream.Streams.Count - 2).ConfigureAwait(false);
@@ -103,12 +108,12 @@ public partial class FlyleafVideoPlayer : UserControl
         }
     }
 
-    public async Task PlayDriveAsync(OpenpilotDevice openpilotDevice, Drive drive,
+    public async Task PlayRouteAsync(OpenpilotDevice openpilotDevice, Route route,
         CancellationToken cancellationToken)
     {
         try
         {
-            await _streamLock.WaitAsync(cancellationToken);
+            await _streamLock.WaitAsync(cancellationToken).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
         {
@@ -117,25 +122,38 @@ public partial class FlyleafVideoPlayer : UserControl
 
         try
         {
-            await DisposeStreamAsync(_combinedStreamCollection);
+            timeScale.Value = 0;
+            _currentSegment = 0;
+            BeginInvoke(() => { lblSegment.Text = _currentSegment.ToString(); });
+
+            await DisposeStreamAsync(_combinedStreamCollection).ConfigureAwait(false);
             _isOpening = true;
 
-            var combinedStreamCollection = new CombinedStreamCollection(openpilotDevice, drive);
+            var combinedStreamCollection = new CombinedStreamCollection(openpilotDevice, route);
             _combinedStreamCollection = combinedStreamCollection;
 
-            materialComboBox1.Items.Clear();
-            foreach (var cameraStreamsKey in combinedStreamCollection.CameraStreams.Keys)
+            materialComboBox1.Invoke((MethodInvoker)(() =>
             {
-                materialComboBox1.Items.Add(cameraStreamsKey);
-            }
+                materialComboBox1.Items.Clear();
+                foreach (var cameraStreamsKey in combinedStreamCollection.CameraStreams.Keys)
+                {
+                    materialComboBox1.Items.Add(cameraStreamsKey);
+                }
 
-            materialComboBox1.SelectedValueChanged -= materialComboBox1_SelectedValueChanged;
-            materialComboBox1.SelectedIndex = 0;
-            materialComboBox1.SelectedValueChanged += materialComboBox1_SelectedValueChanged;
+                materialComboBox1.SelectedValueChanged -= materialComboBox1_SelectedValueChanged;
+                materialComboBox1.SelectedIndex = 0;
+                materialComboBox1.SelectedValueChanged += materialComboBox1_SelectedValueChanged;
+            }));
 
             var firstStream = await combinedStreamCollection.CameraStreams.First().Value;
             firstStream.CurrentStreamIndexChanged += CombinedStreamOnCurrentStreamIndexChanged;
-            await ChangeCurrentStreamAsync(firstStream).ConfigureAwait(false);
+            //var duration = await firstStream.GetDurationAsync();
+            await OpenStreamAsync(firstStream).ConfigureAwait(false);
+            
+            
+
+            Serilog.Log.Debug("Calling Play");
+            flyleafHost1.Player.Play();
         }
         finally
         {
@@ -144,15 +162,24 @@ public partial class FlyleafVideoPlayer : UserControl
     }
 
 
-    private async Task ChangeCurrentStreamAsync(CombinedStream fs)
+    private async Task ChangeCurrentStreamAsync(CombinedStream stream)
     {
         _isOpening = true;
-        _currentStream = fs;
-        _currentSegment = 0;
-        timeScale.Value = 0;
-        BeginInvoke(() => { lblSegment.Text = _currentSegment.ToString(); });
+        decimal originalPosition = 0;
+        if (_currentStream != null)
+        {
+            originalPosition = (decimal)_currentStream.Position / _currentStream.Length;
+        }
 
-        await PlayStreamAsync(fs).ConfigureAwait(false);
+        var newPosition = (long)(stream.Length * originalPosition);
+
+        await OpenStreamAsync(stream).ConfigureAwait(false);
+
+        flyleafHost1.Player.Play();
+        stream.Position = newPosition;
+        flyleafHost1.Player.Pause();
+        flyleafHost1.Player.Flush();
+        flyleafHost1.Player.Play();
     }
 
     private void CombinedStreamOnCurrentStreamIndexChanged(int obj)
@@ -179,7 +206,7 @@ public partial class FlyleafVideoPlayer : UserControl
 
             if (flyleafHost1.Player.Status == Status.Ended)
             {
-                await PlayStreamAsync(_currentStream).ConfigureAwait(false);
+                await OpenStreamAsync(_currentStream).ConfigureAwait(false);
             }
 
             var newPosition = (long)(newValue / (float)timeScale.RangeMax * _currentStream.Length);
@@ -198,7 +225,7 @@ public partial class FlyleafVideoPlayer : UserControl
 
     private async Task DisposeStreamAsync(CombinedStreamCollection streamToDispose)
     {
-        Debug.Print("Request Stop");
+        Serilog.Log.Debug("Request Stop");
         var tcs = new TaskCompletionSource<PlaybackStoppedArgs>();
         EventHandler<PlaybackStoppedArgs> handler = null;
         handler = (sender, args) =>
@@ -207,8 +234,7 @@ public partial class FlyleafVideoPlayer : UserControl
             {
                 return;
             }
-
-            Debug.Print("Playing stopped");
+            Serilog.Log.Debug("Playing stopped");
             flyleafHost1.Player.PlaybackStopped -= handler;
             tcs.SetResult(args);
         };
@@ -224,7 +250,7 @@ public partial class FlyleafVideoPlayer : UserControl
             catch (TimeoutException)
             {
                 flyleafHost1.Player.PlaybackStopped -= handler;
-                Debug.Print("Timed out waiting for player to stop");
+                Serilog.Log.Debug("Timed out waiting for player to stop");
             }
         }
         else

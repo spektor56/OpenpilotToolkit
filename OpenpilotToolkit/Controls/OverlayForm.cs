@@ -89,7 +89,7 @@ namespace OpenpilotToolkit.Controls
 
         private void OverlayForm_Shown(object sender, EventArgs e)
         {
-            this.Opacity = 0.7;
+            Opacity = 0.7;
         }
     }
 }

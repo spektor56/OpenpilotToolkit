@@ -10,6 +10,9 @@ using System.Windows.Forms;
 using CefSharp;
 using CefSharp.WinForms;
 using Octokit;
+using SshNet.Keygen;
+using SshNet.Keygen.Extensions;
+using SshNet.Keygen.SshKeyEncryption;
 
 namespace OpenpilotToolkit.Controls.Wizards
 {
@@ -43,8 +46,11 @@ namespace OpenpilotToolkit.Controls.Wizards
         {
             _clientId = Encoding.UTF8.GetString(Convert.FromBase64String(_clientId));
             _clientSecret = Encoding.UTF8.GetString(Convert.FromBase64String(_clientSecret));
-            
-            if (!this.DesignMode)
+
+            cmbKeyAlgorithm.Items.AddRange(Enum.GetValues(typeof(SshKeyType)).Cast<SshKeyType>().Select(key => key.ToString()).ToArray());
+            cmbKeyAlgorithm.SelectedItem = SshKeyType.ED25519.ToString();
+
+             if (!DesignMode)
             {
                 string githubToken = "";
                 try
@@ -183,13 +189,21 @@ namespace OpenpilotToolkit.Controls.Wizards
 
         private async void btnGenerateSSHKey_Click(object sender, EventArgs e)
         {
+            var keyAlgorithm = cmbKeyAlgorithm.SelectedItem;
+            if (keyAlgorithm is null)
+            {
+                ToolkitMessageDialog.ShowDialog("Key Algorithm is required.", this);
+                return;
+            }
+
             btnGenerateSSHKey.Enabled = false;
 
             try
             {
                 await Task.Run(async () =>
                 {
-                    var keygen = new SshKeyGenerator.SshKeyGenerator(4096);
+                    var sshKeyGenerateInfo = new SshKeyGenerateInfo(Enum.Parse<SshKeyType>(keyAlgorithm.ToString()));
+                    var generatedKey = SshKey.Generate(sshKeyGenerateInfo);
 
                     try
                     {
@@ -212,11 +226,10 @@ namespace OpenpilotToolkit.Controls.Wizards
                     {
                         Serilog.Log.Error(exception, "Failed to retrieve github SSH public key list");
                     }
-
+                    
                     try
                     {
-                        await _githubClient.User.GitSshKey.Create(new NewPublicKey("OpenpilotToolkitKey",
-                            keygen.ToRfcPublicKey()));
+                        await _githubClient.User.GitSshKey.Create(new NewPublicKey("OpenpilotToolkitKey", generatedKey.ToPublic()));
                         Serilog.Log.Information("Created new github SSH public key '{key}'", "OpenpilotToolkitKey");
                     }
                     catch (Exception exception)
@@ -227,7 +240,7 @@ namespace OpenpilotToolkit.Controls.Wizards
 
                     try
                     {
-                        await File.WriteAllTextAsync("opensshkey", keygen.ToPrivateKey());
+                        await File.WriteAllTextAsync("opensshkey",generatedKey.ToOpenSshFormat());
                         Serilog.Log.Information("Updated opensshkey private key file");
                     }
                     catch (Exception exception)

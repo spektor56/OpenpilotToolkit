@@ -4,13 +4,13 @@ namespace OpenpilotToolkit.Controls
 {
     public partial class ucTaskProgress : UserControl
     {
-        private string _driveName;
-        public ucTaskProgress(string driveName, int segments)
+        private string _routeName;
+        public ucTaskProgress(string routeName, int segments)
         {
             InitializeComponent();
             materialProgressBar1.Maximum = segments;
-            _driveName = driveName;
-            lblPercent.Text = string.Concat(_driveName," ", 0, "%");
+            _routeName = routeName;
+            lblPercent.Text = string.Concat(_routeName," ", 0, "%");
         }
 
         public int Progress
@@ -19,7 +19,7 @@ namespace OpenpilotToolkit.Controls
             set
             {
                 materialProgressBar1.Value = value;
-                lblPercent.Text = string.Concat(_driveName, " ", (int)(((double)value / (double)materialProgressBar1.Maximum)*100), "%");
+                lblPercent.Text = string.Concat(_routeName, " ", (int)(((double)value / (double)materialProgressBar1.Maximum)*100), "%");
             }
         }
     }

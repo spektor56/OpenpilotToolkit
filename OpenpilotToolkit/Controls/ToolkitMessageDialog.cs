@@ -15,7 +15,7 @@ namespace OpenpilotToolkit.Controls
             {
                 _overlayForm = new OverlayForm(parent);
             }
-            this.Icon = Properties.Resources.ic_launcher_web;
+            Icon = Properties.Resources.ic_launcher_web;
             var materialSkinManager = MaterialSkinManager.Instance;
             materialSkinManager.EnforceBackcolorOnAllComponents = false;
             materialSkinManager.AddFormToManage(this);
@@ -34,7 +34,7 @@ namespace OpenpilotToolkit.Controls
             if (flowLayoutPanel1.Controls.Count > 0)
             {
                 var button = (MaterialButton)flowLayoutPanel1.Controls[0];
-                this.AcceptButton = button;
+                AcceptButton = button;
             }
 
             label1.Text = text;

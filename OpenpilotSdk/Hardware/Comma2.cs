@@ -10,7 +10,7 @@ namespace OpenpilotSdk.Hardware
         public static string CloseSettingsCommand => "kill $(pgrep com.android.settings)";
         public override string DeviceName => "Comma2";
 
-        private readonly Lazy<IReadOnlyDictionary<CameraType, Camera>> _cameras = new Lazy<IReadOnlyDictionary<CameraType, Camera>>(() => new Dictionary<CameraType, Camera>
+        private readonly Lazy<IReadOnlyDictionary<CameraType, Camera>> _cameras = new(() => new Dictionary<CameraType, Camera>
         {
             { CameraType.Front, new Camera(CameraType.Front) },
             { CameraType.Driver, new Camera(CameraType.Driver,10) },
@@ -26,7 +26,7 @@ namespace OpenpilotSdk.Hardware
 
         private async Task<bool> ExecuteCommandAsync(string commandString)
         {
-            await ConnectAsync();
+            await ConnectAsync().ConfigureAwait(false);
 
             if (SshClient != null)
             {

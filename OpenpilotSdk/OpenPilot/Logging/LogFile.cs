@@ -44,7 +44,7 @@ namespace OpenpilotSdk.OpenPilot.Logging
                     await Task.Run(() =>
                     {
                         pump.Run();
-                    });
+                    }).ConfigureAwait(false);
                 }
             }
             else
@@ -77,14 +77,14 @@ namespace OpenpilotSdk.OpenPilot.Logging
                 await Task.Run(() =>
                 {
                     pump.Run();
-                });
+                }).ConfigureAwait(false);
             }
 
             
             return waypoints;
         }
 
-        public static async Task<IEnumerable<Firmware>> GetFirmware(Stream fileStream, bool compressed)
+        public static async Task<IEnumerable<Firmware>> GetFirmwareAsync(Stream fileStream, bool compressed)
         {
             List<Firmware> firmwares = new List<Firmware>();
 
@@ -109,7 +109,7 @@ namespace OpenpilotSdk.OpenPilot.Logging
                     await Task.Run(() =>
                     {
                         pump.Run();
-                    });
+                    }).ConfigureAwait(false);
 
                 }
             }
@@ -132,7 +132,7 @@ namespace OpenpilotSdk.OpenPilot.Logging
                 await Task.Run(() =>
                 {
                     pump.Run();
-                });
+                }).ConfigureAwait(false);
             }
             
             return firmwares;

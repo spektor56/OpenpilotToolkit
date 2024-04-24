@@ -3,12 +3,8 @@ using System.Drawing;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
-using System.Text;
 using System.Text.RegularExpressions;
 using FFMpegCore;
-using FFMpegCore.Enums;
-using FFMpegCore.Exceptions;
-using FFMpegCore.Pipes;
 using GeoCoordinatePortable;
 using NetTopologySuite.IO;
 using OpenpilotSdk.Git;
@@ -23,6 +19,9 @@ using System.Globalization;
 using System.Runtime.CompilerServices;
 using OpenpilotSdk.Exceptions;
 using OpenpilotSdk.OpenPilot.Segment;
+using DnsClient;
+using OpenpilotSdk.OpenPilot.FileTypes;
+using OpenpilotSdk.OpenPilot.Media;
 
 namespace OpenpilotSdk.Hardware
 {
@@ -38,6 +37,7 @@ namespace OpenpilotSdk.Hardware
         public IPAddress IpAddress { get; init; }
         protected SftpClient? SftpClient;
         protected SshClient? SshClient;
+        private static readonly LookupClient LookupClient = new LookupClient();
 
         public virtual string DeviceName => "";
         public virtual string StorageDirectory => @"/data/media/0/realdata/";
@@ -48,6 +48,17 @@ namespace OpenpilotSdk.Hardware
         public virtual string GitCloneCommand => @"cd /data && rm -rf openpilot; git clone -b {1} --depth 1 --single-branch --progress --recurse-submodules --shallow-submodules {0} openpilot";
 
         public abstract IReadOnlyDictionary<CameraType,Camera> Cameras { get; }
+
+        private static readonly string PrivateSshKeyFile = Path.Combine(
+            OperatingSystem.IsWindows()
+                ? AppContext.BaseDirectory
+                : Environment.GetFolderPath(Environment.SpecialFolder.Personal),
+            "opensshkey");
+
+        private static readonly IPrivateKeySource[] PrivateKeys =
+        [
+            new PrivateKeyFile(PrivateSshKeyFile)
+        ];
 
         public string WorkingDirectory
         {
@@ -66,15 +77,15 @@ namespace OpenpilotSdk.Hardware
 
         public async Task UploadFileAsync(string source, string destination)
         {
-            await ConnectAsync();
+            await ConnectAsync().ConfigureAwait(false);
             if (SftpClient != null)
             {
-                await using (var fileStream = File.Open(source, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                FileStream fileStream;
+                await using ((fileStream = File.Open(source, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)).ConfigureAwait(false))
                 {
-
                     await Task.Factory.FromAsync(
                         SftpClient.BeginUploadFile(fileStream, destination),
-                        SftpClient.EndUploadFile);
+                        SftpClient.EndUploadFile).ConfigureAwait(false);
 
                 }
             }
@@ -82,11 +93,11 @@ namespace OpenpilotSdk.Hardware
 
         public async Task<SftpFileStream> OpenReadAsync(string path)
         {
-            await ConnectAsync();
+            await ConnectAsync().ConfigureAwait(false);
 
             if (SftpClient != null)
             {
-                return await SftpClient.OpenAsync(path, FileMode.Open, FileAccess.Read, CancellationToken.None);
+                return await SftpClient.OpenAsync(path, FileMode.Open, FileAccess.Read, CancellationToken.None).ConfigureAwait(false);
             }
 
             throw new NotConnectedException("SftpClient is not connected");
@@ -94,11 +105,11 @@ namespace OpenpilotSdk.Hardware
 
         public async Task<SftpFileStream> OpenWriteAsync(string path)
         {
-            await ConnectAsync();
+            await ConnectAsync().ConfigureAwait(false);
 
             if (SftpClient != null)
             {
-                return await SftpClient.OpenAsync(path, FileMode.Create, FileAccess.Write, CancellationToken.None);
+                return await SftpClient.OpenAsync(path, FileMode.Create, FileAccess.Write, CancellationToken.None).ConfigureAwait(false);
             }
 
             throw new NotConnectedException("SftpClient is not connected");
@@ -116,14 +127,14 @@ namespace OpenpilotSdk.Hardware
             throw new NotConnectedException("SftpClient is not connected");
         }
         
-        public async Task<Bitmap?> GetThumbnailAsync(Drive drive)
+        public async Task<Bitmap?> GetThumbnailAsync(Route route)
         {
-            await ConnectAsync();
+            await ConnectAsync().ConfigureAwait(false);
 
-            var firstSegment = drive.Segments.FirstOrDefault();
+            var firstSegment = route.Segments.FirstOrDefault();
             if (firstSegment != null)
             {
-                return await GetThumbnailAsync(firstSegment);
+                return await GetThumbnailAsync(firstSegment).ConfigureAwait(false);
             }
 
             return null;
@@ -131,46 +142,81 @@ namespace OpenpilotSdk.Hardware
 
         public async Task DeleteFile(SftpFile file)
         {
-            await ConnectAsync();
+            await ConnectAsync().ConfigureAwait(false);
 
             if (SshClient != null)
             {
                 using (var command = SshClient.CreateCommand("rm -rf '" + file.FullName + "'"))
                 {
-                    await Task.Factory.FromAsync(command.BeginExecute(), command.EndExecute);
+                    await Task.Factory.FromAsync(command.BeginExecute(), command.EndExecute).ConfigureAwait(false);
                 }
             }
         }
 
-        public async Task DeleteDriveAsync(Drive drive)
+        public async Task<TimeSpan?> GetVideoDuration(VideoSegment videoSegment)
         {
-            await ConnectAsync();
+            await ConnectAsync().ConfigureAwait(false);
+
             if (SshClient != null)
             {
-                var deleteTasks = drive.Segments.Select(async segment =>
+                using (var command = SshClient.CreateCommand(
+                           string.Format(
+                               @"ffprobe -v error -select_streams v:0 -show_entries packet=duration_time -of csv=p=0 {0}",
+                               videoSegment.File.FullName)))
+                {
+                    var result = await Task.Factory.FromAsync(command.BeginExecute(), command.EndExecute)
+                        .ConfigureAwait(false);
+                    if (!string.IsNullOrWhiteSpace(result))
+                    {
+                        return new TimeSpan(result.Split('\n').Where(x => !string.IsNullOrWhiteSpace(x))
+                            .Select(x => TimeSpan.FromSeconds(Convert.ToDouble(x))).Sum(x => x.Ticks));
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        public async Task DeleteRouteAsync(Route route)
+        {
+            await ConnectAsync().ConfigureAwait(false);
+            if (SshClient != null)
+            {
+                var deleteTasks = route.Segments.Select(async segment =>
                 {
 
                     using (var command = SshClient.CreateCommand("rm -rf " + segment.Path))
                     {
-                        return await Task.Factory.FromAsync(command.BeginExecute(), command.EndExecute);
+                        return await Task.Factory.FromAsync(command.BeginExecute(), command.EndExecute).ConfigureAwait(false);
                     }
                 });
-                await Task.WhenAll(deleteTasks);
+                await Task.WhenAll(deleteTasks).ConfigureAwait(false);
             }
-
-
         }
 
-        public async Task ExportDriveAsync(string exportPath, Drive drive, Camera camera, bool combineSegments = false, IProgress<OpenPilot.Camera.Progress>? progress = null)
+        public async Task<CombinedStream> GetVideoStream(Route route, Camera camera)
         {
-            await ConnectAsync();
+            await ConnectAsync().ConfigureAwait(false);
+
+            return new CombinedStream(await Task
+                .WhenAll(route.Segments.Select(v => OpenReadAsync(v.RawVideoSegments[camera.Type].File.FullName)).ToArray()).ConfigureAwait(false));
+        }
+
+        public async Task<CombinedStreamCollection> GetVideoStreams(Route route)
+        {
+            return new CombinedStreamCollection(this, route);
+        }
+
+        public async Task ExportRouteAsync(string exportPath, Route route, Camera camera, bool combineSegments = false, IProgress<OpenPilot.Camera.Progress>? progress = null)
+        {
+            await ConnectAsync().ConfigureAwait(false);
 
             var cameraProgress = new OpenPilot.Camera.Progress(camera);
             Progress<Progress>? segmentProgress = null;
             if (progress != null)
             {
                 segmentProgress = new Progress<Progress>();
-                var segmentProgressDictionary = drive.Segments.ToDictionary(segment => segment.Index, _ => 0);
+                var segmentProgressDictionary = route.Segments.ToDictionary(segment => segment.Index, _ => 0);
                 int previousProgress = 0;
                 segmentProgress.ProgressChanged += async (sender, segmentProgressResult) =>
                 {
@@ -195,26 +241,28 @@ namespace OpenpilotSdk.Hardware
             if (combineSegments)
             {
                 var exportTasks =
-                    drive.Segments.Select((segment) => ExportSegmentAsync(exportPath, segment, camera, false, segmentProgress)).ToArray();
+                    route.Segments.Select((segment) => ExportSegmentAsync(exportPath, segment, camera, false, segmentProgress)).ToArray();
 
                 if (exportTasks.Length > 0)
                 {
-                    var outputFilePath = Path.Combine(exportPath, drive.ToString() + (char)camera.Type) + ".hevc";
+                    var outputFilePath = Path.Combine(exportPath, route.ToString() + (char)camera.Type) + ".hevc";
                     bool fileWritten = false;
 
-                    await using (var outputFile = File.Create(outputFilePath))
+                    FileStream outputFile;
+                    await using ((outputFile = File.Create(outputFilePath)).ConfigureAwait(false))
                     {
                         for (int i = 0; i < exportTasks.Length; i++)
                         {
-                            var fileName = await exportTasks[i];
+                            var fileName = await exportTasks[i].ConfigureAwait(false);
                             
                             if (!string.IsNullOrWhiteSpace(fileName))
                             {
                                 var tempFilePath = Path.Combine(exportPath, fileName);
 
-                                await using (var inputFile = File.OpenRead(tempFilePath))
+                                FileStream inputFile;
+                                await using ((inputFile = File.OpenRead(tempFilePath)).ConfigureAwait(false))
                                 {
-                                    await inputFile.CopyToAsync(outputFile);
+                                    await inputFile.CopyToAsync(outputFile).ConfigureAwait(false);
                                 }
                                 File.Delete(tempFilePath);
                             }
@@ -227,70 +275,37 @@ namespace OpenpilotSdk.Hardware
                     {
                         await FFMpegArguments.FromFileInput(outputFilePath, true,
                                                     options => options.WithFramerate(camera.FrameRate))
-                                                .OutputToFile(Path.Combine(exportPath, drive.ToString() + (char)camera.Type) + ".mp4", true, options => options.CopyChannel())
-                                                .ProcessAsynchronously();
+                                                .OutputToFile(Path.Combine(exportPath, route.ToString() + (char)camera.Type) + ".mp4", true, options => options.CopyChannel())
+                                                .ProcessAsynchronously().ConfigureAwait(false);
                     }
                     File.Delete(outputFilePath);
                 }
             }
             else
             {
-                var m3uFileName = drive.ToString() + (char)camera.Type + ".m3u";
+                var m3uFileName = route.ToString() + (char)camera.Type + ".m3u";
 
                 var exportTasks =
-                    drive.Segments.Select((segment) => ExportSegmentAsync(exportPath, segment, camera, true, segmentProgress)).ToArray();
+                    route.Segments.Select((segment) => ExportSegmentAsync(exportPath, segment, camera, true, segmentProgress)).ToArray();
 
-                var exportedSegments = (await Task.WhenAll(exportTasks)).Where(file => !string.IsNullOrWhiteSpace(file)).ToArray();
+                var exportedSegments = (await Task.WhenAll(exportTasks).ConfigureAwait(false)).Where(file => !string.IsNullOrWhiteSpace(file)).ToArray();
 
                 if (exportedSegments.Length > 1)
                 {
                     await File.WriteAllTextAsync(Path.Combine(exportPath, m3uFileName),
-                        string.Join(Environment.NewLine, exportedSegments));
+                        string.Join(Environment.NewLine, exportedSegments)).ConfigureAwait(false);
                 }
             }
         }
-        
-        public void ExportDrive(string path, Drive drive, IProgress<int>? progress = null)
-        {
-            Connect();
 
-            if (!Directory.Exists(path))
-            {
-                Directory.CreateDirectory(path);
-            }
-
-            var m3uFileName = drive.ToString() + ".m3u";
-            var m3uList = new StringBuilder();
-
-            foreach (var segment in drive.Segments)
-            {
-                m3uList.AppendLine(ExportSegment(path, segment));
-            }
-
-            if (m3uList.Length > 1)
-            {
-                File.WriteAllText(Path.Combine(path, m3uFileName), m3uList.ToString());
-            }
-        }
-
-        public async Task<string> ExportSegmentAsync(string path, DriveSegment driveSegment, Camera camera, bool containerize,
+        public async Task<string> ExportSegmentAsync(string path, RouteSegment routeSegment, Camera camera, bool containerize,
             IProgress<Progress>? progress = null)
         {
-            var segmentProgress = new Progress(driveSegment.Index);
+            var segmentProgress = new Progress(routeSegment.Index);
 
-            Video? video = null;
-            switch (camera.Type)
-            {
-                case CameraType.Wide:
-                    video = driveSegment.WideVideo;
-                    break;
-                case CameraType.Driver:
-                    video = driveSegment.DriverVideo;
-                    break;
-                default:
-                    video = driveSegment.FrontVideo;
-                    break;
-            }
+            
+            VideoSegment? video = null;
+            routeSegment.RawVideoSegments.TryGetValue(camera.Type, out video);
 
             string fileName = "";
             var videoPath = video?.File?.FullName;
@@ -305,36 +320,33 @@ namespace OpenpilotSdk.Hardware
                 {
                     if (!File.Exists(outputFilePath))
                     {
-                        await using (var outputFile = File.Create(outputFilePath))
+                        FileStream outputFile;
+                        await using ((outputFile = File.Create(outputFilePath)).ConfigureAwait(false))
                         {
                             if (Directory.Exists(Path.GetDirectoryName(path)))
                             {
                                 var connectionInfo = new ConnectionInfo(IpAddress.ToString(), Port,
                                     "comma",
-                                    new PrivateKeyAuthenticationMethod("comma",
-                                        new PrivateKeyFile(Path.Combine(
-                                            OperatingSystem.IsWindows()
-                                                ? AppContext.BaseDirectory
-                                                : Environment.GetFolderPath(Environment.SpecialFolder.Personal),
-                                            "opensshkey"))));
+                                    new PrivateKeyAuthenticationMethod("comma", PrivateKeys));
 
                                 using (var sftpClient = new SftpClient(connectionInfo))
                                 {
-                                    await _maxConcurrentConnectionLock.WaitAsync();
+                                    await _maxConcurrentConnectionLock.WaitAsync().ConfigureAwait(false);
                                     try
                                     {
-                                        await sftpClient.ConnectAsync(CancellationToken.None);
+                                        await sftpClient.ConnectAsync(CancellationToken.None).ConfigureAwait(false);
                                     }
                                     finally
                                     {
                                         _maxConcurrentConnectionLock.Release();
                                     }
 
-                                    await using (var stream = await sftpClient.OpenAsync(videoPath, FileMode.Open,
-                                                     FileAccess.Read, CancellationToken.None))
+                                    SftpFileStream stream;
+                                    await using ((stream = await sftpClient.OpenAsync(videoPath, FileMode.Open,
+                                                     FileAccess.Read, CancellationToken.None).ConfigureAwait(false)).ConfigureAwait(false))
                                     {
                                         var buffer = new byte[81920];
-                                        int bytesRead = 0;
+                                        int bytesRead;
                                         var sourceLength = stream.Length;
                                         int totalBytesRead = 0;
                                         int previousProgress = 0;
@@ -364,9 +376,9 @@ namespace OpenpilotSdk.Hardware
                     if (containerize)
                     {
                         await FFMpegArguments.FromFileInput(outputFilePath, true,
-                                options => options.WithFramerate(video.Properties.FrameRate))
+                                options => options.WithFramerate(video.Camera.FrameRate))
                             .OutputToFile(Path.Combine(path, fileName), true, options => options.CopyChannel())
-                            .ProcessAsynchronously();
+                            .ProcessAsynchronously().ConfigureAwait(false);
                         File.Delete(outputFilePath);
                     }
                 }
@@ -381,56 +393,37 @@ namespace OpenpilotSdk.Hardware
             return fileName;
         }
 
-        public string ExportSegment(string path, DriveSegment driveSegment)
+        public async Task<Bitmap?> GetThumbnailAsync(RouteSegment routeSegment)
         {
-            Connect();
-
-            var newFileName = new DirectoryInfo(Path.GetDirectoryName(driveSegment.FrontVideo.File.FullName)).Name +
-                              Path.GetExtension(driveSegment.FrontVideo.File.FullName);
-
-            var filePath = Path.Combine(path, newFileName);
-            if (!File.Exists(filePath))
-            {
-                using (var outputFile = File.Create(Path.Combine(path, newFileName)))
-                {
-                    if (Directory.Exists(Path.GetDirectoryName(path)))
-                    {
-                        SftpClient.DownloadFile(driveSegment.FrontVideo.File.FullName, outputFile, obj => { });
-                    }
-                }
-            }
-
-            return newFileName;
-        }
-
-        public async Task<Bitmap?> GetThumbnailAsync(DriveSegment driveSegment)
-        {
-            await ConnectAsync();
-
-            Bitmap? thumbnail = null;
-            var videoFile = driveSegment.FrontVideoQuick ?? driveSegment.FrontVideo;
-            var drive = new DirectoryInfo(Path.GetDirectoryName(videoFile.File.FullName)).Name;
-            var cachedThumbnail = Path.Combine(TempDirectory, drive + ".jpg");
+            await ConnectAsync().ConfigureAwait(false);
+            /*
+             Bitmap? thumbnail = null;
+             var videoFile = routeSegment.RawVideoSegments.FrontVideoSegmentQuick ?? routeSegment.FrontVideo;
+             var route = new DirectoryInfo(Path.GetDirectoryName(videoFile.File.FullName)).Name;
+             var cachedThumbnail = Path.Combine(TempDirectory, route + ".jpg");
 
 
             if (!File.Exists(cachedThumbnail))
             {
-                bool quickVideo = driveSegment.FrontVideoQuick != null;
+                bool quickVideo = routeSegment.FrontVideoSegmentQuick != null;
                 var offset = 0;
 
                 var imageBuffer = quickVideo ? new byte[10000] : new byte[200000];
 
-                await using (var sftpFileStream = SftpClient.OpenRead(videoFile.File.FullName))
+                SftpFileStream sftpFileStream;
+                await using ((sftpFileStream = SftpClient.OpenRead(videoFile.File.FullName)).ConfigureAwait(false))
                 {
                     while (offset < imageBuffer.Length)
                     {
-                        offset = await sftpFileStream.ReadAsync(imageBuffer, offset, imageBuffer.Length - offset);
+                        offset = await sftpFileStream.ReadAsync(imageBuffer, offset, imageBuffer.Length - offset).ConfigureAwait(false);
                     }
                 }
 
-                //using (var sftpFileStream = SftpClient.OpenRead(driveSegment.FrontCamera.FullName))
-                await using (var msInput = new MemoryStream(imageBuffer))
-                await using (var msOutput = new MemoryStream())
+                //using (var sftpFileStream = SftpClient.OpenRead(routeSegment.FrontCamera.FullName))
+                MemoryStream msInput;
+                MemoryStream msOutput;
+                await using ((msInput = new MemoryStream(imageBuffer)).ConfigureAwait(false))
+                await using ((msOutput = new MemoryStream()).ConfigureAwait(false))
                 {
                     try
                     {
@@ -440,165 +433,128 @@ namespace OpenpilotSdk.Hardware
                                 options.WithVideoCodec(VideoCodec.Png)
                                     .WithFrameOutputCount(1)
                                     .ForceFormat("rawvideo"))
-                            .ProcessAsynchronously();
+                            .ProcessAsynchronously().ConfigureAwait(false);
                     }
                     catch (FFMpegException)
                     {
-                        System.Diagnostics.Debug.Print("FFMpeg pipe exception");
+                        Debug.Print("FFMpeg pipe exception");
                     }
 
                     msOutput.Position = 0;
                     thumbnail = new Bitmap(msOutput);
                     thumbnail.Save(cachedThumbnail);
                 }
-
             }
-
+           
             return thumbnail ?? (Bitmap)Image.FromFile(cachedThumbnail);
+             */
+            return null;
         }
 
-        public async Task<DriveSegment> GetSegmentAsync(DateTime driveDate, int index)
+        public async Task<RouteSegment> GetRouteSegmentAsync(DateTime routeDate, int index)
         {
-            await ConnectAsync();
+            await ConnectAsync().ConfigureAwait(false);
 
-            var segmentFolder = Path.Combine(StorageDirectory, driveDate.ToUniversalTime().ToString("yyyy-MM-dd--HH-mm-ss--" + index, CultureInfo.InvariantCulture));
+            var segmentFolder = Path.Combine(StorageDirectory, routeDate.ToUniversalTime().ToString("yyyy-MM-dd--HH-mm-ss--" + index, CultureInfo.InvariantCulture));
             var segmentFiles = SftpClient.GetFilesAsync(segmentFolder);
 
-            ISftpFile frontVideo = null;
-            ISftpFile driverVideo = null;
-            ISftpFile wideVideo = null;
-            ISftpFile quickLog = null;
-            ISftpFile rawLog = null;
-            ISftpFile frontVideoQuick = null;
+            var rawVideoSegments = new Dictionary<CameraType, VideoSegment>();
+            var videoSegments = new Dictionary<CameraType, VideoSegment>();
+            LogFile quickLog = null;
+            LogFile rawLog = null;
 
-            bool rawLogCompressed = false;
-            bool quickLogCompressed = false;
-
-            await foreach (var segmentFile in segmentFiles)
+            await foreach (var segmentFile in segmentFiles.ConfigureAwait(false))
             {
                 if (segmentFile.Name.Equals("fcamera.hevc", StringComparison.OrdinalIgnoreCase))
                 {
-                    frontVideo = segmentFile;
+                    rawVideoSegments.Add(CameraType.Front, new VideoSegment(segmentFile, Cameras[CameraType.Front]));
                 }
                 else if (segmentFile.Name.Equals("dcamera.hevc", StringComparison.OrdinalIgnoreCase))
                 {
-                    driverVideo = segmentFile;
+                    rawVideoSegments.Add(CameraType.Driver, new VideoSegment(segmentFile, Cameras[CameraType.Driver]));
                 }
                 else if (segmentFile.Name.Equals("ecamera.hevc", StringComparison.OrdinalIgnoreCase))
                 {
-                    wideVideo = segmentFile;
+                    rawVideoSegments.Add(CameraType.Wide, new VideoSegment(segmentFile, Cameras[CameraType.Wide]));
                 }
                 else if (segmentFile.Name.StartsWith("rlog", StringComparison.OrdinalIgnoreCase))
                 {
-                    rawLog = segmentFile;
-                    if (segmentFile.Name.Contains(".bz2", StringComparison.OrdinalIgnoreCase))
-                    {
-                        rawLogCompressed = true;
-                    }
+                    rawLog = new LogFile(segmentFile,
+                        segmentFile.Name.Contains(".bz2", StringComparison.OrdinalIgnoreCase));
                 }
                 else if (segmentFile.Name.StartsWith("qlog", StringComparison.OrdinalIgnoreCase))
                 {
-                    quickLog = segmentFile;
-                    if (segmentFile.Name.Contains(".bz2", StringComparison.OrdinalIgnoreCase))
-                    {
-                        quickLogCompressed = true;
-                    }
+                    quickLog = new LogFile(segmentFile,
+                        segmentFile.Name.Contains(".bz2", StringComparison.OrdinalIgnoreCase));
                 }
                 else if (segmentFile.Name.Equals("qcamera.ts", StringComparison.OrdinalIgnoreCase))
                 {
-                    frontVideoQuick = segmentFile;
+                    videoSegments.Add(CameraType.Front, new VideoSegment(segmentFile, Cameras[CameraType.Front]));
                 }
             }
 
-            return new DriveSegment(
-                index, segmentFolder, 
-                frontVideo == null ? null : new Video(frontVideo, Cameras[CameraType.Front].FrameRate), 
-                quickLog, rawLog, 
-                driverVideo == null ? null : new Video(driverVideo, Cameras[CameraType.Driver].FrameRate), 
-                frontVideoQuick == null ? null : new Video(frontVideoQuick, Cameras[CameraType.Front].FrameRate), 
-                wideVideo == null ? null : new Video(wideVideo, Cameras[CameraType.Wide].FrameRate), rawLogCompressed, quickLogCompressed);
+            return new RouteSegment(index, segmentFolder, rawVideoSegments, videoSegments, quickLog, rawLog);
         }
 
-        public DriveSegment GetSegment(DateTime driveDate, int index)
+        public RouteSegment GetSegment(DateTime routeDate, int index)
         {
             Connect();
 
-            var segmentFolder = Path.Combine(StorageDirectory, driveDate.ToString("yyyy-MM-dd--HH-mm-ss--" + index));
+            var segmentFolder = Path.Combine(StorageDirectory, routeDate.ToString("yyyy-MM-dd--HH-mm-ss--" + index));
             var segmentFiles = SftpClient.GetFiles(segmentFolder);
 
 
-            ISftpFile frontVideo = null;
-            ISftpFile driverVideo = null;
-            ISftpFile wideVideo = null;
-            ISftpFile quickLog = null;
-            ISftpFile rawLog = null;
-            ISftpFile frontVideoQuick = null;
+            var rawVideoSegments = new Dictionary<CameraType, VideoSegment>();
+            var videoSegments = new Dictionary<CameraType, VideoSegment>();
 
-            bool rawLogCompressed = false;
-            bool quickLogCompressed = false;
+            LogFile quickLog = null;
+            LogFile rawLog = null;
 
             foreach (var segmentFile in segmentFiles)
             {
                 if (segmentFile.Name.Equals("fcamera.hevc", StringComparison.OrdinalIgnoreCase))
                 {
-                    frontVideo = segmentFile;
+                    rawVideoSegments.Add(CameraType.Front, new VideoSegment(segmentFile, Cameras[CameraType.Front]));
                 }
                 else if (segmentFile.Name.Equals("dcamera.hevc", StringComparison.OrdinalIgnoreCase))
                 {
-                    driverVideo = segmentFile;
+                    rawVideoSegments.Add(CameraType.Driver, new VideoSegment(segmentFile, Cameras[CameraType.Driver]));
                 }
                 else if (segmentFile.Name.Equals("ecamera.hevc", StringComparison.OrdinalIgnoreCase))
                 {
-                    wideVideo = segmentFile;
+                    rawVideoSegments.Add(CameraType.Wide, new VideoSegment(segmentFile, Cameras[CameraType.Wide]));
                 }
                 else if (segmentFile.Name.StartsWith("rlog", StringComparison.OrdinalIgnoreCase))
                 {
-                    rawLog = segmentFile;
-                    if (segmentFile.Name.Contains(".bz2", StringComparison.OrdinalIgnoreCase))
-                    {
-                        rawLogCompressed = true;
-                    }
+                    rawLog = new LogFile(segmentFile,
+                        segmentFile.Name.Contains(".bz2", StringComparison.OrdinalIgnoreCase));
                 }
                 else if (segmentFile.Name.StartsWith("qlog", StringComparison.OrdinalIgnoreCase))
                 {
-                    quickLog = segmentFile;
-                    if (segmentFile.Name.Contains(".bz2", StringComparison.OrdinalIgnoreCase))
-                    {
-                        quickLogCompressed = true;
-                    }
+                    quickLog = new LogFile(segmentFile,
+                        segmentFile.Name.Contains(".bz2", StringComparison.OrdinalIgnoreCase));
                 }
                 else if (segmentFile.Name.Equals("qcamera.ts", StringComparison.OrdinalIgnoreCase))
                 {
-                    frontVideoQuick = segmentFile;
+                    videoSegments.Add(CameraType.Front, new VideoSegment(segmentFile, Cameras[CameraType.Front]));
                 }
             }
 
-
-            //
-            //directoryItem.Name.Equals("rlog.bz2", StringComparison.OrdinalIgnoreCase))
-
-
-            return new DriveSegment(
-                index, segmentFolder,
-                frontVideo == null ? null : new Video(frontVideo, Cameras[CameraType.Front].FrameRate),
-                quickLog, rawLog,
-                driverVideo == null ? null : new Video(driverVideo, Cameras[CameraType.Driver].FrameRate),
-                frontVideoQuick == null ? null : new Video(frontVideoQuick, Cameras[CameraType.Front].FrameRate),
-                wideVideo == null ? null : new Video(wideVideo, Cameras[CameraType.Wide].FrameRate), rawLogCompressed, quickLogCompressed);
+            return new RouteSegment(index, segmentFolder, rawVideoSegments, videoSegments, quickLog, rawLog);
         }
 
-        public async Task<List<GpxWaypoint>> MapillaryExportAsync(Drive drive)
+        public async Task<List<GpxWaypoint>> MapillaryExportAsync(Route route)
         {
-            await ConnectAsync();
+            await ConnectAsync().ConfigureAwait(false);
 
             var waypoints = new List<GpxWaypoint>();
 
-            var wayPointTasks = drive.Segments.OrderBy(segment => segment.Index)
+            var wayPointTasks = route.Segments.OrderBy(segment => segment.Index)
                 .Select(GetWaypointsFromSegment).ToArray();
             
             foreach (var wayPointTask in wayPointTasks)
             {
-                waypoints.AddRange(await wayPointTask);
+                waypoints.AddRange(await wayPointTask.ConfigureAwait(false));
             }
 
             List<GpxWaypoint> waypointsToExport = new List<GpxWaypoint>();
@@ -627,7 +583,7 @@ namespace OpenpilotSdk.Hardware
 
             var waypointTable = new ImmutableGpxWaypointTable(waypointsToExport);
             var trackSegment = new GpxTrackSegment(waypointTable, null);
-            var track = new GpxTrack(drive.ToString(), null, null, "openpilot", ImmutableArray<GpxWebLink>.Empty, null, null, null, ImmutableArray.Create(trackSegment));
+            var track = new GpxTrack(route.ToString(), null, null, "openpilot", ImmutableArray<GpxWebLink>.Empty, null, null, null, ImmutableArray.Create(trackSegment));
             var gpxFile = new GpxFile();
             gpxFile.Tracks.Add(track);
             File.WriteAllText(@"D:\OpenPilot\testf\test.gpx", gpxFile.BuildString(new GpxWriterSettings()));
@@ -637,15 +593,15 @@ namespace OpenpilotSdk.Hardware
 
         public async Task<IEnumerable<Firmware>> GetFirmwareVersions(IProgress<int>? progress = null)
         {
-            await ConnectAsync();
+            await ConnectAsync().ConfigureAwait(false);
 
             var firmwares = new List<Firmware>();
 
-            await foreach (var drive in GetDrivesAsync())
+            await foreach (var route in GetRoutesAsync().ConfigureAwait(false))
             {
-                foreach (var driveSegment in drive.Segments.OrderBy(segment => segment.Index))
+                foreach (var routeSegment in route.Segments.OrderBy(segment => segment.Index))
                 {
-                    var firmware = await OpenPilot.Logging.LogFile.GetFirmware(SftpClient.OpenRead(driveSegment.QuickLog.FullName), driveSegment.QuickLogCompressed);
+                    var firmware = await OpenPilot.Logging.LogFile.GetFirmwareAsync(SftpClient.OpenRead(routeSegment.QuickLog.File.FullName), routeSegment.QuickLog.IsCompressed).ConfigureAwait(false);
 
                     if (firmware != null && firmware.Any())
                     {
@@ -658,46 +614,46 @@ namespace OpenpilotSdk.Hardware
             return firmwares;
         }
 
-        private async Task<IEnumerable<GpxWaypoint>> GetWaypoints(Drive drive)
+        private async Task<IEnumerable<GpxWaypoint>> GetWaypoints(Route route)
         {
             var waypoints = new List<GpxWaypoint>();
 
-            var wayPointTasks = drive.Segments.OrderBy(segment => segment.Index)
+            var wayPointTasks = route.Segments.OrderBy(segment => segment.Index)
                 .Select(GetWaypointsFromSegment);
 
             int i = 0;
             foreach (var wayPointTask in wayPointTasks)
             {
                 i++;
-                waypoints.AddRange(await wayPointTask);
+                waypoints.AddRange(await wayPointTask.ConfigureAwait(false));
             }
 
             return waypoints;
         }
 
-        private async Task<IEnumerable<GpxWaypoint>> GetWaypointsFromSegment(DriveSegment driveSegment)
+        private async Task<IEnumerable<GpxWaypoint>> GetWaypointsFromSegment(RouteSegment routeSegment)
         {
-            await using (var fileStream = await SftpClient.OpenAsync(driveSegment.QuickLog.FullName, FileMode.Open,
-                             FileAccess.Read, CancellationToken.None))
+            SftpFileStream fileStream;
+            await using ((fileStream = await SftpClient.OpenAsync(routeSegment.QuickLog.File.FullName, FileMode.Open, FileAccess.Read, CancellationToken.None)).ConfigureAwait(false))
             {
-                return await OpenPilot.Logging.LogFile.GetWaypointsAsync(fileStream, driveSegment.QuickLogCompressed);
+                return await OpenPilot.Logging.LogFile.GetWaypointsAsync(fileStream, routeSegment.QuickLog.IsCompressed).ConfigureAwait(false);
             }
         }
 
-        public async Task<GpxFile> GenerateGpxFileAsync(Drive drive, IProgress<int>? progress = null)
+        public async Task<GpxFile> GenerateGpxFileAsync(Route route, IProgress<int>? progress = null)
         {
-            await ConnectAsync();
+            await ConnectAsync().ConfigureAwait(false);
 
             var waypoints = new List<GpxWaypoint>();
 
-            var wayPointTasks = drive.Segments.OrderBy(segment => segment.Index)
+            var wayPointTasks = route.Segments.OrderBy(segment => segment.Index)
                 .Select(GetWaypointsFromSegment).ToArray();
             
             int i = 0;
             foreach (var wayPointTask in wayPointTasks)
             {
                 i++;
-                waypoints.AddRange(await wayPointTask);
+                waypoints.AddRange(await wayPointTask.ConfigureAwait(false));
 
                 if (progress != null)
                 {
@@ -707,22 +663,22 @@ namespace OpenpilotSdk.Hardware
 
             var waypointTable = new ImmutableGpxWaypointTable(waypoints);
             var trackSegment = new GpxTrackSegment(waypointTable, null);
-            var track = new GpxTrack(drive.ToString(), null, null, "openpilot", ImmutableArray<GpxWebLink>.Empty, null, null, null, ImmutableArray.Create(trackSegment));
+            var track = new GpxTrack(route.ToString(), null, null, "openpilot", ImmutableArray<GpxWebLink>.Empty, null, null, null, ImmutableArray.Create(trackSegment));
             var gpxFile = new GpxFile();
             gpxFile.Tracks.Add(track);
 
             return gpxFile;
         }
 
-        public async IAsyncEnumerable<Drive> GetDrivesAsync([EnumeratorCancellation]CancellationToken cancellationToken = default(CancellationToken))
+        public async IAsyncEnumerable<Route> GetRoutesAsync([EnumeratorCancellation]CancellationToken cancellationToken = default(CancellationToken))
         {
-            await ConnectAsync(cancellationToken);
+            await ConnectAsync(cancellationToken).ConfigureAwait(false);
 
             IOrderedEnumerable<IGrouping<DateTime, ISftpFile>>? directoryListing;
 
             try
             {
-                directoryListing = (await SftpClient.ListDirectoryAsync(StorageDirectory, cancellationToken))
+                directoryListing = (await SftpClient.ListDirectoryAsync(StorageDirectory, cancellationToken).ConfigureAwait(false))
                     .Where(dir => OpenPilot.Extensions.FolderRegex.IsMatch(dir.Name))
                     .GroupBy(dir =>
                     {
@@ -741,20 +697,20 @@ namespace OpenpilotSdk.Hardware
 
             foreach (var segmentGroup in directoryListing)
             {
-                var driveDate = segmentGroup.Key;
+                var routeDate = segmentGroup.Key;
 
                 var segmentTasks = segmentGroup.Select(segmentFolder => {
                     var segmentIndex = int.Parse(segmentFolder.Name.AsSpan().Slice(22));
-                    return GetSegmentAsync(driveDate, segmentIndex);
+                    return GetRouteSegmentAsync(routeDate, segmentIndex);
                 }).ToArray();
 
-                var segments = await Task.WhenAll(segmentTasks);
-
-                yield return new Drive(driveDate, segments.OrderBy(segment => segment.Index).ToList());
+                var segments = await Task.WhenAll(segmentTasks).ConfigureAwait(false);
+                
+                yield return new Route(routeDate, segments.OrderBy(segment => segment.Index).ToList());
             }
         }
 
-        public IEnumerable<Drive> GetDrives()
+        public IEnumerable<Route> GetRoutes()
         {
             Connect();
 
@@ -780,37 +736,37 @@ namespace OpenpilotSdk.Hardware
             }
 
             DateTime? previousSegmentDate = null;
-            DateTime driveDate = DateTime.Today;
-            var segmentList = new List<DriveSegment>();
+            DateTime routeDate = DateTime.Today;
+            var segmentList = new List<RouteSegment>();
 
             foreach (var segmentFolder in directoryListing)
             {
                 var matches = OpenPilot.Extensions.FolderRegex.Match(segmentFolder.Name);
-                driveDate = DateTime.Parse(
+                routeDate = DateTime.Parse(
                     matches.Groups[1].Value + " " + matches.Groups[2].Value.Replace("-", ":"));
                 if (previousSegmentDate == null)
                 {
-                    previousSegmentDate = driveDate;
+                    previousSegmentDate = routeDate;
                 }
 
                 var segmentIndex = int.Parse(matches.Groups[3].Value);
-                var driveSegment = GetSegment(driveDate, segmentIndex);
+                var routeSegment = GetSegment(routeDate, segmentIndex);
 
-                if (previousSegmentDate == driveDate)
+                if (previousSegmentDate == routeDate)
                 {
-                    segmentList.Add(driveSegment);
+                    segmentList.Add(routeSegment);
                 }
                 else
                 {
-                    yield return new Drive((DateTime)previousSegmentDate, segmentList);
-                    previousSegmentDate = driveDate;
-                    segmentList = new List<DriveSegment> { driveSegment };
+                    yield return new Route((DateTime)previousSegmentDate, segmentList);
+                    previousSegmentDate = routeDate;
+                    segmentList = new List<RouteSegment> { routeSegment };
                 }
             }
 
             if (segmentList.Count > 0)
             {
-                yield return new Drive(driveDate, segmentList);
+                yield return new Route(routeDate, segmentList);
             }
         
         }
@@ -855,14 +811,14 @@ namespace OpenpilotSdk.Hardware
             return Equals(left, right);
         }
 
-        public static bool operator !=(OpenpilotDevice left, OpenpilotDevice right)
+        public static bool operator !=(OpenpilotDevice? left, OpenpilotDevice? right)
         {
             return !Equals(left, right);
         }
 
         public async Task ChangeDirectoryAsync(string path)
         {
-            await ConnectAsync();
+            await ConnectAsync().ConfigureAwait(false);
 
             SftpClient.ChangeDirectory(path);
         }
@@ -876,7 +832,7 @@ namespace OpenpilotSdk.Hardware
 
         public async Task<IEnumerable<ISftpFile>> EnumerateFileSystemEntriesAsync(string path = "/")
         {
-            await ConnectAsync();
+            await ConnectAsync().ConfigureAwait(false);
 
             var fileSystemEntries = SftpClient.EnumerateFileSystemEntries(path);
             return fileSystemEntries;
@@ -892,9 +848,9 @@ namespace OpenpilotSdk.Hardware
         
         public async Task<IEnumerable<ISftpFile>?> EnumerateFilesAsync(string path = ".")
         {
-            await ConnectAsync();
+            await ConnectAsync().ConfigureAwait(false);
 
-            var directoryListing = await SftpClient.ListDirectoryAsync(path, CancellationToken.None);
+            var directoryListing = await SftpClient.ListDirectoryAsync(path, CancellationToken.None).ConfigureAwait(false);
             return directoryListing;
         }
         
@@ -909,12 +865,21 @@ namespace OpenpilotSdk.Hardware
         public static async IAsyncEnumerable<OpenpilotDevice> DiscoverAsync()
         {
             Log.Information("Scanning network for devices.");
-            var pingRequests = new List<Task<OpenpilotDevice>>();
-            HashSet<string> addressList = new HashSet<string>();
+            var connectionRequests = new List<Task<OpenpilotDevice?>>();
+            var addressList = new HashSet<string>();
 
             foreach (var networkInterface in NetworkInterface.GetAllNetworkInterfaces())
             {
                 Log.Information("Found network interface: {interface}", networkInterface.Name);
+
+                if (!(networkInterface.OperationalStatus == OperationalStatus.Up ||
+                     networkInterface.OperationalStatus == OperationalStatus.Unknown ||
+                     networkInterface.OperationalStatus == OperationalStatus.Dormant ||
+                     networkInterface.OperationalStatus == OperationalStatus.Testing) || networkInterface.NetworkInterfaceType == NetworkInterfaceType.Loopback)
+                {
+                    Log.Information("Network interface is not enabled: {interface}", networkInterface.Name);
+                    continue;
+                }
 
                 var unicastAddresses = networkInterface.GetIPProperties().UnicastAddresses;
                 foreach (var unicastAddress in unicastAddresses)
@@ -927,7 +892,7 @@ namespace OpenpilotSdk.Hardware
 
                     var subnetMask = unicastAddress.IPv4Mask.GetAddressBytes();
                     var ipAddress = unicastAddress.Address.GetAddressBytes();
-
+                    
                     if (BitConverter.IsLittleEndian)
                     {
                         Array.Reverse(subnetMask);
@@ -947,13 +912,12 @@ namespace OpenpilotSdk.Hardware
                     if (BitConverter.IsLittleEndian) Array.Reverse(startAddressBytes);
                     var startIPAddress = Convert.ToString(startAddressBytes[0]) + "." + Convert.ToString(startAddressBytes[1]) + "." +
                         Convert.ToString(startAddressBytes[2]) + "." + Convert.ToString(startAddressBytes[3]);
-
+                    
                     if (startIPAddress == "192.168.43.1")
                     {
-                        if (!addressList.Contains(startIPAddress))
+                        if (addressList.Add(startIPAddress))
                         {
-                            addressList.Add(startIPAddress);
-                            pingRequests.Add(GetOpenpilotDevice(startIPAddress, SshPort));
+                            connectionRequests.Add(GetOpenpilotDeviceAsync(startIPAddress, SshPort));
                             continue;
                         }
                     }
@@ -963,7 +927,7 @@ namespace OpenpilotSdk.Hardware
                     var endIPAddress = Convert.ToString(endAddressBytes[0]) + "." + Convert.ToString(endAddressBytes[1]) + "." +
                                          Convert.ToString(endAddressBytes[2]) + "." + Convert.ToString(endAddressBytes[3]);
 
-                    Serilog.Log.Information("Scanning IP range: {startAddress} - {endAddress}", startIPAddress, endIPAddress);
+                    Log.Information("Scanning IP range: {startAddress} - {endAddress}", startIPAddress, endIPAddress);
 
                     for (uint i = 1; i <= endAddress; i++)
                     {
@@ -976,136 +940,98 @@ namespace OpenpilotSdk.Hardware
                         var hostAddress = Convert.ToString(hostBytes[0]) + "." + Convert.ToString(hostBytes[1]) + "." +
                                           Convert.ToString(hostBytes[2]) + "." + Convert.ToString(hostBytes[3]);
 
-                        if (!addressList.Contains(hostAddress))
+                        if (addressList.Add(hostAddress))
                         {
-                            addressList.Add(hostAddress);
-                            pingRequests.Add(GetOpenpilotDevice(hostAddress, SshPort));
+                            connectionRequests.Add(GetOpenpilotDeviceAsync(hostAddress, SshPort));
                         }
                     }
                 }
             }
-            
-            while (pingRequests.Count > 0)
-            {
-                var cts = new CancellationTokenSource();
-                var timeout = Task.Delay(10000, cts.Token);
-                var result = await Task.WhenAny(Task.WhenAny(pingRequests), timeout).ConfigureAwait(false);
 
-                if (result != timeout)
+            var timeout = TimeSpan.FromSeconds(10);
+            var cts = new CancellationTokenSource(timeout);
+            await foreach (var connectionRequest in Task.WhenEach(connectionRequests).WithCancellation(cts.Token).ConfigureAwait(false))
+            {
+                if (!cts.TryReset())
                 {
-                    cts.Cancel();
-                    var pingResult = await ((Task<Task<OpenpilotDevice>>)result).ConfigureAwait(false);
-                    pingRequests.Remove(pingResult);
-                    var openpilotDevice = await pingResult.ConfigureAwait(false);
-                    if (openpilotDevice != null)
-                    {
-                        yield return openpilotDevice;
-                    }
+                    cts.Token.ThrowIfCancellationRequested();
                 }
-                else
+
+                var openpilotDevice = await connectionRequest.ConfigureAwait(false);
+                if (openpilotDevice != null)
                 {
-                    Serilog.Log.Information("Timed Out");
-                    break;
-                }
+                    yield return openpilotDevice;
+                };
+                cts.CancelAfter(timeout); // Start the timer again
             }
         }
 
-        public static async Task<OpenpilotDevice> GetOpenpilotDevice(string address, int port, int timeout = 5000)
+        public static async Task<OpenpilotDevice?> GetOpenpilotDeviceAsync(string address, int port, int timeout = 500)
         {
+            
             try
             {
-                //SendPingAsync never completes, maybe skip this and jut try socket instead
-                var socketConnected = false;
+                //Use socket to find service on specific port instead of ping
                 using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
                 {
-                    Task socketTask;
-                    try
+                    var cts = new CancellationTokenSource(timeout);
+                    var socketTask = socket.ConnectAsync(address, port, cts.Token);
+
+                    await Task.WhenAny(Task.Delay(timeout), socketTask.AsTask()).ConfigureAwait(false);
+
+                    if (!socket.Connected)
                     {
-                        socketTask = socket.ConnectAsync(address, port);
-                    }
-                    catch (Exception)
-                    {
-                        return null;
+                       return null;
                     }
                     
-                    await Task.WhenAny(Task.Delay(timeout), socketTask).ConfigureAwait(false);
-
-                    socketConnected = socket.Connected;
-
-                    if (socketConnected)
-                    {
-                        socket.Shutdown(SocketShutdown.Both);
-                        socket.Disconnect(false);
-                    }
-
+                    socket.Shutdown(SocketShutdown.Both);
                     socket.Close();
                 }
 
-                if (socketConnected)
+                Log.Information("Connected to {Address} on port {port}", address, port);
+
+                using (var client = new SshClient(address, port, "comma", PrivateKeys))
                 {
-                    Serilog.Log.Information("Connected to {Address} on port {port}", address, port);
-
-                    var privateKeyFile = Path.Combine(
-                        OperatingSystem.IsWindows()
-                            ? AppContext.BaseDirectory
-                            : Environment.GetFolderPath(Environment.SpecialFolder.Personal),
-                        "opensshkey");
-
-                    var privateKeys = new PrivateKeyFile[]
+                    try
                     {
-                        new PrivateKeyFile(privateKeyFile)
-                    };
-
-                    bool foundDevice = false;
-                    using (var client = new SshClient(address, port, "comma", privateKeys))
+                        await client.ConnectAsync(CancellationToken.None).ConfigureAwait(false);
+                    }
+                    catch (SshAuthenticationException)
                     {
-                        try
-                        {
-                            await client.ConnectAsync(CancellationToken.None);
-                        }
-                        catch (SshAuthenticationException)
-                        {
-                            var device = new UnknownDevice();
-                            return device;
-                        }
-
-                        if (client.IsConnected)
-                        {
-                            foundDevice = true;
-                        }
+                        return new UnknownDevice();
                     }
 
-                    if (foundDevice)
+                    if (!client.IsConnected)
                     {
-                        try
-                        {
-                            using (var client = new SshClient(address, port, "root",
-                            privateKeys))
-                            {
-                                await client.ConnectAsync(CancellationToken.None);
-                                if (client.IsConnected)
-                                {
-                                    Serilog.Log.Information("Connected to Comma2 device at {Address} on port {port}", address, port);
-                                    return new Comma2(IPAddress.Parse(address));
-                                }
-                                else
-                                {
-                                    Serilog.Log.Information("Connected to Comma3 device at {Address} on port {port}", address, port);
-                                    return new Comma3(IPAddress.Parse(address));
-                                }
-                            }
-                        }
-                        catch (Exception)
-                        {
-                            Serilog.Log.Information("Connected to Comma3 device at {Address} on port {port}", address, port);
-                            return (OpenpilotDevice)(new Comma3(IPAddress.Parse(address)));
-                        }
+                        return null;
                     }
                 }
+
+                var ipAddress = IPAddress.Parse(address);
+
+                string? hostName;
+                try
+                {
+                    hostName = await LookupClient.GetHostNameAsync(ipAddress).ConfigureAwait(false);
+                }
+                catch (Exception)
+                {
+                    hostName = null;
+                }
+                
+                if (hostName != null && (hostName.StartsWith("comma") || hostName.Equals("tici")))
+                {
+                    Log.Information("Connected to Comma3 device at {Address} on port {port}",
+                        address, port);
+                    return new Comma3(ipAddress);
+                }
+
+                Log.Information("Connected to Comma2 device at {Address} on port {port}", address, port);
+                return new Comma2(IPAddress.Parse(address));
             }
             catch (Exception e)
             {
-                Serilog.Log.Error("Failed to connect to {Address} with the following exception: {Exception}", address, e.Message);
+                Log.Error("Failed to connect to {Address} with the following exception: {Exception}", address, e.Message);
             }
 
             return null;
@@ -1113,7 +1039,7 @@ namespace OpenpilotSdk.Hardware
 
         public virtual async Task<ForkResult> ReinstallOpenpilotAsync(IProgress<InstallProgress>? progress = null)
         {
-            await ConnectAsync();
+            await ConnectAsync().ConfigureAwait(false);
 
             using (var command = SshClient.CreateCommand("cd /data/openpilot && git remote get-url origin && git rev-parse --abbrev-ref HEAD"))
             {
@@ -1140,7 +1066,7 @@ namespace OpenpilotSdk.Hardware
 
         public virtual async Task<bool> FlashPandaAsync()
         {
-            await ConnectAsync();
+            await ConnectAsync().ConfigureAwait(false);
 
             using (var command = SshClient.CreateCommand(FlashCommand))
             {
@@ -1159,7 +1085,7 @@ namespace OpenpilotSdk.Hardware
 
         public virtual async Task<bool> InstallEmuAsync()
         {
-            await ConnectAsync();
+            await ConnectAsync().ConfigureAwait(false);
 
             using (var command = SshClient.CreateCommand(InstallEmuCommand))
             {
@@ -1171,7 +1097,7 @@ namespace OpenpilotSdk.Hardware
 
         public virtual async Task<bool> ShutdownAsync()
         {
-            await ConnectAsync();
+            await ConnectAsync().ConfigureAwait(false);
 
             using (var command = SshClient.CreateCommand(ShutdownCommand))
             {
@@ -1183,7 +1109,7 @@ namespace OpenpilotSdk.Hardware
 
         public virtual async Task<bool> RebootAsync()
         {
-            await ConnectAsync();
+            await ConnectAsync().ConfigureAwait(false);
 
             using (var command = SshClient.CreateCommand(RebootCommand))
             {
@@ -1200,7 +1126,7 @@ namespace OpenpilotSdk.Hardware
                 return await InstallForkAsync(username, branch, repository).ConfigureAwait(false);
             }
 
-            await ConnectAsync();
+            await ConnectAsync().ConfigureAwait(false);
 
             var installCommand =
                 string.Format(@"cd /data && rm -rf openpilot ; git clone -b {1} --depth 1 --single-branch --progress --recurse-submodules --shallow-submodules https://github.com/{0}/{2}.git openpilot", username, branch, repository);
@@ -1257,7 +1183,7 @@ namespace OpenpilotSdk.Hardware
 
         public virtual async Task<ForkResult> InstallForkAsync(string username, string branch, string repository = "openpilot")
         {
-            await ConnectAsync();
+            await ConnectAsync().ConfigureAwait(false);
 
             var installCommand =
                 string.Format(@"cd /data && rm -rf openpilot; git clone -b {1} --depth 1 --single-branch --recurse-submodules --shallow-submodules https://github.com/{0}/{2}.git openpilot", username, branch, repository);
@@ -1282,7 +1208,7 @@ namespace OpenpilotSdk.Hardware
 
         public async Task<ShellStream> GetShellStreamAsync()
         {
-            await ConnectAsync();
+            await ConnectAsync().ConfigureAwait(false);
             var client = SshClient.CreateShellStream("xterm-256color", 0, 0, 0, 0, 1024);
             return client;
         }
@@ -1305,19 +1231,16 @@ namespace OpenpilotSdk.Hardware
             {
                 if (SftpClient == null || !SftpClient.IsConnected)
                 {
-                    var connectionInfo = new ConnectionInfo(IpAddress.ToString(), Port,
-                        "comma",
-                        new PrivateKeyAuthenticationMethod("comma",
-                            new PrivateKeyFile(Path.Combine(
-                                OperatingSystem.IsWindows()
-                                    ? AppContext.BaseDirectory
-                                    : Environment.GetFolderPath(Environment.SpecialFolder.Personal),
-                                "opensshkey"))));
-                    SftpClient = new SftpClient(connectionInfo);
-                    SshClient = new SshClient(connectionInfo);
+                    var connectionInfo = new ConnectionInfo(IpAddress.ToString(), Port, "comma", new PrivateKeyAuthenticationMethod("comma", PrivateKeys));
 
-                    SftpClient.KeepAliveInterval = TimeSpan.FromSeconds(10);
-                    SshClient.KeepAliveInterval = TimeSpan.FromSeconds(10);
+                    SftpClient = new SftpClient(connectionInfo)
+                    {
+                        KeepAliveInterval = TimeSpan.FromSeconds(10)
+                    };
+                    SshClient = new SshClient(connectionInfo)
+                    {
+                        KeepAliveInterval = TimeSpan.FromSeconds(10)
+                    };
 
                     SftpClient.Connect();
                     SshClient.Connect();
@@ -1337,35 +1260,33 @@ namespace OpenpilotSdk.Hardware
                 return;
             }
 
-            await _connectionLock.WaitAsync(cancellationToken);
+            await _connectionLock.WaitAsync(cancellationToken).ConfigureAwait(false);
 
             try
             {
                 if (SftpClient == null || !SftpClient.IsConnected)
                 {
-                    var privateKeyFile = Path.Combine(
-                        OperatingSystem.IsWindows()
-                            ? AppContext.BaseDirectory
-                            : Environment.GetFolderPath(Environment.SpecialFolder.Personal),
-                        "opensshkey");
 
                     var connectionInfo = new ConnectionInfo(IpAddress.ToString(), Port,
                         "comma",
-                        new PrivateKeyAuthenticationMethod("comma",
-                            new PrivateKeyFile(privateKeyFile)));
-                    SftpClient = new SftpClient(connectionInfo);
-                    SshClient = new SshClient(connectionInfo);
+                        new PrivateKeyAuthenticationMethod("comma",PrivateKeys));
 
-                    SftpClient.KeepAliveInterval = TimeSpan.FromSeconds(10);
-                    SshClient.KeepAliveInterval = TimeSpan.FromSeconds(10);
+                    SftpClient = new SftpClient(connectionInfo)
+                    {
+                        KeepAliveInterval = TimeSpan.FromSeconds(10)
+                    };
+                    SshClient = new SshClient(connectionInfo)
+                    {
+                        KeepAliveInterval = TimeSpan.FromSeconds(10)
+                    };
 
-                    await _maxConcurrentConnectionLock.WaitAsync(cancellationToken);
+                    await _maxConcurrentConnectionLock.WaitAsync(cancellationToken).ConfigureAwait(false);
                     try
                     {
-                        await SftpClient.ConnectAsync(cancellationToken);
+                        await SftpClient.ConnectAsync(cancellationToken).ConfigureAwait(false);
                         //SftpClient.ChangeDirectory("/data/openpilot/");
-
-                        await SshClient.ConnectAsync(cancellationToken);
+                        
+                        await SshClient.ConnectAsync(cancellationToken).ConfigureAwait(false);
                     }
                     finally
                     {

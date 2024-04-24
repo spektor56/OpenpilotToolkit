@@ -7,7 +7,7 @@ namespace OpenpilotToolkit.Controls
     {
         public ToolkitForm()
         {
-            this.Icon = Properties.Resources.ic_launcher_web;
+            Icon = Properties.Resources.ic_launcher_web;
             var materialSkinManager = MaterialSkinManager.Instance;
             materialSkinManager.EnforceBackcolorOnAllComponents = false;
             materialSkinManager.AddFormToManage(this);

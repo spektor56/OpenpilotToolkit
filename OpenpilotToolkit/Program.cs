@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using CefSharp.WinForms;
 using FFMpegCore;
+using FlyleafLib;
 using OpenpilotToolkit.Controls;
 using OpenpilotToolkit.Properties;
 using Serilog;
@@ -27,9 +28,8 @@ namespace OpenpilotToolkit
             Task.Run(() =>
             {
                 splashForm.ShowDialog();
-                
             });
-
+            
             var exitCode = CefSharp.BrowserSubprocess.SelfHost.Main(args);
 
             if (exitCode >= 0)
@@ -53,14 +53,22 @@ namespace OpenpilotToolkit
 
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
+                .WriteTo.Debug(outputTemplate: "{Timestamp:HH:mm:ss.fff} [{Level}] ({ThreadId}) {Message}{NewLine}{Exception}")
                 .WriteTo.Console()
-                .WriteTo.File(logPath, rollingInterval: RollingInterval.Day, shared: true)
+                .WriteTo.Async(a => a.File(logPath, rollingInterval: RollingInterval.Day, shared: true))
                 .CreateLogger();
 
             Application.ApplicationExit += (_, _) =>
             {
                 Settings.Default.Save();
+
+                while (Engine.Players.Count != 0)
+                {
+                    Engine.Players[0].Dispose();
+                }
+
                 Log.Information("Application Exiting.");
+                Log.CloseAndFlush();
             };
 
             Log.Information("Application Starting.");
