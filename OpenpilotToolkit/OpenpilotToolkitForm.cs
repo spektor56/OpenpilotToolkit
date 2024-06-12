@@ -387,11 +387,21 @@ namespace OpenpilotToolkit
                             
                             if (!_devices.Contains(device))
                             {
-                                if (!device.IsAuthenticated)
+                                if (device is not UnknownDevice)
                                 {
-                                    await device.ConnectSftpAsync().ConfigureAwait(false);
+                                    if (!device.IsAuthenticated)
+                                    {
+                                        try
+                                        {
+                                            await device.ConnectSftpAsync().ConfigureAwait(false);
+                                        }
+                                        catch (SshAuthenticationException ex)
+                                        {
+                                            Serilog.Log.Information(ex, "Authentication failed for {Device}", device);
+                                        }
+                                    }
                                 }
-                            
+
                                 if (device.IsAuthenticated)
                                 {
                                     Invoke(new MethodInvoker(async () =>
