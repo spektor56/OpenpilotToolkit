@@ -6,4 +6,4 @@
 	url = https://github.com/spektor56/SSH.NET.git
 [submodule "SshNet.Keygen"]
 	path = SshNet.Keygen
-	url = https://github.com/spektor56/SSH.NET.git
+	url = https://github.com/spektor56/SshNet.Keygen.git
