@@ -5,5 +5,5 @@ plugins:
 - jekyll-sitemap
 show_downloads: [true]
 github:
-  zip_url: https://github.com/spektor56/OpenpilotToolkit/releases/download/1.9.0/OpenpilotToolkit.zip
+  zip_url: https://github.com/spektor56/OpenpilotToolkit/releases/download/1.9.1/OpenpilotToolkit.zip
   tar_url: https://github.com/spektor56/OpenpilotToolkit/releases/download/1.8.1/com.spektor56.openpilottoolkitandroid.apk
