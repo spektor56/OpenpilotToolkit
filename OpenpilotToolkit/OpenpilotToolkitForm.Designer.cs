@@ -1697,7 +1697,6 @@ namespace OpenpilotToolkit
             cmbDevices.MouseState = MaterialSkin.MouseState.OUT;
             cmbDevices.Name = "cmbDevices";
             cmbDevices.Size = new System.Drawing.Size(266, 35);
-            cmbDevices.StartIndex = 0;
             cmbDevices.TabIndex = 0;
             cmbDevices.UseTallSize = false;
             cmbDevices.SelectedIndexChanged += cmbDevices_SelectedIndexChanged;

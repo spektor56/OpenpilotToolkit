@@ -36,7 +36,7 @@
             timeScale = new MaterialSkin.Controls.MaterialSlider();
             lblSegment = new System.Windows.Forms.Label();
             btnNextSegment = new MaterialSkin.Controls.MaterialButton();
-            materialComboBox1 = new MaterialSkin.Controls.MaterialComboBox();
+            cmbStreamType = new MaterialSkin.Controls.MaterialComboBox();
             tableLayoutPanel1.SuspendLayout();
             panel2.SuspendLayout();
             tableLayoutPanel2.SuspendLayout();
@@ -101,7 +101,7 @@
             tableLayoutPanel2.Controls.Add(timeScale, 1, 0);
             tableLayoutPanel2.Controls.Add(lblSegment, 2, 0);
             tableLayoutPanel2.Controls.Add(btnNextSegment, 4, 0);
-            tableLayoutPanel2.Controls.Add(materialComboBox1, 3, 0);
+            tableLayoutPanel2.Controls.Add(cmbStreamType, 3, 0);
             tableLayoutPanel2.Dock = System.Windows.Forms.DockStyle.Fill;
             tableLayoutPanel2.Location = new System.Drawing.Point(3, 308);
             tableLayoutPanel2.Name = "tableLayoutPanel2";
@@ -185,32 +185,32 @@
             btnNextSegment.UseVisualStyleBackColor = true;
             btnNextSegment.Click += btnNextSegment_Click;
             // 
-            // materialComboBox1
+            // cmbStreamType
             // 
-            materialComboBox1.AutoResize = false;
-            materialComboBox1.BackColor = System.Drawing.Color.FromArgb(255, 255, 255);
-            materialComboBox1.Depth = 0;
-            materialComboBox1.Dock = System.Windows.Forms.DockStyle.Fill;
-            materialComboBox1.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawVariable;
-            materialComboBox1.DropDownHeight = 118;
-            materialComboBox1.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            materialComboBox1.DropDownWidth = 121;
-            materialComboBox1.Font = new System.Drawing.Font("Microsoft Sans Serif", 14F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Pixel);
-            materialComboBox1.ForeColor = System.Drawing.Color.FromArgb(222, 0, 0, 0);
-            materialComboBox1.FormattingEnabled = true;
-            materialComboBox1.IntegralHeight = false;
-            materialComboBox1.ItemHeight = 29;
-            materialComboBox1.Items.AddRange(new object[] { "Front", "Driver", "Wide" });
-            materialComboBox1.Location = new System.Drawing.Point(320, 3);
-            materialComboBox1.MaxDropDownItems = 4;
-            materialComboBox1.MouseState = MaterialSkin.MouseState.OUT;
-            materialComboBox1.Name = "materialComboBox1";
-            materialComboBox1.Size = new System.Drawing.Size(94, 35);
-            materialComboBox1.StartIndex = 0;
-            materialComboBox1.TabIndex = 70;
-            materialComboBox1.UseTallSize = false;
-            materialComboBox1.SelectedIndexChanged += materialComboBox1_SelectedIndexChanged;
-            materialComboBox1.SelectedValueChanged += materialComboBox1_SelectedValueChanged;
+            cmbStreamType.AutoResize = false;
+            cmbStreamType.BackColor = System.Drawing.Color.FromArgb(255, 255, 255);
+            cmbStreamType.Depth = 0;
+            cmbStreamType.Dock = System.Windows.Forms.DockStyle.Fill;
+            cmbStreamType.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawVariable;
+            cmbStreamType.DropDownHeight = 118;
+            cmbStreamType.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            cmbStreamType.DropDownWidth = 121;
+            cmbStreamType.Font = new System.Drawing.Font("Microsoft Sans Serif", 14F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Pixel);
+            cmbStreamType.ForeColor = System.Drawing.Color.FromArgb(222, 0, 0, 0);
+            cmbStreamType.FormattingEnabled = true;
+            cmbStreamType.IntegralHeight = false;
+            cmbStreamType.ItemHeight = 29;
+            cmbStreamType.Items.AddRange(new object[] { "Front", "Driver", "Wide" });
+            cmbStreamType.Location = new System.Drawing.Point(320, 3);
+            cmbStreamType.MaxDropDownItems = 4;
+            cmbStreamType.MouseState = MaterialSkin.MouseState.OUT;
+            cmbStreamType.Name = "cmbStreamType";
+            cmbStreamType.Size = new System.Drawing.Size(94, 35);
+            cmbStreamType.StartIndex = 0;
+            cmbStreamType.TabIndex = 70;
+            cmbStreamType.UseTallSize = false;
+            cmbStreamType.SelectedIndexChanged += materialComboBox1_SelectedIndexChanged;
+            cmbStreamType.SelectedValueChanged += cmbStreamType_SelectedValueChanged;
             // 
             // FlyleafVideoPlayer
             // 
@@ -236,6 +236,6 @@
         private MaterialSkin.Controls.MaterialSlider timeScale;
         private MaterialSkin.Controls.MaterialButton btnNextSegment;
         private System.Windows.Forms.Label lblSegment;
-        private MaterialSkin.Controls.MaterialComboBox materialComboBox1;
+        private MaterialSkin.Controls.MaterialComboBox cmbStreamType;
     }
 }

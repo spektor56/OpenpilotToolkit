@@ -180,7 +180,6 @@ namespace OpenpilotToolkit.Controls.Wizards
             cmbKeyAlgorithm.MouseState = MaterialSkin.MouseState.OUT;
             cmbKeyAlgorithm.Name = "cmbKeyAlgorithm";
             cmbKeyAlgorithm.Size = new System.Drawing.Size(341, 49);
-            cmbKeyAlgorithm.StartIndex = 0;
             cmbKeyAlgorithm.TabIndex = 1;
             // 
             // btnGenerateSSHKey

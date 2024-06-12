@@ -8,6 +8,7 @@ using FlyleafLib;
 using OpenpilotToolkit.Controls;
 using OpenpilotToolkit.Properties;
 using Serilog;
+using Serilog.Events;
 
 namespace OpenpilotToolkit
 {
@@ -53,9 +54,10 @@ namespace OpenpilotToolkit
 
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
-                .WriteTo.Debug(outputTemplate: "{Timestamp:HH:mm:ss.fff} [{Level}] ({ThreadId}) {Message}{NewLine}{Exception}")
-                .WriteTo.Console()
-                .WriteTo.Async(a => a.File(logPath, rollingInterval: RollingInterval.Day, shared: true))
+                .WriteTo.Logger(lc => lc
+                .Filter.ByExcluding(le => le.Level == LogEventLevel.Information)
+                .WriteTo.Debug(outputTemplate: "{Timestamp:HH:mm:ss.fff} [{Level}] ({ThreadId}) {Message}{NewLine}{Exception}"))
+                .WriteTo.Async(a => a.File(logPath, rollingInterval: RollingInterval.Day, shared: true, restrictedToMinimumLevel: LogEventLevel.Information))
                 .CreateLogger();
 
             Application.ApplicationExit += (_, _) =>

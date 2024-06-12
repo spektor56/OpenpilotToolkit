@@ -26,7 +26,7 @@ namespace OpenpilotSdk.Hardware
 
         private async Task<bool> ExecuteCommandAsync(string commandString)
         {
-            await ConnectAsync().ConfigureAwait(false);
+            await ConnectSshAsync().ConfigureAwait(false);
 
             if (SshClient != null)
             {

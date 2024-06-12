@@ -381,23 +381,31 @@ namespace OpenpilotToolkit
                 {
                     try
                     {
-                        await foreach (var device in OpenpilotDevice.DiscoverAsync())
+                        await foreach (var device in OpenpilotDevice.DiscoverAsync().ConfigureAwait(false))
                         {
-                            Debug.Print("Found a device");
                             foundDevices++;
-                            Invoke(new MethodInvoker(() =>
+                            
+                            if (!_devices.Contains(device))
                             {
-                                if (device.IsAuthenticated && !_devices.Contains(device))
+                                if (!device.IsAuthenticated)
                                 {
-                                    _devices.Add(device);
-                                    if (_devices.Count == 1)
-                                    {
-                                        wifiConnected.SetEnabled(true);
-                                        cmbDevices.SelectedIndex = -1;
-                                        cmbDevices.SelectedIndex = 0;
-                                    }
+                                    await device.ConnectSftpAsync().ConfigureAwait(false);
                                 }
-                            }));
+                            
+                                if (device.IsAuthenticated)
+                                {
+                                    Invoke(new MethodInvoker(async () =>
+                                    {
+                                        _devices.Add(device);
+                                        if (_devices.Count == 1)
+                                        {
+                                            wifiConnected.SetEnabled(true);
+                                            cmbDevices.SelectedIndex = -1;
+                                            cmbDevices.SelectedIndex = 0;
+                                        }
+                                    }));
+                                }
+                            }
                         }
                     }
                     catch (TaskCanceledException)
@@ -544,7 +552,15 @@ namespace OpenpilotToolkit
 
         private async void btnRefreshVideos_Click(object sender, EventArgs e)
         {
-            await LoadRoutesAsync().ConfigureAwait(false);
+            try
+            {
+                btnRefreshVideos.Enabled = false;
+                await LoadRoutesAsync();
+            }
+            finally
+            {
+                btnRefreshVideos.Enabled = true;
+            }
         }
 
         private readonly SemaphoreSlim _routeSemaphoreSlim = new SemaphoreSlim(1, 1);

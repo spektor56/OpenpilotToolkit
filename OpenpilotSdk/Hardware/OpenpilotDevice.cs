@@ -77,7 +77,7 @@ namespace OpenpilotSdk.Hardware
 
         public async Task UploadFileAsync(string source, string destination)
         {
-            await ConnectAsync().ConfigureAwait(false);
+            await ConnectSftpAsync().ConfigureAwait(false);
             if (SftpClient != null)
             {
                 FileStream fileStream;
@@ -93,7 +93,7 @@ namespace OpenpilotSdk.Hardware
 
         public async Task<SftpFileStream> OpenReadAsync(string path)
         {
-            await ConnectAsync().ConfigureAwait(false);
+            await ConnectSftpAsync().ConfigureAwait(false);
 
             if (SftpClient != null)
             {
@@ -105,7 +105,7 @@ namespace OpenpilotSdk.Hardware
 
         public async Task<SftpFileStream> OpenWriteAsync(string path)
         {
-            await ConnectAsync().ConfigureAwait(false);
+            await ConnectSftpAsync().ConfigureAwait(false);
 
             if (SftpClient != null)
             {
@@ -129,7 +129,7 @@ namespace OpenpilotSdk.Hardware
         
         public async Task<Bitmap?> GetThumbnailAsync(Route route)
         {
-            await ConnectAsync().ConfigureAwait(false);
+            await ConnectSftpAsync().ConfigureAwait(false);
 
             var firstSegment = route.Segments.FirstOrDefault();
             if (firstSegment != null)
@@ -142,7 +142,7 @@ namespace OpenpilotSdk.Hardware
 
         public async Task DeleteFile(SftpFile file)
         {
-            await ConnectAsync().ConfigureAwait(false);
+            await ConnectSshAsync().ConfigureAwait(false);
 
             if (SshClient != null)
             {
@@ -155,7 +155,7 @@ namespace OpenpilotSdk.Hardware
 
         public async Task<TimeSpan?> GetVideoDuration(VideoSegment videoSegment)
         {
-            await ConnectAsync().ConfigureAwait(false);
+            await ConnectSshAsync().ConfigureAwait(false);
 
             if (SshClient != null)
             {
@@ -179,7 +179,7 @@ namespace OpenpilotSdk.Hardware
 
         public async Task DeleteRouteAsync(Route route)
         {
-            await ConnectAsync().ConfigureAwait(false);
+            await ConnectSshAsync().ConfigureAwait(false);
             if (SshClient != null)
             {
                 var deleteTasks = route.Segments.Select(async segment =>
@@ -196,7 +196,7 @@ namespace OpenpilotSdk.Hardware
 
         public async Task<CombinedStream> GetVideoStream(Route route, Camera camera)
         {
-            await ConnectAsync().ConfigureAwait(false);
+            await ConnectSftpAsync().ConfigureAwait(false);
 
             return new CombinedStream(await Task
                 .WhenAll(route.Segments.Select(v => OpenReadAsync(v.RawVideoSegments[camera.Type].File.FullName)).ToArray()).ConfigureAwait(false));
@@ -209,7 +209,7 @@ namespace OpenpilotSdk.Hardware
 
         public async Task ExportRouteAsync(string exportPath, Route route, Camera camera, bool combineSegments = false, IProgress<OpenPilot.Camera.Progress>? progress = null)
         {
-            await ConnectAsync().ConfigureAwait(false);
+            await ConnectSftpAsync().ConfigureAwait(false);
 
             var cameraProgress = new OpenPilot.Camera.Progress(camera);
             Progress<Progress>? segmentProgress = null;
@@ -325,12 +325,9 @@ namespace OpenpilotSdk.Hardware
                         {
                             if (Directory.Exists(Path.GetDirectoryName(path)))
                             {
-                                var connectionInfo = new ConnectionInfo(IpAddress.ToString(), Port,
-                                    "comma",
-                                    new PrivateKeyAuthenticationMethod("comma", PrivateKeys));
-
-                                using (var sftpClient = new SftpClient(connectionInfo))
+                                using (var sftpClient = new SftpClient(IpAddress.ToString(), "comma", PrivateKeys))
                                 {
+                                    sftpClient.KeepAliveInterval = TimeSpan.FromSeconds(10);
                                     await _maxConcurrentConnectionLock.WaitAsync().ConfigureAwait(false);
                                     try
                                     {
@@ -395,7 +392,7 @@ namespace OpenpilotSdk.Hardware
 
         public async Task<Bitmap?> GetThumbnailAsync(RouteSegment routeSegment)
         {
-            await ConnectAsync().ConfigureAwait(false);
+            await ConnectSftpAsync().ConfigureAwait(false);
             /*
              Bitmap? thumbnail = null;
              var videoFile = routeSegment.RawVideoSegments.FrontVideoSegmentQuick ?? routeSegment.FrontVideo;
@@ -453,7 +450,7 @@ namespace OpenpilotSdk.Hardware
 
         public async Task<RouteSegment> GetRouteSegmentAsync(DateTime routeDate, int index)
         {
-            await ConnectAsync().ConfigureAwait(false);
+            await ConnectSftpAsync().ConfigureAwait(false);
 
             var segmentFolder = Path.Combine(StorageDirectory, routeDate.ToUniversalTime().ToString("yyyy-MM-dd--HH-mm-ss--" + index, CultureInfo.InvariantCulture));
             var segmentFiles = SftpClient.GetFilesAsync(segmentFolder);
@@ -545,7 +542,7 @@ namespace OpenpilotSdk.Hardware
 
         public async Task<List<GpxWaypoint>> MapillaryExportAsync(Route route)
         {
-            await ConnectAsync().ConfigureAwait(false);
+            await ConnectSftpAsync().ConfigureAwait(false);
 
             var waypoints = new List<GpxWaypoint>();
 
@@ -593,7 +590,7 @@ namespace OpenpilotSdk.Hardware
 
         public async Task<IEnumerable<Firmware>> GetFirmwareVersions(IProgress<int>? progress = null)
         {
-            await ConnectAsync().ConfigureAwait(false);
+            await ConnectSftpAsync().ConfigureAwait(false);
 
             var firmwares = new List<Firmware>();
 
@@ -642,7 +639,7 @@ namespace OpenpilotSdk.Hardware
 
         public async Task<GpxFile> GenerateGpxFileAsync(Route route, IProgress<int>? progress = null)
         {
-            await ConnectAsync().ConfigureAwait(false);
+            await ConnectSftpAsync().ConfigureAwait(false);
 
             var waypoints = new List<GpxWaypoint>();
 
@@ -672,7 +669,7 @@ namespace OpenpilotSdk.Hardware
 
         public async IAsyncEnumerable<Route> GetRoutesAsync([EnumeratorCancellation]CancellationToken cancellationToken = default(CancellationToken))
         {
-            await ConnectAsync(cancellationToken).ConfigureAwait(false);
+            await ConnectSftpAsync(cancellationToken).ConfigureAwait(false);
 
             IOrderedEnumerable<IGrouping<DateTime, ISftpFile>>? directoryListing;
 
@@ -818,7 +815,7 @@ namespace OpenpilotSdk.Hardware
 
         public async Task ChangeDirectoryAsync(string path)
         {
-            await ConnectAsync().ConfigureAwait(false);
+            await ConnectSftpAsync().ConfigureAwait(false);
 
             SftpClient.ChangeDirectory(path);
         }
@@ -832,7 +829,7 @@ namespace OpenpilotSdk.Hardware
 
         public async Task<IEnumerable<ISftpFile>> EnumerateFileSystemEntriesAsync(string path = "/")
         {
-            await ConnectAsync().ConfigureAwait(false);
+            await ConnectSftpAsync().ConfigureAwait(false);
 
             var fileSystemEntries = SftpClient.EnumerateFileSystemEntries(path);
             return fileSystemEntries;
@@ -848,7 +845,7 @@ namespace OpenpilotSdk.Hardware
         
         public async Task<IEnumerable<ISftpFile>?> EnumerateFilesAsync(string path = ".")
         {
-            await ConnectAsync().ConfigureAwait(false);
+            await ConnectSftpAsync().ConfigureAwait(false);
 
             var directoryListing = await SftpClient.ListDirectoryAsync(path, CancellationToken.None).ConfigureAwait(false);
             return directoryListing;
@@ -968,10 +965,9 @@ namespace OpenpilotSdk.Hardware
 
         public static async Task<OpenpilotDevice?> GetOpenpilotDeviceAsync(string address, int port, int timeout = 500)
         {
-            
             try
             {
-                //Use socket to find service on specific port instead of ping
+                //~6.388 ms
                 using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
                 {
                     var cts = new CancellationTokenSource(timeout);
@@ -983,32 +979,16 @@ namespace OpenpilotSdk.Hardware
                     {
                        return null;
                     }
-                    
+                   
                     socket.Shutdown(SocketShutdown.Both);
                     socket.Close();
                 }
-
+                
                 Log.Information("Connected to {Address} on port {port}", address, port);
-
-                using (var client = new SshClient(address, port, "comma", PrivateKeys))
-                {
-                    try
-                    {
-                        await client.ConnectAsync(CancellationToken.None).ConfigureAwait(false);
-                    }
-                    catch (SshAuthenticationException)
-                    {
-                        return new UnknownDevice();
-                    }
-
-                    if (!client.IsConnected)
-                    {
-                        return null;
-                    }
-                }
 
                 var ipAddress = IPAddress.Parse(address);
 
+                //~8.253 ms
                 string? hostName;
                 try
                 {
@@ -1018,16 +998,61 @@ namespace OpenpilotSdk.Hardware
                 {
                     hostName = null;
                 }
-                
+
                 if (hostName != null && (hostName.StartsWith("comma") || hostName.Equals("tici")))
                 {
                     Log.Information("Connected to Comma3 device at {Address} on port {port}",
-                        address, port);
-                    return new Comma3(ipAddress);
+                    address, port);
+
+                    return new Comma3(ipAddress, false);
+                }
+                
+                //~174.320 ms
+                var sshClient = new SshClient(address, port, "comma", PrivateKeys)
+                {
+                    KeepAliveInterval = TimeSpan.FromSeconds(10)
+                };
+
+                try
+                {
+                    await sshClient.ConnectAsync(CancellationToken.None);
+                }
+                catch (SshAuthenticationException)
+                {
+                    sshClient.Dispose();
+                    return new UnknownDevice();
                 }
 
-                Log.Information("Connected to Comma2 device at {Address} on port {port}", address, port);
-                return new Comma2(IPAddress.Parse(address));
+                if (!sshClient.IsConnected)
+                {
+                    sshClient.Dispose();
+                    return null;
+                }
+
+                //~26ms
+                try
+                {
+                    using (var command = sshClient.CreateCommand("hostname"))
+                    {
+                        hostName = await Task.Factory.FromAsync(command.BeginExecute(), command.EndExecute).ConfigureAwait(false);
+                        if (hostName != null && (hostName.StartsWith("comma") || hostName.Equals("tici")))
+                        {
+                            Log.Information("Connected to Comma3 device at {Address} on port {port}",
+                                address, port);
+
+                            return new Comma3(ipAddress) { SshClient = sshClient };
+                        }
+                        else
+                        {
+                            Log.Information("Connected to Comma2 device at {Address} on port {port}", address, port);
+                            return new Comma2(ipAddress) { SshClient = sshClient };
+                        }
+                    }
+                }
+                catch (Exception)
+                {
+                    return new UnknownDevice();
+                }
             }
             catch (Exception e)
             {
@@ -1039,7 +1064,7 @@ namespace OpenpilotSdk.Hardware
 
         public virtual async Task<ForkResult> ReinstallOpenpilotAsync(IProgress<InstallProgress>? progress = null)
         {
-            await ConnectAsync().ConfigureAwait(false);
+            await ConnectSshAsync().ConfigureAwait(false);
 
             using (var command = SshClient.CreateCommand("cd /data/openpilot && git remote get-url origin && git rev-parse --abbrev-ref HEAD"))
             {
@@ -1066,7 +1091,7 @@ namespace OpenpilotSdk.Hardware
 
         public virtual async Task<bool> FlashPandaAsync()
         {
-            await ConnectAsync().ConfigureAwait(false);
+            await ConnectSshAsync().ConfigureAwait(false);
 
             using (var command = SshClient.CreateCommand(FlashCommand))
             {
@@ -1085,7 +1110,7 @@ namespace OpenpilotSdk.Hardware
 
         public virtual async Task<bool> InstallEmuAsync()
         {
-            await ConnectAsync().ConfigureAwait(false);
+            await ConnectSshAsync().ConfigureAwait(false);
 
             using (var command = SshClient.CreateCommand(InstallEmuCommand))
             {
@@ -1097,7 +1122,7 @@ namespace OpenpilotSdk.Hardware
 
         public virtual async Task<bool> ShutdownAsync()
         {
-            await ConnectAsync().ConfigureAwait(false);
+            await ConnectSshAsync().ConfigureAwait(false);
 
             using (var command = SshClient.CreateCommand(ShutdownCommand))
             {
@@ -1109,7 +1134,7 @@ namespace OpenpilotSdk.Hardware
 
         public virtual async Task<bool> RebootAsync()
         {
-            await ConnectAsync().ConfigureAwait(false);
+            await ConnectSshAsync().ConfigureAwait(false);
 
             using (var command = SshClient.CreateCommand(RebootCommand))
             {
@@ -1126,7 +1151,7 @@ namespace OpenpilotSdk.Hardware
                 return await InstallForkAsync(username, branch, repository).ConfigureAwait(false);
             }
 
-            await ConnectAsync().ConfigureAwait(false);
+            await ConnectSshAsync().ConfigureAwait(false);
 
             var installCommand =
                 string.Format(@"cd /data && rm -rf openpilot ; git clone -b {1} --depth 1 --single-branch --progress --recurse-submodules --shallow-submodules https://github.com/{0}/{2}.git openpilot", username, branch, repository);
@@ -1183,7 +1208,7 @@ namespace OpenpilotSdk.Hardware
 
         public virtual async Task<ForkResult> InstallForkAsync(string username, string branch, string repository = "openpilot")
         {
-            await ConnectAsync().ConfigureAwait(false);
+            await ConnectSshAsync().ConfigureAwait(false);
 
             var installCommand =
                 string.Format(@"cd /data && rm -rf openpilot; git clone -b {1} --depth 1 --single-branch --recurse-submodules --shallow-submodules https://github.com/{0}/{2}.git openpilot", username, branch, repository);
@@ -1208,7 +1233,7 @@ namespace OpenpilotSdk.Hardware
 
         public async Task<ShellStream> GetShellStreamAsync()
         {
-            await ConnectAsync().ConfigureAwait(false);
+            await ConnectSshAsync().ConfigureAwait(false);
             var client = SshClient.CreateShellStream("xterm-256color", 0, 0, 0, 0, 1024);
             return client;
         }
@@ -1253,9 +1278,9 @@ namespace OpenpilotSdk.Hardware
             
         }
 
-        public async Task ConnectAsync(CancellationToken cancellationToken = default)
+        public async Task ConnectSftpAsync(CancellationToken cancellationToken = default)
         {
-            if(SftpClient != null && SftpClient.IsConnected)
+            if (SftpClient != null && SftpClient.IsConnected)
             {
                 return;
             }
@@ -1264,34 +1289,113 @@ namespace OpenpilotSdk.Hardware
 
             try
             {
-                if (SftpClient == null || !SftpClient.IsConnected)
+                var host = IpAddress.ToString();
+
+                await _maxConcurrentConnectionLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+                try
                 {
-
-                    var connectionInfo = new ConnectionInfo(IpAddress.ToString(), Port,
-                        "comma",
-                        new PrivateKeyAuthenticationMethod("comma",PrivateKeys));
-
-                    SftpClient = new SftpClient(connectionInfo)
+                    if (SftpClient == null || !SftpClient.IsConnected)
                     {
-                        KeepAliveInterval = TimeSpan.FromSeconds(10)
-                    };
-                    SshClient = new SshClient(connectionInfo)
-                    {
-                        KeepAliveInterval = TimeSpan.FromSeconds(10)
-                    };
-
-                    await _maxConcurrentConnectionLock.WaitAsync(cancellationToken).ConfigureAwait(false);
-                    try
-                    {
-                        await SftpClient.ConnectAsync(cancellationToken).ConfigureAwait(false);
-                        //SftpClient.ChangeDirectory("/data/openpilot/");
-                        
-                        await SshClient.ConnectAsync(cancellationToken).ConfigureAwait(false);
+                        SftpClient = new SftpClient(host, Port, "comma", PrivateKeys)
+                        {
+                            KeepAliveInterval = TimeSpan.FromSeconds(10)
+                        };
+                        await SftpClient.ConnectAsync(cancellationToken);
+                        IsAuthenticated = true;
                     }
-                    finally
+                }
+                finally
+                {
+                    _maxConcurrentConnectionLock.Release();
+                }
+            }
+            finally
+            {
+                _connectionLock.Release();
+            }
+        }
+
+        public async Task ConnectSshAsync(CancellationToken cancellationToken = default)
+        {
+            if (SshClient != null && SshClient.IsConnected)
+            {
+                return;
+            }
+
+            await _connectionLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+
+            try
+            {
+                var host = IpAddress.ToString();
+
+                await _maxConcurrentConnectionLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+                try
+                {
+                    if (SshClient == null || !SshClient.IsConnected)
                     {
-                        _maxConcurrentConnectionLock.Release();
+                        SshClient = new SshClient(host, Port, "comma", PrivateKeys)
+                        {
+                            KeepAliveInterval = TimeSpan.FromSeconds(10)
+                        };
+                        await SshClient.ConnectAsync(cancellationToken);
+                        IsAuthenticated = true;
                     }
+                }
+                finally
+                {
+                    _maxConcurrentConnectionLock.Release();
+                }
+            }
+            finally
+            {
+                _connectionLock.Release();
+            }
+        }
+
+        public async Task ConnectAsync(CancellationToken cancellationToken = default)
+        {
+            if(SftpClient != null && SftpClient.IsConnected && SshClient != null && SshClient.IsConnected)
+            {
+                return;
+            }
+
+            await _connectionLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+
+            try
+            {
+                var host = IpAddress.ToString();
+                List<Task> connectionTasks = new List<Task>(2);
+                
+                await _maxConcurrentConnectionLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+                try
+                {
+                    if (SshClient == null || !SshClient.IsConnected)
+                    {
+                        SshClient = new SshClient(host, Port, "comma", PrivateKeys)
+                        {
+                            KeepAliveInterval = TimeSpan.FromSeconds(10)
+                        };
+                        connectionTasks.Add(SshClient.ConnectAsync(cancellationToken));
+                    }
+
+                    if (SftpClient == null || !SftpClient.IsConnected)
+                    {
+                        SftpClient = new SftpClient(host, Port, "comma", PrivateKeys)
+                        {
+                            KeepAliveInterval = TimeSpan.FromSeconds(10)
+                        };
+                        connectionTasks.Add(SftpClient.ConnectAsync(cancellationToken));
+                    }
+
+                    if (connectionTasks.Count > 0)
+                    {
+                        await Task.WhenAll(connectionTasks).ConfigureAwait(false);
+                        IsAuthenticated = true;
+                    }
+                }
+                finally
+                {
+                    _maxConcurrentConnectionLock.Release();
                 }
             }
             finally

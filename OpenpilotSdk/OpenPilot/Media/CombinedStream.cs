@@ -74,7 +74,12 @@ namespace OpenpilotSdk.OpenPilot.Media
                     {
                         if (_currentStreamIndex == _streams.Length - 1)
                         {
+                            _position = _length.Value;
                             break;
+                        }
+                        if (_streams[_currentStreamIndex + 1].Position != 0)
+                        {
+                            _streams[_currentStreamIndex + 1].Position = 0;
                         }
                         CurrentStreamIndex++;
                         continue;
@@ -113,6 +118,10 @@ namespace OpenpilotSdk.OpenPilot.Media
                             _position = _length.Value;
                             break;
                         }
+                        if (_streams[_currentStreamIndex + 1].Position != 0)
+                        {
+                            _streams[_currentStreamIndex + 1].Position = 0;
+                        }   
                         CurrentStreamIndex++;
                         continue;
                     }
@@ -137,24 +146,24 @@ namespace OpenpilotSdk.OpenPilot.Media
             _semaphore.Wait();
             try
             {
-                long position;
+                long targetPosition;
 
                 switch (origin)
                 {
                     case SeekOrigin.Begin:
-                        position = Math.Max(0, Math.Min(_length.Value, offset));
+                        targetPosition = Math.Max(0, Math.Min(_length.Value, offset));
                         break;
                     case SeekOrigin.Current:
-                        position = Math.Max(0, Math.Min(_length.Value, _position + offset));
+                        targetPosition = Math.Max(0, Math.Min(_length.Value, _position + offset));
                         break;
                     case SeekOrigin.End:
-                        position = Math.Max(0, Math.Min(_length.Value, _length.Value + offset));
+                        targetPosition = Math.Max(0, Math.Min(_length.Value, _length.Value + offset));
                         break;
                     default:
                         throw new ArgumentException("Invalid seek origin.");
                 }
 
-                var remainingOffset = position;
+                var remainingOffset = targetPosition;
 
                 for (CurrentStreamIndex = 0; _currentStreamIndex < _streams.Length; CurrentStreamIndex++)
                 {
@@ -165,11 +174,14 @@ namespace OpenpilotSdk.OpenPilot.Media
                         {
                             _streams[i].Position = 0;
                         }
-                        _position = position;
+                        _position = targetPosition;
                         return _position;
                     }
-
-                    remainingOffset -= _streams[_currentStreamIndex].Length;
+                    else
+                    {
+                        _streams[_currentStreamIndex].Position = _streams[_currentStreamIndex].Length;
+                        remainingOffset -= _streams[_currentStreamIndex].Length;
+                    }
                 }
 
                 if (_streams.Length > 0)

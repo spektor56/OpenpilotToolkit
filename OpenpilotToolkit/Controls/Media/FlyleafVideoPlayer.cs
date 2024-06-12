@@ -132,17 +132,17 @@ public partial class FlyleafVideoPlayer : UserControl
             var combinedStreamCollection = new CombinedStreamCollection(openpilotDevice, route);
             _combinedStreamCollection = combinedStreamCollection;
 
-            materialComboBox1.Invoke((MethodInvoker)(() =>
+            cmbStreamType.Invoke((MethodInvoker)(() =>
             {
-                materialComboBox1.Items.Clear();
+                cmbStreamType.Items.Clear();
                 foreach (var cameraStreamsKey in combinedStreamCollection.CameraStreams.Keys)
                 {
-                    materialComboBox1.Items.Add(cameraStreamsKey);
+                    cmbStreamType.Items.Add(cameraStreamsKey);
                 }
 
-                materialComboBox1.SelectedValueChanged -= materialComboBox1_SelectedValueChanged;
-                materialComboBox1.SelectedIndex = 0;
-                materialComboBox1.SelectedValueChanged += materialComboBox1_SelectedValueChanged;
+                cmbStreamType.SelectedValueChanged -= cmbStreamType_SelectedValueChanged;
+                cmbStreamType.SelectedIndex = 0;
+                cmbStreamType.SelectedValueChanged += cmbStreamType_SelectedValueChanged;
             }));
 
             var firstStream = await combinedStreamCollection.CameraStreams.First().Value;
@@ -268,13 +268,19 @@ public partial class FlyleafVideoPlayer : UserControl
     {
     }
 
-    private async void materialComboBox1_SelectedValueChanged(object sender, EventArgs e)
+    private async void cmbStreamType_SelectedValueChanged(object sender, EventArgs e)
     {
-        var cameraType = (CameraType)materialComboBox1.SelectedItem;
+        var cameraType = (CameraType)cmbStreamType.SelectedItem;
         if (_combinedStreamCollection.CameraStreams.ContainsKey(cameraType))
         {
             var streamInitialized = _combinedStreamCollection.CameraStreams[cameraType].IsStarted;
             var stream = await _combinedStreamCollection.CameraStreams[cameraType];
+
+            if (stream == _currentStream)
+            {
+                return;
+            }
+
             if (!streamInitialized)
             {
                 stream.CurrentStreamIndexChanged += CombinedStreamOnCurrentStreamIndexChanged;
