@@ -9,8 +9,8 @@ namespace OpenpilotSdk.OpenPilot
         public IReadOnlyDictionary<CameraType,VideoSegment> RawVideoSegments { get; }
         public IReadOnlyDictionary<CameraType, VideoSegment> VideoSegments { get; }
 
-        public LogFile QuickLog { get; }
-        public LogFile RawLog { get; }
+        public LogFile? QuickLog { get; }
+        public LogFile? RawLog { get; }
 
         public string Path { get; }
 

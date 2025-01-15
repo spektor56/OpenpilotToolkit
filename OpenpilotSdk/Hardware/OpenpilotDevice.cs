@@ -5,7 +5,6 @@ using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Text.RegularExpressions;
 using FFMpegCore;
-using GeoCoordinatePortable;
 using NetTopologySuite.IO;
 using OpenpilotSdk.Git;
 using OpenpilotSdk.OpenPilot;
@@ -55,7 +54,7 @@ namespace OpenpilotSdk.Hardware
                 : Environment.GetFolderPath(Environment.SpecialFolder.Personal),
             "opensshkey");
 
-        private static readonly IPrivateKeySource[] PrivateKeys =
+        private static IPrivateKeySource[] _privateKeys =
         [
             new PrivateKeyFile(PrivateSshKeyFile)
         ];
@@ -325,7 +324,7 @@ namespace OpenpilotSdk.Hardware
                         {
                             if (Directory.Exists(Path.GetDirectoryName(path)))
                             {
-                                using (var sftpClient = new SftpClient(IpAddress.ToString(), "comma", PrivateKeys))
+                                using (var sftpClient = new SftpClient(IpAddress.ToString(), "comma", _privateKeys))
                                 {
                                     sftpClient.KeepAliveInterval = TimeSpan.FromSeconds(10);
                                     await _maxConcurrentConnectionLock.WaitAsync().ConfigureAwait(false);
@@ -448,11 +447,11 @@ namespace OpenpilotSdk.Hardware
             return null;
         }
 
-        public async Task<RouteSegment> GetRouteSegmentAsync(DateTime routeDate, int index)
+        public async Task<RouteSegment> GetRouteSegmentAsync(string route, int index)
         {
             await ConnectSftpAsync().ConfigureAwait(false);
 
-            var segmentFolder = Path.Combine(StorageDirectory, routeDate.ToUniversalTime().ToString("yyyy-MM-dd--HH-mm-ss--" + index, CultureInfo.InvariantCulture));
+            var segmentFolder = Path.Combine(StorageDirectory, route  + "--" + index);
             var segmentFiles = SftpClient.GetFilesAsync(segmentFolder);
 
             var rawVideoSegments = new Dictionary<CameraType, VideoSegment>();
@@ -559,12 +558,12 @@ namespace OpenpilotSdk.Hardware
             {
                 var firstWaypoint = waypoints.First();
                 waypointsToExport.Add(firstWaypoint);
-                var geoCoordinate = new GeoCoordinate(firstWaypoint.Latitude, firstWaypoint.Longitude,
+                var geoCoordinate = new GeoCoordinate.NetStandard2.GeoCoordinate(firstWaypoint.Latitude, firstWaypoint.Longitude,
                     (double)firstWaypoint.ElevationInMeters);
 
                 for (int i = 1; i < waypoints.Count-1; i++)
                 {
-                    var nextCoordinate = new GeoCoordinate(waypoints[i].Latitude, waypoints[i].Latitude,
+                    var nextCoordinate = new GeoCoordinate.NetStandard2.GeoCoordinate(waypoints[i].Latitude, waypoints[i].Latitude,
                         (double)waypoints[i].ElevationInMeters);
 
                     var distance = geoCoordinate.GetDistanceTo(nextCoordinate);
@@ -594,19 +593,21 @@ namespace OpenpilotSdk.Hardware
 
             var firmwares = new List<Firmware>();
 
-            await foreach (var route in GetRoutesAsync().ConfigureAwait(false))
+            if (SftpClient != null)
             {
-                foreach (var routeSegment in route.Segments.OrderBy(segment => segment.Index))
+                await foreach (var route in GetRoutesAsync().ConfigureAwait(false))
                 {
-                    var firmware = await OpenPilot.Logging.LogFile.GetFirmwareAsync(SftpClient.OpenRead(routeSegment.QuickLog.File.FullName), routeSegment.QuickLog.IsCompressed).ConfigureAwait(false);
-
-                    if (firmware != null && firmware.Any())
+                    foreach (var routeSegment in route.Segments.Where(segment => segment.QuickLog != null).OrderBy(segment => segment.Index))
                     {
-                        return firmware;
+                        var firmware = await OpenPilot.Logging.LogFile.GetFirmwareAsync(SftpClient.OpenRead(routeSegment.QuickLog.File.FullName), routeSegment.QuickLog.IsCompressed).ConfigureAwait(false);
+
+                        if (firmware != null && firmware.Any())
+                        {
+                            return firmware;
+                        }
                     }
                 }
             }
-
 
             return firmwares;
         }
@@ -671,20 +672,16 @@ namespace OpenpilotSdk.Hardware
         {
             await ConnectSftpAsync(cancellationToken).ConfigureAwait(false);
 
-            IOrderedEnumerable<IGrouping<DateTime, ISftpFile>>? directoryListing;
+            IOrderedEnumerable<IGrouping<string, ISftpFile>>? directoryListing;
 
             try
             {
                 directoryListing = (await SftpClient.ListDirectoryAsync(StorageDirectory, cancellationToken).ConfigureAwait(false))
                     .Where(dir => OpenPilot.Extensions.FolderRegex.IsMatch(dir.Name))
-                    .GroupBy(dir =>
-                    {
-                        return DateTime.ParseExact(dir.Name.AsSpan().Slice(0, 20), "yyyy-MM-dd--HH-mm-ss", CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal).ToUniversalTime(); 
-                    })
+                    .GroupBy(dir => dir.Name.Substring(0,20))
                     .OrderByDescending(dir =>
                     {
-                        var date = dir.Key;
-                        return date;
+                        return dir.Key;
                     });
             }
             catch (SftpPathNotFoundException)
@@ -694,16 +691,13 @@ namespace OpenpilotSdk.Hardware
 
             foreach (var segmentGroup in directoryListing)
             {
-                var routeDate = segmentGroup.Key;
-
                 var segmentTasks = segmentGroup.Select(segmentFolder => {
                     var segmentIndex = int.Parse(segmentFolder.Name.AsSpan().Slice(22));
-                    return GetRouteSegmentAsync(routeDate, segmentIndex);
+                    return GetRouteSegmentAsync(segmentGroup.Key, segmentIndex);
                 }).ToArray();
 
                 var segments = await Task.WhenAll(segmentTasks).ConfigureAwait(false);
-                
-                yield return new Route(routeDate, segments.OrderBy(segment => segment.Index).ToList());
+                yield return new Route(segmentGroup.First().LastWriteTimeUtc, segments.OrderBy(segment => segment.Index).ToList());
             }
         }
 
@@ -861,6 +855,11 @@ namespace OpenpilotSdk.Hardware
 
         public static async IAsyncEnumerable<OpenpilotDevice> DiscoverAsync()
         {
+            _privateKeys =
+            [
+                new PrivateKeyFile(PrivateSshKeyFile)
+            ];
+
             Log.Information("Scanning network for devices.");
             var connectionRequests = new List<Task<OpenpilotDevice?>>();
             var addressList = new HashSet<string>();
@@ -1008,7 +1007,7 @@ namespace OpenpilotSdk.Hardware
                 }
                 
                 //~174.320 ms
-                var sshClient = new SshClient(address, port, "comma", PrivateKeys)
+                var sshClient = new SshClient(address, port, "comma", _privateKeys)
                 {
                     KeepAliveInterval = TimeSpan.FromSeconds(10)
                 };
@@ -1256,7 +1255,7 @@ namespace OpenpilotSdk.Hardware
             {
                 if (SftpClient == null || !SftpClient.IsConnected)
                 {
-                    var connectionInfo = new ConnectionInfo(IpAddress.ToString(), Port, "comma", new PrivateKeyAuthenticationMethod("comma", PrivateKeys));
+                    var connectionInfo = new ConnectionInfo(IpAddress.ToString(), Port, "comma", new PrivateKeyAuthenticationMethod("comma", _privateKeys));
 
                     SftpClient = new SftpClient(connectionInfo)
                     {
@@ -1296,7 +1295,7 @@ namespace OpenpilotSdk.Hardware
                 {
                     if (SftpClient == null || !SftpClient.IsConnected)
                     {
-                        SftpClient = new SftpClient(host, Port, "comma", PrivateKeys)
+                        SftpClient = new SftpClient(host, Port, "comma", _privateKeys)
                         {
                             KeepAliveInterval = TimeSpan.FromSeconds(10)
                         };
@@ -1333,7 +1332,7 @@ namespace OpenpilotSdk.Hardware
                 {
                     if (SshClient == null || !SshClient.IsConnected)
                     {
-                        SshClient = new SshClient(host, Port, "comma", PrivateKeys)
+                        SshClient = new SshClient(host, Port, "comma", _privateKeys)
                         {
                             KeepAliveInterval = TimeSpan.FromSeconds(10)
                         };
@@ -1371,7 +1370,7 @@ namespace OpenpilotSdk.Hardware
                 {
                     if (SshClient == null || !SshClient.IsConnected)
                     {
-                        SshClient = new SshClient(host, Port, "comma", PrivateKeys)
+                        SshClient = new SshClient(host, Port, "comma", _privateKeys)
                         {
                             KeepAliveInterval = TimeSpan.FromSeconds(10)
                         };
@@ -1380,7 +1379,7 @@ namespace OpenpilotSdk.Hardware
 
                     if (SftpClient == null || !SftpClient.IsConnected)
                     {
-                        SftpClient = new SftpClient(host, Port, "comma", PrivateKeys)
+                        SftpClient = new SftpClient(host, Port, "comma", _privateKeys)
                         {
                             KeepAliveInterval = TimeSpan.FromSeconds(10)
                         };

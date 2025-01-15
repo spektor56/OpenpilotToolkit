@@ -24,6 +24,22 @@
 		<SelfContained Condition="'$(SelfContained)' == ''">false</SelfContained>
 	</PropertyGroup>
 
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+	  <NoWarn>1701;1702;WFO1000</NoWarn>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
+	  <NoWarn>1701;1702;WFO1000</NoWarn>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+	  <NoWarn>1701;1702;WFO1000</NoWarn>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
+	  <NoWarn>1701;1702;WFO1000</NoWarn>
+	</PropertyGroup>
+
 	<ItemGroup>
 	  <Compile Remove="Controls\Terminal\xterm-addon-fit\**" />
 	  <Compile Remove="Controls\Terminal\xterm-addon-webgl\**" />
@@ -77,7 +93,6 @@
 	  <None Remove="Controls\Terminal\xterm\src\browser\input\MoveToCell.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\browser\Lifecycle.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\browser\Linkifier.ts" />
-	  <None Remove="Controls\Terminal\xterm\src\browser\Linkifier2.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\browser\LocalizableStrings.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\browser\OscLinkProvider.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\browser\public\Terminal.ts" />
@@ -92,12 +107,10 @@
 	  <None Remove="Controls\Terminal\xterm\src\browser\renderer\shared\CursorBlinkStateManager.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\browser\renderer\shared\CustomGlyphs.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\browser\renderer\shared\DevicePixelObserver.ts" />
-	  <None Remove="Controls\Terminal\xterm\src\browser\renderer\shared\README.md" />
 	  <None Remove="Controls\Terminal\xterm\src\browser\renderer\shared\RendererUtils.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\browser\renderer\shared\SelectionRenderModel.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\browser\renderer\shared\TextureAtlas.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\browser\renderer\shared\Types.d.ts" />
-	  <None Remove="Controls\Terminal\xterm\src\browser\ScreenDprMonitor.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\browser\selection\SelectionModel.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\browser\selection\Types.d.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\browser\services\CharacterJoinerService.ts" />
@@ -168,8 +181,6 @@
 	  <None Remove="Controls\Terminal\xterm\src\common\TypedArrayUtils.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\common\Types.d.ts" />
 	  <None Remove="Controls\Terminal\xterm\src\common\WindowsMode.ts" />
-	  <None Remove="Controls\Terminal\xterm\src\headless\public\Terminal.ts" />
-	  <None Remove="Controls\Terminal\xterm\src\headless\Terminal.ts" />
 	  <None Remove="Controls\Terminal\xterm\typings\xterm.d.ts" />
 	</ItemGroup>
 
@@ -343,9 +354,6 @@
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </Content>
 	  <Content Include="Controls\Terminal\xterm\src\browser\renderer\shared\DevicePixelObserver.ts">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
-	  <Content Include="Controls\Terminal\xterm\src\browser\renderer\shared\README.md">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </Content>
 	  <Content Include="Controls\Terminal\xterm\src\browser\renderer\shared\RendererUtils.ts">
@@ -570,30 +578,25 @@
 	  <Content Include="Controls\Terminal\xterm\src\common\WindowsMode.ts">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </Content>
-	  <Content Include="Controls\Terminal\xterm\src\headless\public\Terminal.ts">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
-	  <Content Include="Controls\Terminal\xterm\src\headless\Terminal.ts">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
 	  <Content Include="Controls\Terminal\xterm\typings\xterm.d.ts">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </Content>
 	</ItemGroup>
 
   <ItemGroup>
-	<PackageReference Include="CefSharp.WinForms.NETCore" Version="125.0.210" />
+	<PackageReference Include="CefSharp.WinForms.NETCore" Version="131.3.50" />
+	<PackageReference Include="DnsClient" Version="1.8.0" />
 	<PackageReference Include="FFMpegCore" Version="5.1.0" />
 	<PackageReference Include="FlyleafLib" Version="3.7.46" />
 	<PackageReference Include="LibUsbDotNet" Version="2.2.29" />
-    <PackageReference Include="Microsoft.Windows.Compatibility" Version="9.0.0-preview.5.24306.8" />
+    <PackageReference Include="Microsoft.Windows.Compatibility" Version="9.0.0" />
     <PackageReference Include="Nito.AsyncEx.Coordination" Version="5.1.2" />
-    <PackageReference Include="Octokit" Version="12.0.0" />
-    <PackageReference Include="Serilog" Version="4.0.0" />
-    <PackageReference Include="Serilog.Sinks.Async" Version="2.0.0" />
-    <PackageReference Include="Serilog.Sinks.Debug" Version="2.0.0" />
-    <PackageReference Include="Serilog.Sinks.File" Version="5.0.1-dev-00972" />
-    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.4" />
+    <PackageReference Include="Octokit" Version="14.0.0" />
+    <PackageReference Include="Serilog" Version="4.2.0" />
+    <PackageReference Include="Serilog.Sinks.Async" Version="2.1.0" />
+    <PackageReference Include="Serilog.Sinks.Debug" Version="3.0.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.6" />
   </ItemGroup>
 
   <ItemGroup>

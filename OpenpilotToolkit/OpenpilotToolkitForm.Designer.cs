@@ -1684,7 +1684,6 @@ namespace OpenpilotToolkit
             cmbDevices.Depth = 0;
             cmbDevices.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawVariable;
             cmbDevices.DropDownHeight = 118;
-            cmbDevices.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             cmbDevices.DropDownWidth = 121;
             cmbDevices.Font = new System.Drawing.Font("Microsoft Sans Serif", 14F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Pixel);
             cmbDevices.ForeColor = System.Drawing.Color.FromArgb(222, 0, 0, 0);
@@ -1697,6 +1696,7 @@ namespace OpenpilotToolkit
             cmbDevices.MouseState = MaterialSkin.MouseState.OUT;
             cmbDevices.Name = "cmbDevices";
             cmbDevices.Size = new System.Drawing.Size(266, 35);
+            cmbDevices.StartIndex = 0;
             cmbDevices.TabIndex = 0;
             cmbDevices.UseTallSize = false;
             cmbDevices.SelectedIndexChanged += cmbDevices_SelectedIndexChanged;
