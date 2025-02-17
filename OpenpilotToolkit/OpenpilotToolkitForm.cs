@@ -1,8 +1,11 @@
 ﻿using CefSharp;
 using CefSharp.WinForms;
+using FlyleafLib;
+using FlyleafLib.MediaPlayer;
 using MaterialSkin;
 using MaterialSkin.Controls;
 using NetTopologySuite.IO;
+using Octokit;
 using OpenpilotSdk.Git;
 using OpenpilotSdk.Hardware;
 using OpenpilotSdk.OpenPilot;
@@ -28,13 +31,10 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using Octokit;
 using Exception = System.Exception;
 using FileMode = System.IO.FileMode;
-using OpenpilotDevice = OpenpilotSdk.Hardware.OpenpilotDevice;
 using MethodInvoker = System.Windows.Forms.MethodInvoker;
-using FlyleafLib.MediaPlayer;
-using FlyleafLib;
+using OpenpilotDevice = OpenpilotSdk.Hardware.OpenpilotDevice;
 
 namespace OpenpilotToolkit
 {
@@ -64,6 +64,7 @@ namespace OpenpilotToolkit
         public OpenpilotToolkitForm()
         {
             InitializeComponent();
+            AutoScaleMode = AutoScaleMode.None;
 
             tcSettings.Controls.Remove(tpFlash);
             tcSettings.Controls.Remove(tabPage1);
@@ -107,7 +108,7 @@ namespace OpenpilotToolkit
             var terminalPath = Path.Combine(AppContext.BaseDirectory, @"Controls\Terminal\index.html");
             _sshTerminal =
                 new ChromiumWebBrowser(terminalPath);
-
+            
             //Terminal messages from C# instead of webbrowser
             //sshTerminal.KeyboardHandler = new TerminalKeyboardHandler();
             //sshTerminal.PreviewKeyDown += txtSshCommand_PreviewKeyDown;

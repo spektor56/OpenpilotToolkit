@@ -55,7 +55,7 @@ namespace OpenpilotToolkit
             tpExport = new System.Windows.Forms.TabPage();
             tlpTasks = new System.Windows.Forms.TableLayoutPanel();
             groupBox3 = new System.Windows.Forms.GroupBox();
-            dgvRouteInfo = new Controls.MaterialSkinDataGridView();
+            dgvRouteInfo = new OpenpilotToolkit.Controls.MaterialSkinDataGridView();
             colProperty = new System.Windows.Forms.DataGridViewTextBoxColumn();
             colValue = new System.Windows.Forms.DataGridViewTextBoxColumn();
             groupBox2 = new System.Windows.Forms.GroupBox();
@@ -65,7 +65,7 @@ namespace OpenpilotToolkit
             panel2 = new System.Windows.Forms.Panel();
             btnOsmUpload = new MaterialButton();
             btnDeleteRoutes = new MaterialButton();
-            flyleafVideoPlayer = new Controls.Media.FlyleafVideoPlayer();
+            flyleafVideoPlayer = new OpenpilotToolkit.Controls.Media.FlyleafVideoPlayer();
             tpRemote = new System.Windows.Forms.TabPage();
             btnUpdate = new MaterialButton();
             materialButton1 = new MaterialButton();
@@ -89,7 +89,7 @@ namespace OpenpilotToolkit
             tlpExplorerTasks = new System.Windows.Forms.TableLayoutPanel();
             panel3 = new System.Windows.Forms.Panel();
             txtWorkingDirectory = new MaterialTextBox();
-            dgvExplorer = new Controls.MaterialSkinDataGridView();
+            dgvExplorer = new OpenpilotToolkit.Controls.MaterialSkinDataGridView();
             colName = new System.Windows.Forms.DataGridViewTextBoxColumn();
             colSize = new System.Windows.Forms.DataGridViewTextBoxColumn();
             colType = new System.Windows.Forms.DataGridViewTextBoxColumn();
@@ -155,11 +155,11 @@ namespace OpenpilotToolkit
             // 
             lbRoutes.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
             lbRoutes.FormattingEnabled = true;
-            lbRoutes.Location = new System.Drawing.Point(217, 123);
-            lbRoutes.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            lbRoutes.Location = new System.Drawing.Point(248, 164);
+            lbRoutes.Margin = new System.Windows.Forms.Padding(5, 4, 5, 4);
             lbRoutes.Name = "lbRoutes";
             lbRoutes.SelectionMode = System.Windows.Forms.SelectionMode.MultiExtended;
-            lbRoutes.Size = new System.Drawing.Size(143, 364);
+            lbRoutes.Size = new System.Drawing.Size(163, 504);
             lbRoutes.TabIndex = 4;
             lbRoutes.SelectedIndexChanged += LbRoutesSelectedIndexChanged;
             lbRoutes.PreviewKeyDown += LbRoutesPreviewKeyDown;
@@ -173,8 +173,8 @@ namespace OpenpilotToolkit
             btnBrowse.Depth = 0;
             btnBrowse.HighEmphasis = true;
             btnBrowse.Icon = null;
-            btnBrowse.Location = new System.Drawing.Point(1006, 9);
-            btnBrowse.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+            btnBrowse.Location = new System.Drawing.Point(1163, 12);
+            btnBrowse.Margin = new System.Windows.Forms.Padding(5, 8, 5, 8);
             btnBrowse.MouseState = MaterialSkin.MouseState.HOVER;
             btnBrowse.Name = "btnBrowse";
             btnBrowse.NoAccentTextColor = System.Drawing.Color.FromArgb(63, 81, 181);
@@ -196,12 +196,12 @@ namespace OpenpilotToolkit
             btnRefreshVideos.Depth = 0;
             btnRefreshVideos.HighEmphasis = true;
             btnRefreshVideos.Icon = null;
-            btnRefreshVideos.Location = new System.Drawing.Point(4, 6);
-            btnRefreshVideos.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+            btnRefreshVideos.Location = new System.Drawing.Point(5, 8);
+            btnRefreshVideos.Margin = new System.Windows.Forms.Padding(5, 8, 5, 8);
             btnRefreshVideos.MouseState = MaterialSkin.MouseState.HOVER;
             btnRefreshVideos.Name = "btnRefreshVideos";
             btnRefreshVideos.NoAccentTextColor = System.Drawing.Color.FromArgb(63, 81, 181);
-            btnRefreshVideos.Size = new System.Drawing.Size(196, 36);
+            btnRefreshVideos.Size = new System.Drawing.Size(224, 48);
             btnRefreshVideos.TabIndex = 0;
             btnRefreshVideos.Text = "&Refresh Route List";
             btnRefreshVideos.Type = MaterialButton.MaterialButtonType.Contained;
@@ -220,12 +220,12 @@ namespace OpenpilotToolkit
             btnExportMapillary.Enabled = false;
             btnExportMapillary.HighEmphasis = true;
             btnExportMapillary.Icon = null;
-            btnExportMapillary.Location = new System.Drawing.Point(4, 246);
-            btnExportMapillary.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+            btnExportMapillary.Location = new System.Drawing.Point(5, 328);
+            btnExportMapillary.Margin = new System.Windows.Forms.Padding(5, 8, 5, 8);
             btnExportMapillary.MouseState = MaterialSkin.MouseState.HOVER;
             btnExportMapillary.Name = "btnExportMapillary";
             btnExportMapillary.NoAccentTextColor = System.Drawing.Color.FromArgb(63, 81, 181);
-            btnExportMapillary.Size = new System.Drawing.Size(194, 36);
+            btnExportMapillary.Size = new System.Drawing.Size(222, 48);
             btnExportMapillary.TabIndex = 5;
             btnExportMapillary.Text = "&Mapillary Export";
             btnExportMapillary.Type = MaterialButton.MaterialButtonType.Contained;
@@ -243,12 +243,12 @@ namespace OpenpilotToolkit
             btnExportGpx.Depth = 0;
             btnExportGpx.HighEmphasis = true;
             btnExportGpx.Icon = null;
-            btnExportGpx.Location = new System.Drawing.Point(4, 150);
-            btnExportGpx.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+            btnExportGpx.Location = new System.Drawing.Point(5, 200);
+            btnExportGpx.Margin = new System.Windows.Forms.Padding(5, 8, 5, 8);
             btnExportGpx.MouseState = MaterialSkin.MouseState.HOVER;
             btnExportGpx.Name = "btnExportGpx";
             btnExportGpx.NoAccentTextColor = System.Drawing.Color.FromArgb(63, 81, 181);
-            btnExportGpx.Size = new System.Drawing.Size(194, 36);
+            btnExportGpx.Size = new System.Drawing.Size(222, 48);
             btnExportGpx.TabIndex = 3;
             btnExportGpx.Text = "&GPX Export";
             btnExportGpx.Type = MaterialButton.MaterialButtonType.Contained;
@@ -266,12 +266,12 @@ namespace OpenpilotToolkit
             btnExport.Depth = 0;
             btnExport.HighEmphasis = true;
             btnExport.Icon = null;
-            btnExport.Location = new System.Drawing.Point(4, 54);
-            btnExport.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+            btnExport.Location = new System.Drawing.Point(5, 72);
+            btnExport.Margin = new System.Windows.Forms.Padding(5, 8, 5, 8);
             btnExport.MouseState = MaterialSkin.MouseState.HOVER;
             btnExport.Name = "btnExport";
             btnExport.NoAccentTextColor = System.Drawing.Color.FromArgb(63, 81, 181);
-            btnExport.Size = new System.Drawing.Size(194, 36);
+            btnExport.Size = new System.Drawing.Size(222, 48);
             btnExport.TabIndex = 1;
             btnExport.Text = "&Export Selected Route(s)";
             btnExport.Type = MaterialButton.MaterialButtonType.Contained;
@@ -289,12 +289,12 @@ namespace OpenpilotToolkit
             btnScan.Depth = 0;
             btnScan.HighEmphasis = true;
             btnScan.Icon = null;
-            btnScan.Location = new System.Drawing.Point(558, 2);
-            btnScan.Margin = new System.Windows.Forms.Padding(2);
+            btnScan.Location = new System.Drawing.Point(639, 3);
+            btnScan.Margin = new System.Windows.Forms.Padding(2, 3, 2, 3);
             btnScan.MouseState = MaterialSkin.MouseState.HOVER;
             btnScan.Name = "btnScan";
             btnScan.NoAccentTextColor = System.Drawing.Color.FromArgb(63, 81, 181);
-            btnScan.Size = new System.Drawing.Size(177, 36);
+            btnScan.Size = new System.Drawing.Size(202, 48);
             btnScan.TabIndex = 1;
             btnScan.Text = "Scan For OP Devices";
             btnScan.Type = MaterialButton.MaterialButtonType.Contained;
@@ -309,15 +309,16 @@ namespace OpenpilotToolkit
             txtExportFolder.AnimateReadOnly = false;
             txtExportFolder.BorderStyle = System.Windows.Forms.BorderStyle.None;
             txtExportFolder.Depth = 0;
-            txtExportFolder.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F);
+            txtExportFolder.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.6F);
             txtExportFolder.Hint = "Export Folder";
             txtExportFolder.LeadingIcon = null;
-            txtExportFolder.Location = new System.Drawing.Point(6, 6);
+            txtExportFolder.Location = new System.Drawing.Point(7, 8);
+            txtExportFolder.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             txtExportFolder.MaxLength = 50;
             txtExportFolder.MouseState = MaterialSkin.MouseState.OUT;
             txtExportFolder.Multiline = false;
             txtExportFolder.Name = "txtExportFolder";
-            txtExportFolder.Size = new System.Drawing.Size(1002, 50);
+            txtExportFolder.Size = new System.Drawing.Size(1145, 50);
             txtExportFolder.TabIndex = 0;
             txtExportFolder.Text = "C:\\Openpilot";
             txtExportFolder.TrailingIcon = null;
@@ -337,12 +338,12 @@ namespace OpenpilotToolkit
             adbConnected.Icon = Properties.Resources.outline_adb_white_24dp;
             adbConnected.ImageKey = "outline_adb_white_24dp.png";
             adbConnected.ImageList = ilTabs;
-            adbConnected.Location = new System.Drawing.Point(783, 2);
-            adbConnected.Margin = new System.Windows.Forms.Padding(2);
+            adbConnected.Location = new System.Drawing.Point(895, 3);
+            adbConnected.Margin = new System.Windows.Forms.Padding(2, 3, 2, 3);
             adbConnected.MouseState = MaterialSkin.MouseState.HOVER;
             adbConnected.Name = "adbConnected";
             adbConnected.NoAccentTextColor = System.Drawing.Color.FromArgb(63, 81, 181);
-            adbConnected.Size = new System.Drawing.Size(40, 36);
+            adbConnected.Size = new System.Drawing.Size(46, 48);
             adbConnected.TabIndex = 3;
             adbConnected.Type = MaterialButton.MaterialButtonType.Contained;
             adbConnected.UseAccentColor = false;
@@ -378,12 +379,12 @@ namespace OpenpilotToolkit
             themeButton.DrawShadows = false;
             themeButton.HighEmphasis = true;
             themeButton.Icon = Properties.Resources.light_mode_white;
-            themeButton.Location = new System.Drawing.Point(827, 2);
-            themeButton.Margin = new System.Windows.Forms.Padding(2);
+            themeButton.Location = new System.Drawing.Point(945, 3);
+            themeButton.Margin = new System.Windows.Forms.Padding(2, 3, 2, 3);
             themeButton.MouseState = MaterialSkin.MouseState.HOVER;
             themeButton.Name = "themeButton";
             themeButton.NoAccentTextColor = System.Drawing.Color.FromArgb(63, 81, 181);
-            themeButton.Size = new System.Drawing.Size(40, 36);
+            themeButton.Size = new System.Drawing.Size(46, 48);
             themeButton.TabIndex = 4;
             themeButton.Type = MaterialButton.MaterialButtonType.Contained;
             themeButton.UseAccentColor = false;
@@ -407,12 +408,13 @@ namespace OpenpilotToolkit
             tcSettings.Depth = 0;
             tcSettings.Dock = System.Windows.Forms.DockStyle.Fill;
             tcSettings.ImageList = ilTabs;
-            tcSettings.Location = new System.Drawing.Point(3, 64);
+            tcSettings.Location = new System.Drawing.Point(3, 85);
+            tcSettings.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             tcSettings.MouseState = MaterialSkin.MouseState.HOVER;
             tcSettings.Multiline = true;
             tcSettings.Name = "tcSettings";
             tcSettings.SelectedIndex = 0;
-            tcSettings.Size = new System.Drawing.Size(1110, 537);
+            tcSettings.Size = new System.Drawing.Size(1269, 716);
             tcSettings.TabIndex = 1;
             tcSettings.Selected += tcSettings_Selected;
             // 
@@ -429,9 +431,10 @@ namespace OpenpilotToolkit
             tpExport.Controls.Add(btnBrowse);
             tpExport.ImageKey = "outline_file_download_white_24dp.png";
             tpExport.Location = new System.Drawing.Point(4, 31);
+            tpExport.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             tpExport.Name = "tpExport";
-            tpExport.Padding = new System.Windows.Forms.Padding(3);
-            tpExport.Size = new System.Drawing.Size(1102, 502);
+            tpExport.Padding = new System.Windows.Forms.Padding(3, 4, 3, 4);
+            tpExport.Size = new System.Drawing.Size(1261, 681);
             tpExport.TabIndex = 0;
             tpExport.Text = "Export";
             // 
@@ -442,21 +445,23 @@ namespace OpenpilotToolkit
             tlpTasks.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             tlpTasks.ColumnCount = 1;
             tlpTasks.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
-            tlpTasks.Location = new System.Drawing.Point(908, 239);
-            tlpTasks.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            tlpTasks.Location = new System.Drawing.Point(1038, 319);
+            tlpTasks.Margin = new System.Windows.Forms.Padding(5, 4, 5, 4);
             tlpTasks.Name = "tlpTasks";
             tlpTasks.RowCount = 1;
             tlpTasks.RowStyles.Add(new System.Windows.Forms.RowStyle());
-            tlpTasks.Size = new System.Drawing.Size(187, 257);
+            tlpTasks.Size = new System.Drawing.Size(214, 354);
             tlpTasks.TabIndex = 16;
             // 
             // groupBox3
             // 
             groupBox3.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
             groupBox3.Controls.Add(dgvRouteInfo);
-            groupBox3.Location = new System.Drawing.Point(908, 123);
+            groupBox3.Location = new System.Drawing.Point(1038, 164);
+            groupBox3.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             groupBox3.Name = "groupBox3";
-            groupBox3.Size = new System.Drawing.Size(187, 110);
+            groupBox3.Padding = new System.Windows.Forms.Padding(3, 4, 3, 4);
+            groupBox3.Size = new System.Drawing.Size(214, 147);
             groupBox3.TabIndex = 6;
             groupBox3.TabStop = false;
             groupBox3.Text = "Route Info";
@@ -495,14 +500,16 @@ namespace OpenpilotToolkit
             dgvRouteInfo.EnableHeadersVisualStyles = false;
             dgvRouteInfo.Font = new System.Drawing.Font("Segoe UI", 9F);
             dgvRouteInfo.GridColor = System.Drawing.Color.FromArgb(225, 225, 225);
-            dgvRouteInfo.Location = new System.Drawing.Point(6, 22);
+            dgvRouteInfo.Location = new System.Drawing.Point(7, 29);
+            dgvRouteInfo.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             dgvRouteInfo.MouseState = MaterialSkin.MouseState.HOVER;
             dgvRouteInfo.Name = "dgvRouteInfo";
             dgvRouteInfo.ReadOnly = true;
             dgvRouteInfo.RowHeadersVisible = false;
+            dgvRouteInfo.RowHeadersWidth = 51;
             dgvRouteInfo.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
             dgvRouteInfo.ShowCellToolTips = false;
-            dgvRouteInfo.Size = new System.Drawing.Size(175, 78);
+            dgvRouteInfo.Size = new System.Drawing.Size(200, 104);
             dgvRouteInfo.TabIndex = 0;
             // 
             // colProperty
@@ -510,9 +517,10 @@ namespace OpenpilotToolkit
             colProperty.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.AllCells;
             colProperty.DataPropertyName = "Key";
             colProperty.HeaderText = "Property";
+            colProperty.MinimumWidth = 6;
             colProperty.Name = "colProperty";
             colProperty.ReadOnly = true;
-            colProperty.Width = 5;
+            colProperty.Width = 6;
             // 
             // colValue
             // 
@@ -521,6 +529,7 @@ namespace OpenpilotToolkit
             dataGridViewCellStyle2.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleRight;
             colValue.DefaultCellStyle = dataGridViewCellStyle2;
             colValue.HeaderText = "Value";
+            colValue.MinimumWidth = 6;
             colValue.Name = "colValue";
             colValue.ReadOnly = true;
             // 
@@ -530,9 +539,11 @@ namespace OpenpilotToolkit
             groupBox2.Controls.Add(cbFrontCamera);
             groupBox2.Controls.Add(cbDriverCamera);
             groupBox2.Controls.Add(cbWideCamera);
-            groupBox2.Location = new System.Drawing.Point(217, 62);
+            groupBox2.Location = new System.Drawing.Point(248, 83);
+            groupBox2.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             groupBox2.Name = "groupBox2";
-            groupBox2.Size = new System.Drawing.Size(878, 55);
+            groupBox2.Padding = new System.Windows.Forms.Padding(3, 4, 3, 4);
+            groupBox2.Size = new System.Drawing.Size(1003, 73);
             groupBox2.TabIndex = 3;
             groupBox2.TabStop = false;
             groupBox2.Text = "Export Camera";
@@ -543,7 +554,7 @@ namespace OpenpilotToolkit
             cbFrontCamera.Checked = true;
             cbFrontCamera.CheckState = System.Windows.Forms.CheckState.Checked;
             cbFrontCamera.Depth = 0;
-            cbFrontCamera.Location = new System.Drawing.Point(3, 15);
+            cbFrontCamera.Location = new System.Drawing.Point(3, 20);
             cbFrontCamera.Margin = new System.Windows.Forms.Padding(0);
             cbFrontCamera.MouseLocation = new System.Drawing.Point(-1, -1);
             cbFrontCamera.MouseState = MaterialSkin.MouseState.HOVER;
@@ -559,7 +570,7 @@ namespace OpenpilotToolkit
             // 
             cbDriverCamera.AutoSize = true;
             cbDriverCamera.Depth = 0;
-            cbDriverCamera.Location = new System.Drawing.Point(145, 15);
+            cbDriverCamera.Location = new System.Drawing.Point(166, 20);
             cbDriverCamera.Margin = new System.Windows.Forms.Padding(0);
             cbDriverCamera.MouseLocation = new System.Drawing.Point(-1, -1);
             cbDriverCamera.MouseState = MaterialSkin.MouseState.HOVER;
@@ -575,7 +586,7 @@ namespace OpenpilotToolkit
             // 
             cbWideCamera.AutoSize = true;
             cbWideCamera.Depth = 0;
-            cbWideCamera.Location = new System.Drawing.Point(75, 15);
+            cbWideCamera.Location = new System.Drawing.Point(86, 20);
             cbWideCamera.Margin = new System.Windows.Forms.Padding(0);
             cbWideCamera.MouseLocation = new System.Drawing.Point(-1, -1);
             cbWideCamera.MouseState = MaterialSkin.MouseState.HOVER;
@@ -595,9 +606,10 @@ namespace OpenpilotToolkit
             panel2.Controls.Add(btnExportMapillary);
             panel2.Controls.Add(btnExportGpx);
             panel2.Controls.Add(btnExport);
-            panel2.Location = new System.Drawing.Point(6, 62);
+            panel2.Location = new System.Drawing.Point(7, 83);
+            panel2.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             panel2.Name = "panel2";
-            panel2.Size = new System.Drawing.Size(204, 434);
+            panel2.Size = new System.Drawing.Size(233, 579);
             panel2.TabIndex = 2;
             panel2.Paint += panel2_Paint;
             // 
@@ -611,12 +623,12 @@ namespace OpenpilotToolkit
             btnOsmUpload.Depth = 0;
             btnOsmUpload.HighEmphasis = true;
             btnOsmUpload.Icon = null;
-            btnOsmUpload.Location = new System.Drawing.Point(4, 198);
-            btnOsmUpload.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+            btnOsmUpload.Location = new System.Drawing.Point(5, 264);
+            btnOsmUpload.Margin = new System.Windows.Forms.Padding(5, 8, 5, 8);
             btnOsmUpload.MouseState = MaterialSkin.MouseState.HOVER;
             btnOsmUpload.Name = "btnOsmUpload";
             btnOsmUpload.NoAccentTextColor = System.Drawing.Color.FromArgb(63, 81, 181);
-            btnOsmUpload.Size = new System.Drawing.Size(194, 36);
+            btnOsmUpload.Size = new System.Drawing.Size(222, 48);
             btnOsmUpload.TabIndex = 4;
             btnOsmUpload.Text = "Upload GPS to &OSM";
             btnOsmUpload.Type = MaterialButton.MaterialButtonType.Contained;
@@ -634,12 +646,12 @@ namespace OpenpilotToolkit
             btnDeleteRoutes.Depth = 0;
             btnDeleteRoutes.HighEmphasis = true;
             btnDeleteRoutes.Icon = null;
-            btnDeleteRoutes.Location = new System.Drawing.Point(4, 102);
-            btnDeleteRoutes.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+            btnDeleteRoutes.Location = new System.Drawing.Point(5, 136);
+            btnDeleteRoutes.Margin = new System.Windows.Forms.Padding(5, 8, 5, 8);
             btnDeleteRoutes.MouseState = MaterialSkin.MouseState.HOVER;
             btnDeleteRoutes.Name = "btnDeleteRoutes";
             btnDeleteRoutes.NoAccentTextColor = System.Drawing.Color.FromArgb(63, 81, 181);
-            btnDeleteRoutes.Size = new System.Drawing.Size(194, 36);
+            btnDeleteRoutes.Size = new System.Drawing.Size(222, 48);
             btnDeleteRoutes.TabIndex = 2;
             btnDeleteRoutes.Text = "&Delete Selected Route(s)";
             btnDeleteRoutes.Type = MaterialButton.MaterialButtonType.Contained;
@@ -650,9 +662,10 @@ namespace OpenpilotToolkit
             // flyleafVideoPlayer
             // 
             flyleafVideoPlayer.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
-            flyleafVideoPlayer.Location = new System.Drawing.Point(368, 123);
+            flyleafVideoPlayer.Location = new System.Drawing.Point(421, 164);
+            flyleafVideoPlayer.Margin = new System.Windows.Forms.Padding(3, 5, 3, 5);
             flyleafVideoPlayer.Name = "flyleafVideoPlayer";
-            flyleafVideoPlayer.Size = new System.Drawing.Size(532, 373);
+            flyleafVideoPlayer.Size = new System.Drawing.Size(608, 509);
             flyleafVideoPlayer.TabIndex = 17;
             // 
             // tpRemote
@@ -666,10 +679,11 @@ namespace OpenpilotToolkit
             tpRemote.Controls.Add(btnShutdown);
             tpRemote.Controls.Add(btnReboot);
             tpRemote.ImageKey = "outline_games_white_24dp.png";
-            tpRemote.Location = new System.Drawing.Point(4, 31);
+            tpRemote.Location = new System.Drawing.Point(4, 58);
+            tpRemote.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             tpRemote.Name = "tpRemote";
-            tpRemote.Padding = new System.Windows.Forms.Padding(3);
-            tpRemote.Size = new System.Drawing.Size(1102, 502);
+            tpRemote.Padding = new System.Windows.Forms.Padding(3, 4, 3, 4);
+            tpRemote.Size = new System.Drawing.Size(1261, 654);
             tpRemote.TabIndex = 11;
             tpRemote.Text = "Remote";
             // 
@@ -683,12 +697,12 @@ namespace OpenpilotToolkit
             btnUpdate.Depth = 0;
             btnUpdate.HighEmphasis = true;
             btnUpdate.Icon = null;
-            btnUpdate.Location = new System.Drawing.Point(392, 89);
-            btnUpdate.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+            btnUpdate.Location = new System.Drawing.Point(448, 119);
+            btnUpdate.Margin = new System.Windows.Forms.Padding(5, 8, 5, 8);
             btnUpdate.MouseState = MaterialSkin.MouseState.HOVER;
             btnUpdate.Name = "btnUpdate";
             btnUpdate.NoAccentTextColor = System.Drawing.Color.FromArgb(63, 81, 181);
-            btnUpdate.Size = new System.Drawing.Size(307, 36);
+            btnUpdate.Size = new System.Drawing.Size(351, 48);
             btnUpdate.TabIndex = 30;
             btnUpdate.Text = "Reinstall Openpilot";
             btnUpdate.Type = MaterialButton.MaterialButtonType.Contained;
@@ -706,12 +720,12 @@ namespace OpenpilotToolkit
             materialButton1.Depth = 0;
             materialButton1.HighEmphasis = true;
             materialButton1.Icon = null;
-            materialButton1.Location = new System.Drawing.Point(392, 377);
-            materialButton1.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+            materialButton1.Location = new System.Drawing.Point(448, 503);
+            materialButton1.Margin = new System.Windows.Forms.Padding(5, 8, 5, 8);
             materialButton1.MouseState = MaterialSkin.MouseState.HOVER;
             materialButton1.Name = "materialButton1";
             materialButton1.NoAccentTextColor = System.Drawing.Color.FromArgb(63, 81, 181);
-            materialButton1.Size = new System.Drawing.Size(307, 36);
+            materialButton1.Size = new System.Drawing.Size(351, 48);
             materialButton1.TabIndex = 36;
             materialButton1.Text = "Install Emu";
             materialButton1.Type = MaterialButton.MaterialButtonType.Contained;
@@ -729,12 +743,12 @@ namespace OpenpilotToolkit
             btnCloseSettings.Depth = 0;
             btnCloseSettings.HighEmphasis = true;
             btnCloseSettings.Icon = null;
-            btnCloseSettings.Location = new System.Drawing.Point(392, 281);
-            btnCloseSettings.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+            btnCloseSettings.Location = new System.Drawing.Point(448, 375);
+            btnCloseSettings.Margin = new System.Windows.Forms.Padding(5, 8, 5, 8);
             btnCloseSettings.MouseState = MaterialSkin.MouseState.HOVER;
             btnCloseSettings.Name = "btnCloseSettings";
             btnCloseSettings.NoAccentTextColor = System.Drawing.Color.FromArgb(63, 81, 181);
-            btnCloseSettings.Size = new System.Drawing.Size(307, 36);
+            btnCloseSettings.Size = new System.Drawing.Size(351, 48);
             btnCloseSettings.TabIndex = 34;
             btnCloseSettings.Text = "Close Settings";
             btnCloseSettings.Type = MaterialButton.MaterialButtonType.Contained;
@@ -752,12 +766,12 @@ namespace OpenpilotToolkit
             btnFlashPanda.Depth = 0;
             btnFlashPanda.HighEmphasis = true;
             btnFlashPanda.Icon = null;
-            btnFlashPanda.Location = new System.Drawing.Point(392, 329);
-            btnFlashPanda.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+            btnFlashPanda.Location = new System.Drawing.Point(448, 439);
+            btnFlashPanda.Margin = new System.Windows.Forms.Padding(5, 8, 5, 8);
             btnFlashPanda.MouseState = MaterialSkin.MouseState.HOVER;
             btnFlashPanda.Name = "btnFlashPanda";
             btnFlashPanda.NoAccentTextColor = System.Drawing.Color.FromArgb(63, 81, 181);
-            btnFlashPanda.Size = new System.Drawing.Size(307, 36);
+            btnFlashPanda.Size = new System.Drawing.Size(351, 48);
             btnFlashPanda.TabIndex = 35;
             btnFlashPanda.Text = "Flash Panda";
             btnFlashPanda.Type = MaterialButton.MaterialButtonType.Contained;
@@ -775,12 +789,12 @@ namespace OpenpilotToolkit
             btnOpenSettings.Depth = 0;
             btnOpenSettings.HighEmphasis = true;
             btnOpenSettings.Icon = null;
-            btnOpenSettings.Location = new System.Drawing.Point(392, 233);
-            btnOpenSettings.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+            btnOpenSettings.Location = new System.Drawing.Point(448, 311);
+            btnOpenSettings.Margin = new System.Windows.Forms.Padding(5, 8, 5, 8);
             btnOpenSettings.MouseState = MaterialSkin.MouseState.HOVER;
             btnOpenSettings.Name = "btnOpenSettings";
             btnOpenSettings.NoAccentTextColor = System.Drawing.Color.FromArgb(63, 81, 181);
-            btnOpenSettings.Size = new System.Drawing.Size(307, 36);
+            btnOpenSettings.Size = new System.Drawing.Size(351, 48);
             btnOpenSettings.TabIndex = 33;
             btnOpenSettings.Text = "Open Settings";
             btnOpenSettings.Type = MaterialButton.MaterialButtonType.Contained;
@@ -798,12 +812,12 @@ namespace OpenpilotToolkit
             btnShutdown.Depth = 0;
             btnShutdown.HighEmphasis = true;
             btnShutdown.Icon = null;
-            btnShutdown.Location = new System.Drawing.Point(392, 185);
-            btnShutdown.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+            btnShutdown.Location = new System.Drawing.Point(448, 247);
+            btnShutdown.Margin = new System.Windows.Forms.Padding(5, 8, 5, 8);
             btnShutdown.MouseState = MaterialSkin.MouseState.HOVER;
             btnShutdown.Name = "btnShutdown";
             btnShutdown.NoAccentTextColor = System.Drawing.Color.FromArgb(63, 81, 181);
-            btnShutdown.Size = new System.Drawing.Size(307, 36);
+            btnShutdown.Size = new System.Drawing.Size(351, 48);
             btnShutdown.TabIndex = 32;
             btnShutdown.Text = "shutdown";
             btnShutdown.Type = MaterialButton.MaterialButtonType.Contained;
@@ -821,12 +835,12 @@ namespace OpenpilotToolkit
             btnReboot.Depth = 0;
             btnReboot.HighEmphasis = true;
             btnReboot.Icon = null;
-            btnReboot.Location = new System.Drawing.Point(392, 137);
-            btnReboot.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+            btnReboot.Location = new System.Drawing.Point(448, 183);
+            btnReboot.Margin = new System.Windows.Forms.Padding(5, 8, 5, 8);
             btnReboot.MouseState = MaterialSkin.MouseState.HOVER;
             btnReboot.Name = "btnReboot";
             btnReboot.NoAccentTextColor = System.Drawing.Color.FromArgb(63, 81, 181);
-            btnReboot.Size = new System.Drawing.Size(307, 36);
+            btnReboot.Size = new System.Drawing.Size(351, 48);
             btnReboot.TabIndex = 31;
             btnReboot.Text = "reboot";
             btnReboot.Type = MaterialButton.MaterialButtonType.Contained;
@@ -839,10 +853,11 @@ namespace OpenpilotToolkit
             tpSettings.BackColor = System.Drawing.Color.White;
             tpSettings.Controls.Add(groupBox1);
             tpSettings.ImageKey = "outline_settings_white_24dp.png";
-            tpSettings.Location = new System.Drawing.Point(4, 31);
+            tpSettings.Location = new System.Drawing.Point(4, 58);
+            tpSettings.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             tpSettings.Name = "tpSettings";
-            tpSettings.Padding = new System.Windows.Forms.Padding(3);
-            tpSettings.Size = new System.Drawing.Size(1102, 502);
+            tpSettings.Padding = new System.Windows.Forms.Padding(3, 4, 3, 4);
+            tpSettings.Size = new System.Drawing.Size(1261, 654);
             tpSettings.TabIndex = 1;
             tpSettings.Text = "Settings";
             // 
@@ -850,9 +865,11 @@ namespace OpenpilotToolkit
             // 
             groupBox1.Controls.Add(groupBox4);
             groupBox1.Controls.Add(cbCombineSegments);
-            groupBox1.Location = new System.Drawing.Point(6, 6);
+            groupBox1.Location = new System.Drawing.Point(7, 8);
+            groupBox1.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             groupBox1.Name = "groupBox1";
-            groupBox1.Size = new System.Drawing.Size(479, 308);
+            groupBox1.Padding = new System.Windows.Forms.Padding(3, 4, 3, 4);
+            groupBox1.Size = new System.Drawing.Size(547, 411);
             groupBox1.TabIndex = 0;
             groupBox1.TabStop = false;
             groupBox1.Text = "Route Exporter";
@@ -862,9 +879,11 @@ namespace OpenpilotToolkit
             groupBox4.Controls.Add(btnOsmTest);
             groupBox4.Controls.Add(txtOsmPassword);
             groupBox4.Controls.Add(txtOsmUsername);
-            groupBox4.Location = new System.Drawing.Point(6, 59);
+            groupBox4.Location = new System.Drawing.Point(7, 79);
+            groupBox4.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             groupBox4.Name = "groupBox4";
-            groupBox4.Size = new System.Drawing.Size(467, 243);
+            groupBox4.Padding = new System.Windows.Forms.Padding(3, 4, 3, 4);
+            groupBox4.Size = new System.Drawing.Size(534, 324);
             groupBox4.TabIndex = 1;
             groupBox4.TabStop = false;
             groupBox4.Text = "Openstreetmap API";
@@ -879,12 +898,12 @@ namespace OpenpilotToolkit
             btnOsmTest.Depth = 0;
             btnOsmTest.HighEmphasis = true;
             btnOsmTest.Icon = null;
-            btnOsmTest.Location = new System.Drawing.Point(7, 135);
-            btnOsmTest.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+            btnOsmTest.Location = new System.Drawing.Point(8, 180);
+            btnOsmTest.Margin = new System.Windows.Forms.Padding(5, 8, 5, 8);
             btnOsmTest.MouseState = MaterialSkin.MouseState.HOVER;
             btnOsmTest.Name = "btnOsmTest";
             btnOsmTest.NoAccentTextColor = System.Drawing.Color.FromArgb(63, 81, 181);
-            btnOsmTest.Size = new System.Drawing.Size(453, 36);
+            btnOsmTest.Size = new System.Drawing.Size(518, 48);
             btnOsmTest.TabIndex = 2;
             btnOsmTest.Text = "&Test";
             btnOsmTest.Type = MaterialButton.MaterialButtonType.Contained;
@@ -905,7 +924,8 @@ namespace OpenpilotToolkit
             txtOsmPassword.HideSelection = true;
             txtOsmPassword.Hint = "Password";
             txtOsmPassword.LeadingIcon = null;
-            txtOsmPassword.Location = new System.Drawing.Point(6, 78);
+            txtOsmPassword.Location = new System.Drawing.Point(7, 104);
+            txtOsmPassword.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             txtOsmPassword.MaxLength = 50;
             txtOsmPassword.MouseState = MaterialSkin.MouseState.OUT;
             txtOsmPassword.Name = "txtOsmPassword";
@@ -917,7 +937,7 @@ namespace OpenpilotToolkit
             txtOsmPassword.SelectionLength = 0;
             txtOsmPassword.SelectionStart = 0;
             txtOsmPassword.ShortcutsEnabled = true;
-            txtOsmPassword.Size = new System.Drawing.Size(455, 48);
+            txtOsmPassword.Size = new System.Drawing.Size(520, 48);
             txtOsmPassword.TabIndex = 1;
             txtOsmPassword.TabStop = false;
             txtOsmPassword.TextAlign = System.Windows.Forms.HorizontalAlignment.Left;
@@ -937,7 +957,8 @@ namespace OpenpilotToolkit
             txtOsmUsername.HideSelection = true;
             txtOsmUsername.Hint = "Username";
             txtOsmUsername.LeadingIcon = null;
-            txtOsmUsername.Location = new System.Drawing.Point(6, 22);
+            txtOsmUsername.Location = new System.Drawing.Point(7, 29);
+            txtOsmUsername.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             txtOsmUsername.MaxLength = 50;
             txtOsmUsername.MouseState = MaterialSkin.MouseState.OUT;
             txtOsmUsername.Name = "txtOsmUsername";
@@ -949,7 +970,7 @@ namespace OpenpilotToolkit
             txtOsmUsername.SelectionLength = 0;
             txtOsmUsername.SelectionStart = 0;
             txtOsmUsername.ShortcutsEnabled = true;
-            txtOsmUsername.Size = new System.Drawing.Size(455, 48);
+            txtOsmUsername.Size = new System.Drawing.Size(520, 48);
             txtOsmUsername.TabIndex = 0;
             txtOsmUsername.TabStop = false;
             txtOsmUsername.TextAlign = System.Windows.Forms.HorizontalAlignment.Left;
@@ -960,7 +981,7 @@ namespace OpenpilotToolkit
             // 
             cbCombineSegments.AutoSize = true;
             cbCombineSegments.Depth = 0;
-            cbCombineSegments.Location = new System.Drawing.Point(3, 19);
+            cbCombineSegments.Location = new System.Drawing.Point(3, 25);
             cbCombineSegments.Margin = new System.Windows.Forms.Padding(0);
             cbCombineSegments.MouseLocation = new System.Drawing.Point(-1, -1);
             cbCombineSegments.MouseState = MaterialSkin.MouseState.HOVER;
@@ -978,10 +999,11 @@ namespace OpenpilotToolkit
             tpLogFile.BackColor = System.Drawing.Color.White;
             tpLogFile.Controls.Add(txtLog);
             tpLogFile.ImageKey = "outline_description_white_24dp.png";
-            tpLogFile.Location = new System.Drawing.Point(4, 31);
+            tpLogFile.Location = new System.Drawing.Point(4, 58);
+            tpLogFile.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             tpLogFile.Name = "tpLogFile";
-            tpLogFile.Padding = new System.Windows.Forms.Padding(3);
-            tpLogFile.Size = new System.Drawing.Size(1102, 502);
+            tpLogFile.Padding = new System.Windows.Forms.Padding(3, 4, 3, 4);
+            tpLogFile.Size = new System.Drawing.Size(1261, 654);
             tpLogFile.TabIndex = 2;
             tpLogFile.Text = "Log";
             // 
@@ -993,11 +1015,12 @@ namespace OpenpilotToolkit
             txtLog.Dock = System.Windows.Forms.DockStyle.Fill;
             txtLog.Font = new System.Drawing.Font("Microsoft Sans Serif", 14F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel);
             txtLog.ForeColor = System.Drawing.Color.FromArgb(222, 0, 0, 0);
-            txtLog.Location = new System.Drawing.Point(3, 3);
+            txtLog.Location = new System.Drawing.Point(3, 4);
+            txtLog.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             txtLog.MouseState = MaterialSkin.MouseState.HOVER;
             txtLog.Name = "txtLog";
             txtLog.ReadOnly = true;
-            txtLog.Size = new System.Drawing.Size(1096, 496);
+            txtLog.Size = new System.Drawing.Size(1255, 646);
             txtLog.TabIndex = 2;
             txtLog.Text = "";
             // 
@@ -1006,10 +1029,11 @@ namespace OpenpilotToolkit
             tpExplore.BackColor = System.Drawing.Color.White;
             tpExplore.Controls.Add(panel1);
             tpExplore.ImageKey = "outline_folder_open_white_24dp.png";
-            tpExplore.Location = new System.Drawing.Point(4, 31);
+            tpExplore.Location = new System.Drawing.Point(4, 58);
+            tpExplore.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             tpExplore.Name = "tpExplore";
-            tpExplore.Padding = new System.Windows.Forms.Padding(3);
-            tpExplore.Size = new System.Drawing.Size(1102, 502);
+            tpExplore.Padding = new System.Windows.Forms.Padding(3, 4, 3, 4);
+            tpExplore.Size = new System.Drawing.Size(1261, 654);
             tpExplore.TabIndex = 3;
             tpExplore.Text = "Explorer";
             // 
@@ -1018,24 +1042,26 @@ namespace OpenpilotToolkit
             panel1.AutoScroll = true;
             panel1.Controls.Add(tableLayoutPanel2);
             panel1.Dock = System.Windows.Forms.DockStyle.Fill;
-            panel1.Location = new System.Drawing.Point(3, 3);
+            panel1.Location = new System.Drawing.Point(3, 4);
+            panel1.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             panel1.Name = "panel1";
-            panel1.Size = new System.Drawing.Size(1096, 496);
+            panel1.Size = new System.Drawing.Size(1255, 646);
             panel1.TabIndex = 0;
             // 
             // tableLayoutPanel2
             // 
             tableLayoutPanel2.ColumnCount = 2;
             tableLayoutPanel2.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
-            tableLayoutPanel2.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 200F));
+            tableLayoutPanel2.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 229F));
             tableLayoutPanel2.Controls.Add(tlpExplorerTasks, 1, 0);
             tableLayoutPanel2.Controls.Add(panel3, 0, 0);
             tableLayoutPanel2.Dock = System.Windows.Forms.DockStyle.Fill;
             tableLayoutPanel2.Location = new System.Drawing.Point(0, 0);
+            tableLayoutPanel2.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             tableLayoutPanel2.Name = "tableLayoutPanel2";
             tableLayoutPanel2.RowCount = 1;
             tableLayoutPanel2.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
-            tableLayoutPanel2.Size = new System.Drawing.Size(1096, 496);
+            tableLayoutPanel2.Size = new System.Drawing.Size(1255, 646);
             tableLayoutPanel2.TabIndex = 0;
             // 
             // tlpExplorerTasks
@@ -1045,12 +1071,12 @@ namespace OpenpilotToolkit
             tlpExplorerTasks.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             tlpExplorerTasks.ColumnCount = 1;
             tlpExplorerTasks.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
-            tlpExplorerTasks.Location = new System.Drawing.Point(900, 3);
-            tlpExplorerTasks.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            tlpExplorerTasks.Location = new System.Drawing.Point(1031, 4);
+            tlpExplorerTasks.Margin = new System.Windows.Forms.Padding(5, 4, 5, 4);
             tlpExplorerTasks.Name = "tlpExplorerTasks";
             tlpExplorerTasks.RowCount = 1;
             tlpExplorerTasks.RowStyles.Add(new System.Windows.Forms.RowStyle());
-            tlpExplorerTasks.Size = new System.Drawing.Size(192, 490);
+            tlpExplorerTasks.Size = new System.Drawing.Size(219, 638);
             tlpExplorerTasks.TabIndex = 17;
             // 
             // panel3
@@ -1059,9 +1085,10 @@ namespace OpenpilotToolkit
             panel3.Controls.Add(dgvExplorer);
             panel3.Controls.Add(txtSearch);
             panel3.Dock = System.Windows.Forms.DockStyle.Fill;
-            panel3.Location = new System.Drawing.Point(3, 3);
+            panel3.Location = new System.Drawing.Point(3, 4);
+            panel3.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             panel3.Name = "panel3";
-            panel3.Size = new System.Drawing.Size(890, 490);
+            panel3.Size = new System.Drawing.Size(1020, 638);
             panel3.TabIndex = 0;
             // 
             // txtWorkingDirectory
@@ -1070,15 +1097,16 @@ namespace OpenpilotToolkit
             txtWorkingDirectory.AnimateReadOnly = false;
             txtWorkingDirectory.BorderStyle = System.Windows.Forms.BorderStyle.None;
             txtWorkingDirectory.Depth = 0;
-            txtWorkingDirectory.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F);
+            txtWorkingDirectory.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.6F);
             txtWorkingDirectory.Hint = "Working Directory";
             txtWorkingDirectory.LeadingIcon = null;
-            txtWorkingDirectory.Location = new System.Drawing.Point(3, 3);
+            txtWorkingDirectory.Location = new System.Drawing.Point(3, 4);
+            txtWorkingDirectory.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             txtWorkingDirectory.MaxLength = 50;
             txtWorkingDirectory.MouseState = MaterialSkin.MouseState.OUT;
             txtWorkingDirectory.Multiline = false;
             txtWorkingDirectory.Name = "txtWorkingDirectory";
-            txtWorkingDirectory.Size = new System.Drawing.Size(884, 50);
+            txtWorkingDirectory.Size = new System.Drawing.Size(1013, 50);
             txtWorkingDirectory.TabIndex = 0;
             txtWorkingDirectory.Text = "Current Directory";
             txtWorkingDirectory.TrailingIcon = null;
@@ -1117,14 +1145,16 @@ namespace OpenpilotToolkit
             dgvExplorer.EnableHeadersVisualStyles = false;
             dgvExplorer.Font = new System.Drawing.Font("Microsoft Sans Serif", 16F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel);
             dgvExplorer.GridColor = System.Drawing.Color.FromArgb(225, 225, 225);
-            dgvExplorer.Location = new System.Drawing.Point(3, 59);
+            dgvExplorer.Location = new System.Drawing.Point(3, 79);
+            dgvExplorer.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             dgvExplorer.MouseState = MaterialSkin.MouseState.HOVER;
             dgvExplorer.Name = "dgvExplorer";
             dgvExplorer.ReadOnly = true;
             dgvExplorer.RowHeadersVisible = false;
+            dgvExplorer.RowHeadersWidth = 51;
             dgvExplorer.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
             dgvExplorer.ShowCellToolTips = false;
-            dgvExplorer.Size = new System.Drawing.Size(884, 428);
+            dgvExplorer.Size = new System.Drawing.Size(1013, 556);
             dgvExplorer.TabIndex = 1;
             dgvExplorer.CellDoubleClick += dgvExplorer_CellDoubleClick;
             dgvExplorer.CellFormatting += dgvExplorer_CellFormatting;
@@ -1139,6 +1169,7 @@ namespace OpenpilotToolkit
             colName.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
             colName.DataPropertyName = "Name";
             colName.HeaderText = "Name";
+            colName.MinimumWidth = 6;
             colName.Name = "colName";
             colName.ReadOnly = true;
             // 
@@ -1147,14 +1178,17 @@ namespace OpenpilotToolkit
             colSize.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.None;
             colSize.DataPropertyName = "Attributes.Size";
             colSize.HeaderText = "Size";
+            colSize.MinimumWidth = 6;
             colSize.Name = "colSize";
             colSize.ReadOnly = true;
+            colSize.Width = 125;
             // 
             // colType
             // 
             colType.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.None;
             colType.DataPropertyName = "Attributes.IsDirectory";
             colType.HeaderText = "Type";
+            colType.MinimumWidth = 6;
             colType.Name = "colType";
             colType.ReadOnly = true;
             colType.Width = 123;
@@ -1164,6 +1198,7 @@ namespace OpenpilotToolkit
             colChanged.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.None;
             colChanged.DataPropertyName = "LastWriteTimeUTC";
             colChanged.HeaderText = "Changed";
+            colChanged.MinimumWidth = 6;
             colChanged.Name = "colChanged";
             colChanged.ReadOnly = true;
             colChanged.Width = 163;
@@ -1177,12 +1212,13 @@ namespace OpenpilotToolkit
             txtSearch.Font = new System.Drawing.Font("Roboto", 16F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel);
             txtSearch.Hint = "Search";
             txtSearch.LeadingIcon = null;
-            txtSearch.Location = new System.Drawing.Point(678, 3);
+            txtSearch.Location = new System.Drawing.Point(778, 4);
+            txtSearch.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             txtSearch.MaxLength = 50;
             txtSearch.MouseState = MaterialSkin.MouseState.OUT;
             txtSearch.Multiline = false;
             txtSearch.Name = "txtSearch";
-            txtSearch.Size = new System.Drawing.Size(209, 50);
+            txtSearch.Size = new System.Drawing.Size(239, 50);
             txtSearch.TabIndex = 28;
             txtSearch.Text = "";
             txtSearch.TrailingIcon = null;
@@ -1193,10 +1229,11 @@ namespace OpenpilotToolkit
             tpFingerprint.BackColor = System.Drawing.Color.White;
             tpFingerprint.Controls.Add(txtFingerprint);
             tpFingerprint.ImageKey = "outline_fingerprint_white_24dp.png";
-            tpFingerprint.Location = new System.Drawing.Point(4, 31);
+            tpFingerprint.Location = new System.Drawing.Point(4, 58);
+            tpFingerprint.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             tpFingerprint.Name = "tpFingerprint";
-            tpFingerprint.Padding = new System.Windows.Forms.Padding(3);
-            tpFingerprint.Size = new System.Drawing.Size(1102, 502);
+            tpFingerprint.Padding = new System.Windows.Forms.Padding(3, 4, 3, 4);
+            tpFingerprint.Size = new System.Drawing.Size(1261, 654);
             tpFingerprint.TabIndex = 4;
             tpFingerprint.Text = "Fingerprint";
             // 
@@ -1208,11 +1245,12 @@ namespace OpenpilotToolkit
             txtFingerprint.Dock = System.Windows.Forms.DockStyle.Fill;
             txtFingerprint.Font = new System.Drawing.Font("Microsoft Sans Serif", 14F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel);
             txtFingerprint.ForeColor = System.Drawing.Color.FromArgb(222, 0, 0, 0);
-            txtFingerprint.Location = new System.Drawing.Point(3, 3);
+            txtFingerprint.Location = new System.Drawing.Point(3, 4);
+            txtFingerprint.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             txtFingerprint.MouseState = MaterialSkin.MouseState.HOVER;
             txtFingerprint.Name = "txtFingerprint";
             txtFingerprint.ReadOnly = true;
-            txtFingerprint.Size = new System.Drawing.Size(1096, 496);
+            txtFingerprint.Size = new System.Drawing.Size(1255, 646);
             txtFingerprint.TabIndex = 3;
             txtFingerprint.Text = "";
             // 
@@ -1221,19 +1259,21 @@ namespace OpenpilotToolkit
             tpSSH.BackColor = System.Drawing.Color.White;
             tpSSH.Controls.Add(ucSshWizard);
             tpSSH.ImageKey = "outline_ssh_black_24dp.png";
-            tpSSH.Location = new System.Drawing.Point(4, 31);
+            tpSSH.Location = new System.Drawing.Point(4, 58);
+            tpSSH.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             tpSSH.Name = "tpSSH";
-            tpSSH.Padding = new System.Windows.Forms.Padding(3);
-            tpSSH.Size = new System.Drawing.Size(1102, 502);
+            tpSSH.Padding = new System.Windows.Forms.Padding(3, 4, 3, 4);
+            tpSSH.Size = new System.Drawing.Size(1261, 654);
             tpSSH.TabIndex = 5;
             tpSSH.Text = "SSH Wizard";
             // 
             // ucSshWizard
             // 
             ucSshWizard.Dock = System.Windows.Forms.DockStyle.Fill;
-            ucSshWizard.Location = new System.Drawing.Point(3, 3);
+            ucSshWizard.Location = new System.Drawing.Point(3, 4);
+            ucSshWizard.Margin = new System.Windows.Forms.Padding(3, 5, 3, 5);
             ucSshWizard.Name = "ucSshWizard";
-            ucSshWizard.Size = new System.Drawing.Size(1096, 496);
+            ucSshWizard.Size = new System.Drawing.Size(1255, 646);
             ucSshWizard.TabIndex = 1;
             ucSshWizard.WizardCompleted += ucSshWizard_WizardCompleted;
             // 
@@ -1245,9 +1285,10 @@ namespace OpenpilotToolkit
             tpFork.Controls.Add(txtForkUsername);
             tpFork.Controls.Add(btnInstallFork);
             tpFork.ImageKey = "git_fork_black.png";
-            tpFork.Location = new System.Drawing.Point(4, 31);
+            tpFork.Location = new System.Drawing.Point(4, 58);
+            tpFork.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             tpFork.Name = "tpFork";
-            tpFork.Size = new System.Drawing.Size(1102, 502);
+            tpFork.Size = new System.Drawing.Size(1261, 654);
             tpFork.TabIndex = 9;
             tpFork.Text = "Fork Installer";
             // 
@@ -1264,7 +1305,8 @@ namespace OpenpilotToolkit
             txtRepositoryName.HideSelection = true;
             txtRepositoryName.Hint = "Repository Name";
             txtRepositoryName.LeadingIcon = null;
-            txtRepositoryName.Location = new System.Drawing.Point(375, 204);
+            txtRepositoryName.Location = new System.Drawing.Point(429, 272);
+            txtRepositoryName.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             txtRepositoryName.MaxLength = 50;
             txtRepositoryName.MouseState = MaterialSkin.MouseState.OUT;
             txtRepositoryName.Name = "txtRepositoryName";
@@ -1276,7 +1318,7 @@ namespace OpenpilotToolkit
             txtRepositoryName.SelectionLength = 0;
             txtRepositoryName.SelectionStart = 0;
             txtRepositoryName.ShortcutsEnabled = true;
-            txtRepositoryName.Size = new System.Drawing.Size(341, 48);
+            txtRepositoryName.Size = new System.Drawing.Size(390, 48);
             txtRepositoryName.TabIndex = 33;
             txtRepositoryName.TabStop = false;
             txtRepositoryName.Text = "openpilot";
@@ -1298,7 +1340,8 @@ namespace OpenpilotToolkit
             txtForkBranch.HideSelection = true;
             txtForkBranch.Hint = "Branch Name";
             txtForkBranch.LeadingIcon = null;
-            txtForkBranch.Location = new System.Drawing.Point(375, 258);
+            txtForkBranch.Location = new System.Drawing.Point(429, 344);
+            txtForkBranch.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             txtForkBranch.MaxLength = 50;
             txtForkBranch.MouseState = MaterialSkin.MouseState.OUT;
             txtForkBranch.Name = "txtForkBranch";
@@ -1310,7 +1353,7 @@ namespace OpenpilotToolkit
             txtForkBranch.SelectionLength = 0;
             txtForkBranch.SelectionStart = 0;
             txtForkBranch.ShortcutsEnabled = true;
-            txtForkBranch.Size = new System.Drawing.Size(341, 48);
+            txtForkBranch.Size = new System.Drawing.Size(390, 48);
             txtForkBranch.TabIndex = 34;
             txtForkBranch.TabStop = false;
             txtForkBranch.TextAlign = System.Windows.Forms.HorizontalAlignment.Left;
@@ -1330,7 +1373,8 @@ namespace OpenpilotToolkit
             txtForkUsername.HideSelection = true;
             txtForkUsername.Hint = "Fork Username";
             txtForkUsername.LeadingIcon = null;
-            txtForkUsername.Location = new System.Drawing.Point(375, 150);
+            txtForkUsername.Location = new System.Drawing.Point(429, 200);
+            txtForkUsername.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             txtForkUsername.MaxLength = 50;
             txtForkUsername.MouseState = MaterialSkin.MouseState.OUT;
             txtForkUsername.Name = "txtForkUsername";
@@ -1342,7 +1386,7 @@ namespace OpenpilotToolkit
             txtForkUsername.SelectionLength = 0;
             txtForkUsername.SelectionStart = 0;
             txtForkUsername.ShortcutsEnabled = true;
-            txtForkUsername.Size = new System.Drawing.Size(341, 48);
+            txtForkUsername.Size = new System.Drawing.Size(390, 48);
             txtForkUsername.TabIndex = 32;
             txtForkUsername.TabStop = false;
             txtForkUsername.TextAlign = System.Windows.Forms.HorizontalAlignment.Left;
@@ -1360,12 +1404,12 @@ namespace OpenpilotToolkit
             btnInstallFork.Depth = 0;
             btnInstallFork.HighEmphasis = true;
             btnInstallFork.Icon = null;
-            btnInstallFork.Location = new System.Drawing.Point(375, 317);
-            btnInstallFork.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+            btnInstallFork.Location = new System.Drawing.Point(429, 423);
+            btnInstallFork.Margin = new System.Windows.Forms.Padding(5, 8, 5, 8);
             btnInstallFork.MouseState = MaterialSkin.MouseState.HOVER;
             btnInstallFork.Name = "btnInstallFork";
             btnInstallFork.NoAccentTextColor = System.Drawing.Color.FromArgb(63, 81, 181);
-            btnInstallFork.Size = new System.Drawing.Size(341, 36);
+            btnInstallFork.Size = new System.Drawing.Size(390, 48);
             btnInstallFork.TabIndex = 35;
             btnInstallFork.Text = "&Install";
             btnInstallFork.Type = MaterialButton.MaterialButtonType.Contained;
@@ -1377,10 +1421,11 @@ namespace OpenpilotToolkit
             // 
             tpFlash.BackColor = System.Drawing.Color.White;
             tpFlash.ImageKey = "outline_flash_on_white_24dp.png";
-            tpFlash.Location = new System.Drawing.Point(4, 31);
+            tpFlash.Location = new System.Drawing.Point(4, 58);
+            tpFlash.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             tpFlash.Name = "tpFlash";
-            tpFlash.Padding = new System.Windows.Forms.Padding(3);
-            tpFlash.Size = new System.Drawing.Size(1102, 502);
+            tpFlash.Padding = new System.Windows.Forms.Padding(3, 4, 3, 4);
+            tpFlash.Size = new System.Drawing.Size(1261, 654);
             tpFlash.TabIndex = 6;
             tpFlash.Text = "Flash Wizard";
             // 
@@ -1389,10 +1434,11 @@ namespace OpenpilotToolkit
             tpShell.BackColor = System.Drawing.Color.White;
             tpShell.Controls.Add(tableLayoutPanel1);
             tpShell.ImageKey = "outline_console_black_24dp.png";
-            tpShell.Location = new System.Drawing.Point(4, 31);
+            tpShell.Location = new System.Drawing.Point(4, 58);
+            tpShell.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             tpShell.Name = "tpShell";
-            tpShell.Padding = new System.Windows.Forms.Padding(3);
-            tpShell.Size = new System.Drawing.Size(1102, 502);
+            tpShell.Padding = new System.Windows.Forms.Padding(3, 4, 3, 4);
+            tpShell.Size = new System.Drawing.Size(1261, 654);
             tpShell.TabIndex = 10;
             tpShell.Text = "Terminal";
             // 
@@ -1400,15 +1446,16 @@ namespace OpenpilotToolkit
             // 
             tableLayoutPanel1.ColumnCount = 2;
             tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
-            tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 204F));
+            tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 233F));
             tableLayoutPanel1.Controls.Add(panel4, 1, 0);
             tableLayoutPanel1.Dock = System.Windows.Forms.DockStyle.Fill;
-            tableLayoutPanel1.Location = new System.Drawing.Point(3, 3);
+            tableLayoutPanel1.Location = new System.Drawing.Point(3, 4);
+            tableLayoutPanel1.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             tableLayoutPanel1.Name = "tableLayoutPanel1";
             tableLayoutPanel1.RowCount = 2;
             tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
             tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle());
-            tableLayoutPanel1.Size = new System.Drawing.Size(1096, 496);
+            tableLayoutPanel1.Size = new System.Drawing.Size(1255, 646);
             tableLayoutPanel1.TabIndex = 31;
             // 
             // panel4
@@ -1418,9 +1465,10 @@ namespace OpenpilotToolkit
             panel4.Controls.Add(btnTmux);
             panel4.Controls.Add(btnExitTmux);
             panel4.Dock = System.Windows.Forms.DockStyle.Fill;
-            panel4.Location = new System.Drawing.Point(895, 3);
+            panel4.Location = new System.Drawing.Point(1025, 4);
+            panel4.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             panel4.Name = "panel4";
-            panel4.Size = new System.Drawing.Size(198, 490);
+            panel4.Size = new System.Drawing.Size(227, 638);
             panel4.TabIndex = 0;
             // 
             // btnTmuxEndScroll
@@ -1433,12 +1481,12 @@ namespace OpenpilotToolkit
             btnTmuxEndScroll.Depth = 0;
             btnTmuxEndScroll.HighEmphasis = true;
             btnTmuxEndScroll.Icon = null;
-            btnTmuxEndScroll.Location = new System.Drawing.Point(0, 150);
-            btnTmuxEndScroll.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+            btnTmuxEndScroll.Location = new System.Drawing.Point(0, 200);
+            btnTmuxEndScroll.Margin = new System.Windows.Forms.Padding(5, 8, 5, 8);
             btnTmuxEndScroll.MouseState = MaterialSkin.MouseState.HOVER;
             btnTmuxEndScroll.Name = "btnTmuxEndScroll";
             btnTmuxEndScroll.NoAccentTextColor = System.Drawing.Color.FromArgb(63, 81, 181);
-            btnTmuxEndScroll.Size = new System.Drawing.Size(194, 36);
+            btnTmuxEndScroll.Size = new System.Drawing.Size(223, 48);
             btnTmuxEndScroll.TabIndex = 28;
             btnTmuxEndScroll.Text = "TMUX End SCROLL";
             btnTmuxEndScroll.Type = MaterialButton.MaterialButtonType.Contained;
@@ -1456,12 +1504,12 @@ namespace OpenpilotToolkit
             btnTmuxScroll.Depth = 0;
             btnTmuxScroll.HighEmphasis = true;
             btnTmuxScroll.Icon = null;
-            btnTmuxScroll.Location = new System.Drawing.Point(0, 102);
-            btnTmuxScroll.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+            btnTmuxScroll.Location = new System.Drawing.Point(0, 136);
+            btnTmuxScroll.Margin = new System.Windows.Forms.Padding(5, 8, 5, 8);
             btnTmuxScroll.MouseState = MaterialSkin.MouseState.HOVER;
             btnTmuxScroll.Name = "btnTmuxScroll";
             btnTmuxScroll.NoAccentTextColor = System.Drawing.Color.FromArgb(63, 81, 181);
-            btnTmuxScroll.Size = new System.Drawing.Size(194, 36);
+            btnTmuxScroll.Size = new System.Drawing.Size(223, 48);
             btnTmuxScroll.TabIndex = 27;
             btnTmuxScroll.Text = "TMUX Start SCROLL";
             btnTmuxScroll.Type = MaterialButton.MaterialButtonType.Contained;
@@ -1479,12 +1527,12 @@ namespace OpenpilotToolkit
             btnTmux.Depth = 0;
             btnTmux.HighEmphasis = true;
             btnTmux.Icon = null;
-            btnTmux.Location = new System.Drawing.Point(1, 6);
-            btnTmux.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+            btnTmux.Location = new System.Drawing.Point(1, 8);
+            btnTmux.Margin = new System.Windows.Forms.Padding(5, 8, 5, 8);
             btnTmux.MouseState = MaterialSkin.MouseState.HOVER;
             btnTmux.Name = "btnTmux";
             btnTmux.NoAccentTextColor = System.Drawing.Color.FromArgb(63, 81, 181);
-            btnTmux.Size = new System.Drawing.Size(196, 36);
+            btnTmux.Size = new System.Drawing.Size(225, 48);
             btnTmux.TabIndex = 25;
             btnTmux.Text = "Start TMUX";
             btnTmux.Type = MaterialButton.MaterialButtonType.Contained;
@@ -1502,12 +1550,12 @@ namespace OpenpilotToolkit
             btnExitTmux.Depth = 0;
             btnExitTmux.HighEmphasis = true;
             btnExitTmux.Icon = null;
-            btnExitTmux.Location = new System.Drawing.Point(1, 54);
-            btnExitTmux.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+            btnExitTmux.Location = new System.Drawing.Point(1, 72);
+            btnExitTmux.Margin = new System.Windows.Forms.Padding(5, 8, 5, 8);
             btnExitTmux.MouseState = MaterialSkin.MouseState.HOVER;
             btnExitTmux.Name = "btnExitTmux";
             btnExitTmux.NoAccentTextColor = System.Drawing.Color.FromArgb(63, 81, 181);
-            btnExitTmux.Size = new System.Drawing.Size(194, 36);
+            btnExitTmux.Size = new System.Drawing.Size(223, 48);
             btnExitTmux.TabIndex = 26;
             btnExitTmux.Text = "Exit Tmux";
             btnExitTmux.Type = MaterialButton.MaterialButtonType.Contained;
@@ -1523,10 +1571,11 @@ namespace OpenpilotToolkit
             tpDonate.Controls.Add(btnKofi);
             tpDonate.Controls.Add(btnBuyMeCoffee);
             tpDonate.ImageKey = "outline_favorite_white_24dp.png";
-            tpDonate.Location = new System.Drawing.Point(4, 31);
+            tpDonate.Location = new System.Drawing.Point(4, 58);
+            tpDonate.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             tpDonate.Name = "tpDonate";
-            tpDonate.Padding = new System.Windows.Forms.Padding(3);
-            tpDonate.Size = new System.Drawing.Size(1102, 502);
+            tpDonate.Padding = new System.Windows.Forms.Padding(3, 4, 3, 4);
+            tpDonate.Size = new System.Drawing.Size(1261, 654);
             tpDonate.TabIndex = 8;
             tpDonate.Text = "Donate";
             // 
@@ -1534,9 +1583,9 @@ namespace OpenpilotToolkit
             // 
             label1.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
             label1.Font = new System.Drawing.Font("Segoe UI", 15.75F);
-            label1.Location = new System.Drawing.Point(6, 3);
+            label1.Location = new System.Drawing.Point(7, 4);
             label1.Name = "label1";
-            label1.Size = new System.Drawing.Size(1078, 109);
+            label1.Size = new System.Drawing.Size(1232, 145);
             label1.TabIndex = 25;
             label1.Text = "If you wish to donate to support development you can do so on the following platforms:";
             label1.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
@@ -1550,8 +1599,8 @@ namespace OpenpilotToolkit
             btnPaypal.Depth = 0;
             btnPaypal.HighEmphasis = true;
             btnPaypal.Icon = null;
-            btnPaypal.Location = new System.Drawing.Point(507, 233);
-            btnPaypal.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+            btnPaypal.Location = new System.Drawing.Point(579, 311);
+            btnPaypal.Margin = new System.Windows.Forms.Padding(5, 8, 5, 8);
             btnPaypal.MouseState = MaterialSkin.MouseState.HOVER;
             btnPaypal.Name = "btnPaypal";
             btnPaypal.NoAccentTextColor = System.Drawing.Color.FromArgb(63, 81, 181);
@@ -1572,8 +1621,8 @@ namespace OpenpilotToolkit
             btnKofi.Depth = 0;
             btnKofi.HighEmphasis = true;
             btnKofi.Icon = null;
-            btnKofi.Location = new System.Drawing.Point(513, 185);
-            btnKofi.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+            btnKofi.Location = new System.Drawing.Point(586, 247);
+            btnKofi.Margin = new System.Windows.Forms.Padding(5, 8, 5, 8);
             btnKofi.MouseState = MaterialSkin.MouseState.HOVER;
             btnKofi.Name = "btnKofi";
             btnKofi.NoAccentTextColor = System.Drawing.Color.FromArgb(63, 81, 181);
@@ -1594,8 +1643,8 @@ namespace OpenpilotToolkit
             btnBuyMeCoffee.Depth = 0;
             btnBuyMeCoffee.HighEmphasis = true;
             btnBuyMeCoffee.Icon = null;
-            btnBuyMeCoffee.Location = new System.Drawing.Point(473, 281);
-            btnBuyMeCoffee.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+            btnBuyMeCoffee.Location = new System.Drawing.Point(541, 375);
+            btnBuyMeCoffee.Margin = new System.Windows.Forms.Padding(5, 8, 5, 8);
             btnBuyMeCoffee.MouseState = MaterialSkin.MouseState.HOVER;
             btnBuyMeCoffee.Name = "btnBuyMeCoffee";
             btnBuyMeCoffee.NoAccentTextColor = System.Drawing.Color.FromArgb(63, 81, 181);
@@ -1611,19 +1660,21 @@ namespace OpenpilotToolkit
             // 
             tabPage1.BackColor = System.Drawing.Color.White;
             tabPage1.Controls.Add(flpColours);
-            tabPage1.Location = new System.Drawing.Point(4, 31);
+            tabPage1.Location = new System.Drawing.Point(4, 58);
+            tabPage1.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             tabPage1.Name = "tabPage1";
-            tabPage1.Padding = new System.Windows.Forms.Padding(3);
-            tabPage1.Size = new System.Drawing.Size(1102, 502);
+            tabPage1.Padding = new System.Windows.Forms.Padding(3, 4, 3, 4);
+            tabPage1.Size = new System.Drawing.Size(1261, 654);
             tabPage1.TabIndex = 7;
             tabPage1.Text = "tabPage1";
             // 
             // flpColours
             // 
             flpColours.Dock = System.Windows.Forms.DockStyle.Fill;
-            flpColours.Location = new System.Drawing.Point(3, 3);
+            flpColours.Location = new System.Drawing.Point(3, 4);
+            flpColours.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             flpColours.Name = "flpColours";
-            flpColours.Size = new System.Drawing.Size(1096, 496);
+            flpColours.Size = new System.Drawing.Size(1255, 646);
             flpColours.TabIndex = 0;
             // 
             // tabPage8
@@ -1647,9 +1698,10 @@ namespace OpenpilotToolkit
             themePanel.Controls.Add(cmbDevices);
             themePanel.Controls.Add(lblActiveDevice);
             themePanel.FlowDirection = System.Windows.Forms.FlowDirection.RightToLeft;
-            themePanel.Location = new System.Drawing.Point(244, 24);
+            themePanel.Location = new System.Drawing.Point(279, 32);
+            themePanel.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             themePanel.Name = "themePanel";
-            themePanel.Size = new System.Drawing.Size(869, 40);
+            themePanel.Size = new System.Drawing.Size(993, 53);
             themePanel.TabIndex = 0;
             // 
             // wifiConnected
@@ -1666,12 +1718,12 @@ namespace OpenpilotToolkit
             wifiConnected.Icon = Properties.Resources.outline_wifi_black_24dp;
             wifiConnected.ImageKey = "outline_wifi_white_24dp.png";
             wifiConnected.ImageList = ilTabs;
-            wifiConnected.Location = new System.Drawing.Point(739, 2);
-            wifiConnected.Margin = new System.Windows.Forms.Padding(2);
+            wifiConnected.Location = new System.Drawing.Point(845, 3);
+            wifiConnected.Margin = new System.Windows.Forms.Padding(2, 3, 2, 3);
             wifiConnected.MouseState = MaterialSkin.MouseState.HOVER;
             wifiConnected.Name = "wifiConnected";
             wifiConnected.NoAccentTextColor = System.Drawing.Color.FromArgb(63, 81, 181);
-            wifiConnected.Size = new System.Drawing.Size(40, 36);
+            wifiConnected.Size = new System.Drawing.Size(46, 48);
             wifiConnected.TabIndex = 2;
             wifiConnected.Type = MaterialButton.MaterialButtonType.Contained;
             wifiConnected.UseAccentColor = false;
@@ -1684,6 +1736,7 @@ namespace OpenpilotToolkit
             cmbDevices.Depth = 0;
             cmbDevices.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawVariable;
             cmbDevices.DropDownHeight = 118;
+            cmbDevices.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             cmbDevices.DropDownWidth = 121;
             cmbDevices.Font = new System.Drawing.Font("Microsoft Sans Serif", 14F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Pixel);
             cmbDevices.ForeColor = System.Drawing.Color.FromArgb(222, 0, 0, 0);
@@ -1691,11 +1744,12 @@ namespace OpenpilotToolkit
             cmbDevices.Hint = "Openpilot Device";
             cmbDevices.IntegralHeight = false;
             cmbDevices.ItemHeight = 29;
-            cmbDevices.Location = new System.Drawing.Point(287, 3);
+            cmbDevices.Location = new System.Drawing.Point(331, 4);
+            cmbDevices.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             cmbDevices.MaxDropDownItems = 4;
             cmbDevices.MouseState = MaterialSkin.MouseState.OUT;
             cmbDevices.Name = "cmbDevices";
-            cmbDevices.Size = new System.Drawing.Size(266, 35);
+            cmbDevices.Size = new System.Drawing.Size(303, 35);
             cmbDevices.StartIndex = 0;
             cmbDevices.TabIndex = 0;
             cmbDevices.UseTallSize = false;
@@ -1705,18 +1759,18 @@ namespace OpenpilotToolkit
             // 
             lblActiveDevice.Font = new System.Drawing.Font("Microsoft Sans Serif", 14F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Pixel);
             lblActiveDevice.ForeColor = System.Drawing.Color.White;
-            lblActiveDevice.Location = new System.Drawing.Point(124, 0);
+            lblActiveDevice.Location = new System.Drawing.Point(146, 0);
             lblActiveDevice.Name = "lblActiveDevice";
-            lblActiveDevice.Size = new System.Drawing.Size(157, 37);
+            lblActiveDevice.Size = new System.Drawing.Size(179, 49);
             lblActiveDevice.TabIndex = 35;
             lblActiveDevice.Text = "ACTIVE DEVICE:";
             lblActiveDevice.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
             // OpenpilotToolkitForm
             // 
-            AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
+            AutoScaleDimensions = new System.Drawing.SizeF(8F, 20F);
             AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            ClientSize = new System.Drawing.Size(1116, 604);
+            ClientSize = new System.Drawing.Size(1275, 805);
             Controls.Add(tcSettings);
             Controls.Add(themePanel);
             DrawerAutoHide = false;
@@ -1724,9 +1778,10 @@ namespace OpenpilotToolkit
             DrawerShowIconsWhenHidden = true;
             DrawerTabControl = tcSettings;
             Icon = (System.Drawing.Icon)resources.GetObject("$this.Icon");
-            Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            MinimumSize = new System.Drawing.Size(1116, 604);
+            Margin = new System.Windows.Forms.Padding(5, 4, 5, 4);
+            MinimumSize = new System.Drawing.Size(1275, 805);
             Name = "OpenpilotToolkitForm";
+            Padding = new System.Windows.Forms.Padding(3, 85, 3, 4);
             StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             Text = "OPENPILOT TOOLKIT";
             FormClosing += ExportDrivesForm_FormClosing;

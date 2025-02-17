@@ -4,11 +4,13 @@ namespace OpenpilotSdk.Hardware
 {
     public sealed class Comma2 : OpenpilotDevice
     {
+        public override int Port { get; set; } = 8022;
+
         protected override string NotConnectedMessage => "No connection has been made to the Comma2";
 
         public static string OpenSettingsCommand => "am start -a android.settings.SETTINGS";
         public static string CloseSettingsCommand => "kill $(pgrep com.android.settings)";
-        public override string DeviceName => "Comma2";
+        public override OpenpilotDeviceType DeviceType => OpenpilotDeviceType.Comma2;
 
         private readonly Lazy<IReadOnlyDictionary<CameraType, Camera>> _cameras = new(() => new Dictionary<CameraType, Camera>
         {

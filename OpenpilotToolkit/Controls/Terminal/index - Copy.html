@@ -1,6 +1,6 @@
 <!doctype html>
-<html style="width:100%;height:100%;margin:0; padding:0">
-<head>
+<html style="width:100%;height:100%;margin:0; padding:0;background-color:blue">
+<head style="background-color:green">
     <link rel="stylesheet" href="xterm/css/xterm.css" />
     <script src="xterm/lib/xterm.js"></script>
     <script src="addon-fit/lib/addon-fit.js"></script>
@@ -22,81 +22,81 @@
             border-radius: 10px;
         }
 
-        ::-webkit-scrollbar-thumb:hover {
-            background: hsl(198, 100%, 50%);
-        }
+            ::-webkit-scrollbar-thumb:hover {
+                background: hsl(198, 100%, 50%);
+            }
 
         @font-face {
             font-family: 'RobotoPowerline';
             src: url('Roboto Mono for Powerline.ttf');
         }
-		
-		.xterm {
-			height:100%;
-		}
+
+        .xterm {
+            height: 100%;
+        }
     </style>
 </head>
-<body style="width:100%;height:100%;margin:0; padding:0">
+<body style="width:100%;height:100%;margin:0; padding:0; background-color:red">
 
-    <div id="terminal" style="width:100%;height:100%;margin:0; padding:0"></div>
-<script>
+    <div id="terminal" style="width:100%;height:100%;margin:0; padding:0; background-color:pink"></div>
+    <script>
 
+        //CefSharp.BindObjectAsync("sshHost");
 
-    var command = '';
+        var command = '';
 
-    var terminal = new Terminal({
-        fontFamily: 'RobotoPowerline',
-        theme: {
+        var terminal = new Terminal({
             fontFamily: 'RobotoPowerline',
-            background: '#505050'
-        },
-        cursorBlink: true
-    });
+            theme: {
+                fontFamily: 'RobotoPowerline',
+                background: '#505050'
+            },
+            cursorBlink: true
+        });
 
-    var fitaddon = new FitAddon.FitAddon();
-    var webgl = new WebglAddon.WebglAddon();
+        var fitaddon = new FitAddon.FitAddon();
+        var webgl = new WebglAddon.WebglAddon();
 
-    terminal.loadAddon(fitaddon);
-	fitaddon.activate(terminal);
+        terminal.loadAddon(fitaddon);
+        fitaddon.activate(terminal);
 
+        function runCommand(terminal, text) {
+            prompt(terminal);
+        }
 
-    function runCommand(terminal, text) {
-        prompt(terminal);
-    }
+        function prompt(terminal) {
+            command = '';
+            terminal.write('\r\n$ ');
+        }
 
-    function prompt(terminal) {
-        command = '';
-        terminal.write('\r\n$ ');
-    }
+        function ClearTerminal() {
+            //terminal.clear();
+            terminal.write('\x1bc');
+        }
 
-    function ClearTerminal() {
-        //terminal.clear();
-        terminal.write('\x1bc');
-    }
+        function WriteText(stringText) {
+            terminal.write(stringText);
+        }
 
-    function WriteText(stringText) {
-        terminal.write(stringText);
-    }
+        function resizeTerminal() {
+            fitaddon.fit();
+            console.log(terminal.rows, terminal.cols);
+            //term.write(' (' + term.rows + ', ' + term.cols + ')');
+            //sshHost.resizeTerminal(terminal.rows, terminal.cols);
+            //CefSharp.PostMessage(terminal.rows + ',' + terminal.cols);
+        }
 
-    function resizeTerminal() {
-        fitaddon.fit();
-        console.log(terminal.rows, terminal.cols);
-        //term.write(' (' + term.rows + ', ' + term.cols + ')');
-        //sshHost.resizeTerminal(terminal.rows, terminal.cols);
+        terminal.open(document.getElementById('terminal'));
+        terminal.loadAddon(webgl);
 
-    }
-    
-    terminal.open(document.getElementById('terminal'));
-    terminal.loadAddon(webgl);
+        resizeTerminal();
 
-    resizeTerminal();
+        window.addEventListener('resize', resizeTerminal);
 
-    window.addEventListener('resize', resizeTerminal);
+        terminal.onData((e) => {
+            sshHost.terminalData(e);
+        });
 
-    terminal.onData((e) => {
-        sshHost.terminalData(e);
-    });
-    
-</script>
+    </script>
 </body>
 </html>

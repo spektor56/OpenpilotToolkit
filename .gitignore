@@ -340,3 +340,4 @@ ASALocalRun/
 healthchecksdb
 /BenchmarkApp
 /SdkBenchmarks
+/OpenpilotSdk/opensshkey.ppk

@@ -1,7 +1,3 @@
-using System;
-using System.IO;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 using CefSharp.WinForms;
 using FFMpegCore;
 using FlyleafLib;
@@ -9,6 +5,10 @@ using OpenpilotToolkit.Controls;
 using OpenpilotToolkit.Properties;
 using Serilog;
 using Serilog.Events;
+using System;
+using System.IO;
+using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace OpenpilotToolkit
 {
@@ -22,7 +22,6 @@ namespace OpenpilotToolkit
         {
             Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
             Application.SetHighDpiMode(HighDpiMode.DpiUnaware);
-            Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             
             var splashForm = new SplashScreen();
@@ -45,7 +44,7 @@ namespace OpenpilotToolkit
                 //CachePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CefSharp\\Cache"),
                 //BrowserSubprocessPath = System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName
             };
-
+            
             CefSharp.Cef.Initialize(settings);
 
             GlobalFFOptions.Configure(options => options.BinaryFolder = "./");

@@ -26,19 +26,21 @@ namespace OpenpilotSdk.Hardware
 {
     public abstract class OpenpilotDevice
     {
-        private const int SshPort = 8022;
+        private static readonly int[] SshPorts = [22,8022];
 
         protected virtual string NotConnectedMessage => "No connection has been made to the openpilot device";
 
         public bool IsAuthenticated { get; protected set; } = false;
         protected readonly string TempDirectory = Path.Combine(AppContext.BaseDirectory ?? Environment.GetFolderPath(Environment.SpecialFolder.Personal), "tmp");
-        public int Port { get; set; } = 8022;
+        public virtual int Port { get; set; } = 22;
         public IPAddress IpAddress { get; init; }
+        public string HostName { get; init; }
+
         protected SftpClient? SftpClient;
         protected SshClient? SshClient;
         private static readonly LookupClient LookupClient = new LookupClient();
 
-        public virtual string DeviceName => "";
+        public virtual OpenpilotDeviceType DeviceType => OpenpilotDeviceType.Unknown;
         public virtual string StorageDirectory => @"/data/media/0/realdata/";
         public virtual string RebootCommand => @"am start -a android.intent.action.REBOOT";
         public virtual string ShutdownCommand => @"am start -n android/com.android.internal.app.ShutdownActivity";
@@ -152,6 +154,7 @@ namespace OpenpilotSdk.Hardware
             }
         }
 
+        //TODO: Video duration of all segments
         public async Task<TimeSpan?> GetVideoDuration(VideoSegment videoSegment)
         {
             await ConnectSshAsync().ConfigureAwait(false);
@@ -672,32 +675,37 @@ namespace OpenpilotSdk.Hardware
         {
             await ConnectSftpAsync(cancellationToken).ConfigureAwait(false);
 
-            IOrderedEnumerable<IGrouping<string, ISftpFile>>? directoryListing;
-
-            try
+            if (SftpClient != null)
             {
-                directoryListing = (await SftpClient.ListDirectoryAsync(StorageDirectory, cancellationToken).ConfigureAwait(false))
+
+                IEnumerable<ISftpFile>? directoryListing;
+                try
+                {
+                    directoryListing = (await SftpClient.ListDirectoryAsync(StorageDirectory, cancellationToken)
+                            .ConfigureAwait(false));
+                }
+                catch (SftpPathNotFoundException)
+                {
+                    yield break;
+                }
+
+                var orderedDirectoryList = directoryListing
                     .Where(dir => OpenPilot.Extensions.FolderRegex.IsMatch(dir.Name))
-                    .GroupBy(dir => dir.Name.Substring(0,20))
-                    .OrderByDescending(dir =>
+                    .GroupBy(dir => dir.Name.Substring(0, 20))
+                    .OrderByDescending(dir => dir.Key);
+
+                foreach (var segmentGroup in orderedDirectoryList)
+                {
+                    var segmentTasks = segmentGroup.Select(segmentFolder =>
                     {
-                        return dir.Key;
-                    });
-            }
-            catch (SftpPathNotFoundException)
-            {
-                yield break;
-            }
+                        var segmentIndex = int.Parse(segmentFolder.Name.AsSpan().Slice(22));
+                        return GetRouteSegmentAsync(segmentGroup.Key, segmentIndex);
+                    }).ToArray();
 
-            foreach (var segmentGroup in directoryListing)
-            {
-                var segmentTasks = segmentGroup.Select(segmentFolder => {
-                    var segmentIndex = int.Parse(segmentFolder.Name.AsSpan().Slice(22));
-                    return GetRouteSegmentAsync(segmentGroup.Key, segmentIndex);
-                }).ToArray();
-
-                var segments = await Task.WhenAll(segmentTasks).ConfigureAwait(false);
-                yield return new Route(segmentGroup.First().LastWriteTimeUtc, segments.OrderBy(segment => segment.Index).ToList());
+                    var segments = await Task.WhenAll(segmentTasks).ConfigureAwait(false);
+                    yield return new Route(segmentGroup.OrderBy(segmentFolder => int.Parse(segmentFolder.Name.AsSpan().Slice(22))).First().LastWriteTimeUtc,
+                        segments.OrderBy(segment => segment.Index).ToList());
+                }
             }
         }
 
@@ -764,7 +772,7 @@ namespace OpenpilotSdk.Hardware
 
         public override string ToString()
         {
-            return string.IsNullOrWhiteSpace(DeviceName) ? IpAddress.ToString() : IpAddress + " - " + DeviceName;
+            return IpAddress + " - " + DeviceType;
         }
 
         protected bool Equals(OpenpilotDevice other)
@@ -895,33 +903,33 @@ namespace OpenpilotSdk.Hardware
                         Array.Reverse(ipAddress);
                     }
                     var endAddress = ~BitConverter.ToUInt32(subnetMask, 0);
+                    
                     if (endAddress > 1024)
                     {
                         Log.Information("Subnet contains more than 1024 addresses, skipping: {interface}.  End Address: {address}", networkInterface.Name, endAddress);
                         continue;
                     }
+                    
                     var localIp = BitConverter.ToUInt32(ipAddress, 0);
 
                     var startAddress = BitConverter.ToUInt32(ipAddress, 0) & BitConverter.ToUInt32(subnetMask, 0);
 
                     var startAddressBytes = BitConverter.GetBytes(startAddress + 1);
                     if (BitConverter.IsLittleEndian) Array.Reverse(startAddressBytes);
-                    var startIPAddress = Convert.ToString(startAddressBytes[0]) + "." + Convert.ToString(startAddressBytes[1]) + "." +
-                        Convert.ToString(startAddressBytes[2]) + "." + Convert.ToString(startAddressBytes[3]);
-                    
+                    var startIPAddress = new IPAddress(startAddressBytes).ToString();
+
                     if (startIPAddress == "192.168.43.1")
                     {
                         if (addressList.Add(startIPAddress))
                         {
-                            connectionRequests.Add(GetOpenpilotDeviceAsync(startIPAddress, SshPort));
+                            connectionRequests.Add(GetOpenpilotDeviceAsync(startIPAddress));
                             continue;
                         }
                     }
 
                     var endAddressBytes = BitConverter.GetBytes(startAddress + endAddress);
                     if (BitConverter.IsLittleEndian) Array.Reverse(endAddressBytes);
-                    var endIPAddress = Convert.ToString(endAddressBytes[0]) + "." + Convert.ToString(endAddressBytes[1]) + "." +
-                                         Convert.ToString(endAddressBytes[2]) + "." + Convert.ToString(endAddressBytes[3]);
+                    var endIPAddress = new IPAddress(endAddressBytes).ToString();
 
                     Log.Information("Scanning IP range: {startAddress} - {endAddress}", startIPAddress, endIPAddress);
 
@@ -933,12 +941,11 @@ namespace OpenpilotSdk.Hardware
                         var hostBytes = BitConverter.GetBytes(host);
                         if (BitConverter.IsLittleEndian) Array.Reverse(hostBytes);
 
-                        var hostAddress = Convert.ToString(hostBytes[0]) + "." + Convert.ToString(hostBytes[1]) + "." +
-                                          Convert.ToString(hostBytes[2]) + "." + Convert.ToString(hostBytes[3]);
+                        var hostAddress = new IPAddress(hostBytes).ToString();
 
                         if (addressList.Add(hostAddress))
                         {
-                            connectionRequests.Add(GetOpenpilotDeviceAsync(hostAddress, SshPort));
+                            connectionRequests.Add(GetOpenpilotDeviceAsync(hostAddress));
                         }
                     }
                 }
@@ -962,52 +969,88 @@ namespace OpenpilotSdk.Hardware
             }
         }
 
-        public static async Task<OpenpilotDevice?> GetOpenpilotDeviceAsync(string address, int port, int timeout = 500)
+        public static async Task<OpenpilotDevice?> GetOpenpilotDeviceAsync(string host, int timeout = 500)
         {
             try
             {
-                //~6.388 ms
-                using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
+                if (string.IsNullOrWhiteSpace(host))
                 {
-                    var cts = new CancellationTokenSource(timeout);
-                    var socketTask = socket.ConnectAsync(address, port, cts.Token);
+                    throw new ArgumentException("Invalid host", nameof(host));
+                }
 
-                    await Task.WhenAny(Task.Delay(timeout), socketTask.AsTask()).ConfigureAwait(false);
-
-                    if (!socket.Connected)
+                var ipAddress = IPAddress.None;
+                bool isIpAddress = false;
+                int port = 0;
+                for(int i = 0; i < SshPorts.Length; i++)
+                {
+                    port = SshPorts[i];
+                    //~6.388 ms
+                    using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
                     {
-                       return null;
+                        socket.ExclusiveAddressUse = false;
+                        socket.LingerState = new LingerOption(true, 0);
+                        socket.NoDelay = true;
+                        socket.DontFragment = true;
+
+                        var cts = new CancellationTokenSource(timeout);
+                        var socketTask = socket.ConnectAsync(host, port, cts.Token);
+
+                        await Task.WhenAny(Task.Delay(timeout), socketTask.AsTask()).ConfigureAwait(false);
+
+                        if (!socket.Connected)
+                        {
+                            if (i >= SshPorts.Length-1)
+                            {
+                                return null;
+                            }
+                            continue;
+                        }
+                        
+                        isIpAddress = IPAddress.TryParse(host, out ipAddress);
+                        if (!isIpAddress)
+                        {
+                            if (socket.RemoteEndPoint != null)
+                            {
+                                var remoteEndPoint = (IPEndPoint)socket.RemoteEndPoint;
+                                ipAddress = remoteEndPoint.Address;
+                            }
+                        }
+
+                        socket.Shutdown(SocketShutdown.Both);
+                        break;
                     }
-                   
-                    socket.Shutdown(SocketShutdown.Both);
-                    socket.Close();
                 }
                 
-                Log.Information("Connected to {Address} on port {port}", address, port);
+                Log.Information("Connected to {host} on port {port}", host, port);
 
-                var ipAddress = IPAddress.Parse(address);
-
-                //~8.253 ms
                 string? hostName;
-                try
+                if (isIpAddress)
                 {
-                    hostName = await LookupClient.GetHostNameAsync(ipAddress).ConfigureAwait(false);
+                    //~5.691 ms
+                    try
+                    {
+                        hostName = await LookupClient.GetHostNameAsync(ipAddress).ConfigureAwait(false);
+                    }
+                    catch (Exception)
+                    {
+                        hostName = null;
+                    }
                 }
-                catch (Exception)
+                else
                 {
-                    hostName = null;
+                    hostName = host;
                 }
 
                 if (hostName != null && (hostName.StartsWith("comma") || hostName.Equals("tici")))
                 {
                     Log.Information("Connected to Comma3 device at {Address} on port {port}",
-                    address, port);
+                        host, port);
 
-                    return new Comma3(ipAddress, false);
+                    return new Comma3(ipAddress, hostName, false);
                 }
                 
                 //~174.320 ms
-                var sshClient = new SshClient(address, port, "comma", _privateKeys)
+                var sshClient = new SshClient(host, port, "comma", _privateKeys)
                 {
                     KeepAliveInterval = TimeSpan.FromSeconds(10)
                 };
@@ -1036,14 +1079,14 @@ namespace OpenpilotSdk.Hardware
                         hostName = await Task.Factory.FromAsync(command.BeginExecute(), command.EndExecute).ConfigureAwait(false);
                         if (hostName != null && (hostName.StartsWith("comma") || hostName.Equals("tici")))
                         {
-                            Log.Information("Connected to Comma3 device at {Address} on port {port}",
-                                address, port);
+                            Log.Information("Connected to Comma3 device at {Host} on port {port}",
+                                host, port);
 
-                            return new Comma3(ipAddress) { SshClient = sshClient };
+                            return new Comma3(ipAddress, hostName) { SshClient = sshClient };
                         }
                         else
                         {
-                            Log.Information("Connected to Comma2 device at {Address} on port {port}", address, port);
+                            Log.Information("Connected to Comma2 device at {Host} on port {port}", host, port);
                             return new Comma2(ipAddress) { SshClient = sshClient };
                         }
                     }
@@ -1055,7 +1098,7 @@ namespace OpenpilotSdk.Hardware
             }
             catch (Exception e)
             {
-                Log.Error("Failed to connect to {Address} with the following exception: {Exception}", address, e.Message);
+                Log.Error("Failed to connect to {Host} with the following exception: {Exception}", host, e.Message);
             }
 
             return null;

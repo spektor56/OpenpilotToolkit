@@ -18,12 +18,13 @@ namespace OpenpilotSdk.Hardware
         public override string RebootCommand => "sudo reboot";
         public override string ShutdownCommand => "sudo shutdown";
 
-        public override string DeviceName => "Comma3";
+        public override OpenpilotDeviceType DeviceType => OpenpilotDeviceType.Comma3;
 
-        public Comma3(IPAddress hostAddress, bool isAuthenticated = true)
+        public Comma3(IPAddress hostAddress, string hostName, bool isAuthenticated = true)
         {
             IsAuthenticated = isAuthenticated;
             IpAddress = hostAddress;
+            HostName = hostName;
         }
     }
 }
