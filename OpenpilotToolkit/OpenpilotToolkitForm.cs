@@ -5,6 +5,7 @@ using FlyleafLib.MediaPlayer;
 using MaterialSkin;
 using MaterialSkin.Controls;
 using NetTopologySuite.IO;
+using Newtonsoft.Json;
 using Octokit;
 using OpenpilotSdk.Git;
 using OpenpilotSdk.Hardware;
@@ -30,7 +31,9 @@ using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Web;
 using System.Windows.Forms;
+using OpenpilotToolkit.Json;
 using Exception = System.Exception;
 using FileMode = System.IO.FileMode;
 using MethodInvoker = System.Windows.Forms.MethodInvoker;
@@ -61,6 +64,17 @@ namespace OpenpilotToolkit
                 (argb & 0x00FF00) >> 8,
                 argb & 0x0000FF);
         }
+        
+        protected override CreateParams CreateParams
+        {
+            get
+            {
+                CreateParams cp = base.CreateParams;
+                cp.ExStyle |= 0x02000000; // WS_EX_COMPOSITED
+                return cp;
+            }
+        }
+        
         public OpenpilotToolkitForm()
         {
             InitializeComponent();
@@ -86,6 +100,9 @@ namespace OpenpilotToolkit
 
         private async void Form1_Load(object sender, EventArgs e)
         {
+            _osmClientId = Encoding.UTF8.GetString(Convert.FromBase64String(_osmClientId));
+            _osmClientSecret = Encoding.UTF8.GetString(Convert.FromBase64String(_osmClientSecret));
+
             Directory.CreateDirectory(Path.Combine(AppContext.BaseDirectory, "tmp", "explorer"));
 
             _explorerFileWatcher = new FileSystemWatcher(_tempExplorerFiles)
@@ -179,9 +196,10 @@ namespace OpenpilotToolkit
             cbFrontCamera.Checked = Properties.Settings.Default.FrontCamera;
             cbWideCamera.Checked = Properties.Settings.Default.WideCamera;
             cbDriverCamera.Checked = Properties.Settings.Default.DriverCamera;
-
-            txtOsmUsername.Text = Properties.Settings.Default.OsmUsername;
-            txtOsmPassword.Text = Properties.Settings.Default.OsmPassword;
+            
+            _osmToken = Properties.Settings.Default.OsmToken;
+            //txtOsmUsername.Text = Properties.Settings.Default.OsmUsername;
+            //txtOsmPassword.Text = Properties.Settings.Default.OsmPassword;
 
             foreach (PropertyInfo property in MaterialSkinManager.Instance.GetType().GetProperties())
             {
@@ -656,8 +674,12 @@ namespace OpenpilotToolkit
             Properties.Settings.Default.WideCamera = cbWideCamera.Checked;
             Properties.Settings.Default.DriverCamera = cbDriverCamera.Checked;
 
-            Properties.Settings.Default.OsmUsername = txtOsmUsername.Text;
-            Properties.Settings.Default.OsmPassword = txtOsmPassword.Text;
+            //Properties.Settings.Default.OsmUsername = txtOsmUsername.Text;
+            //Properties.Settings.Default.OsmPassword = txtOsmPassword.Text;
+            if (!string.IsNullOrWhiteSpace(_osmToken))
+            {
+                Properties.Settings.Default.OsmToken = _osmToken;
+            }
 
             Properties.Settings.Default.Save();
         }
@@ -1912,64 +1934,24 @@ namespace OpenpilotToolkit
             }
         }
         */
+
         private async void btnOsmUpload_Click(object sender, EventArgs e)
         {
-            var osmUsername = txtOsmUsername.Text;
-            var osmPassword = txtOsmPassword.Text;
-            if (string.IsNullOrWhiteSpace(osmUsername) || string.IsNullOrWhiteSpace(osmPassword))
+            if (string.IsNullOrWhiteSpace(_osmToken) || !await OsmAuthenticated())
             {
                 if (ToolkitMessageDialog.ShowDialog(
-                        "OSM username and password is required, do you want to enter them now?", this,
+                        "OSM authentication is required, do you want to log in now?", this,
                         MessageBoxButtons.YesNo) == DialogResult.Yes)
                 {
                     tcSettings.SelectedTab = tpSettings;
+                    btnOsmTest.PerformClick();
                 }
 
                 return;
             }
 
-
             if (cmbDevices.SelectedItem is OpenpilotDevice openpilotDevice)
             {
-                if (_osmHttpClient == null)
-                {
-                    var httpHandler = new HttpClientHandler { CookieContainer = new CookieContainer() };
-                    _osmHttpClient = new HttpClient(httpHandler, false)
-                    {
-                        BaseAddress = new Uri(@"https://api.openstreetmap.org")
-                    };
-                }
-
-                _osmHttpClient.DefaultRequestHeaders.Clear();
-                _osmHttpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
-                    Convert.ToBase64String(
-                        Encoding.ASCII.GetBytes(string.Format("{0}:{1}", osmUsername, osmPassword))));
-                _osmHttpClient.DefaultRequestHeaders.Accept.Clear();
-                _osmHttpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
-                try
-                {
-                    using (var response = await _osmHttpClient.GetAsync("/api/0.6/user/details"))
-                    {
-                        if (!response.IsSuccessStatusCode)
-                        {
-                            if (response.StatusCode == HttpStatusCode.Unauthorized)
-                            {
-                                ToolkitMessageDialog.ShowDialog("Invalid Username/Password.");
-                                return;
-                            }
-
-                            ToolkitMessageDialog.ShowDialog("Connection Failed: " + response.ReasonPhrase);
-                            return;
-                        }
-                    }
-                }
-                catch (Exception exception)
-                {
-                    ToolkitMessageDialog.ShowDialog("Connection Failed: " + exception.Message);
-                    return;
-                }
-
                 var uploadTasks = new List<Task>();
                 foreach (var selectedItem in lbRoutes.SelectedItems)
                 {
@@ -2003,7 +1985,7 @@ namespace OpenpilotToolkit
                             {
                                 content.Add(new ByteArrayContent(binaryFile), "file", route.ToString());
                                 content.Add(new StringContent(route.ToString() + " openpilot route"), @"description");
-                                content.Add(new StringContent("openpilottoolkit,optk,openpilot,commai,comma2,comma3"), @"tags");
+                                content.Add(new StringContent("openpilottoolkit,optk,openpilot,commai,comma2,comma3,comma3x"), @"tags");
                                 content.Add(new StringContent("1"), @"public");
                                 content.Add(new StringContent("identifiable"), @"visibility");
 
@@ -2023,54 +2005,197 @@ namespace OpenpilotToolkit
             }
         }
 
+        private readonly string _osmAuthUrl = @"https://www.openstreetmap.org/oauth2/authorize";
+        private readonly string _osmAccessTokenUrl = @"https://www.openstreetmap.org/oauth2/token";
+        private string _osmClientId = "YzFSUlFXdVZnb1VpSXBON3ltZlZWVmswTk1pSEZ2S0Voa19VazlaYTdvbw==";
+        private string _osmClientSecret = "ZnBQVXhseHRUb2dEdUJyeXNwazNnTWJiQ1FIODM5SDdpRFcyWkI2SkI4bw==";
+        private string _oauthCode = "";
+        private string _osmToken = "";
+        private ToolkitForm _loginDialog;
+
+        private void BrowserOnLoadError(object sender, LoadErrorEventArgs e)
+        {
+            if (!string.IsNullOrWhiteSpace(e.FailedUrl))
+            {
+                var uri = new Uri(e.FailedUrl);
+                if (uri.Authority.Equals("localhost:8008"))
+                {
+                    var oauthCode = HttpUtility.ParseQueryString(uri.Query).Get("code");
+                    _oauthCode = oauthCode;
+
+                    _loginDialog.Invoke(new MethodInvoker(() => { _loginDialog.Close(); }));
+                }
+            }
+        }
+
+        private void BrowserOnFrameLoadStart(object sender, FrameLoadStartEventArgs e)
+        {
+            if (!string.IsNullOrWhiteSpace(e.Url))
+            {
+                var uri = new Uri(e.Url);
+                if (uri.Authority.Equals("localhost:8008"))
+                {
+                    var oauthCode = HttpUtility.ParseQueryString(uri.Query).Get("code");
+                    _oauthCode = oauthCode;
+
+                    _loginDialog.Invoke(new MethodInvoker(() => { _loginDialog.Close(); }));
+                }
+            }
+        }
+
+        private async Task<bool> OsmAuthenticated()
+        {
+            if (string.IsNullOrWhiteSpace(_osmToken))
+            {
+                return false;
+            }
+
+            if (_osmHttpClient == null)
+            {
+                var httpHandler = new HttpClientHandler { CookieContainer = new CookieContainer() };
+                _osmHttpClient = new HttpClient(httpHandler, false)
+                {
+                    BaseAddress = new Uri(@"https://api.openstreetmap.org")
+                };
+                _osmHttpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _osmToken);
+            }
+
+            using (var response = await _osmHttpClient.GetAsync("/api/0.6/user/details"))
+            {
+                if (response.IsSuccessStatusCode)
+                {
+                    return true;
+                }
+                else
+                {
+                    if (response.StatusCode == HttpStatusCode.Unauthorized)
+                    {
+                        return false;
+                    }
+                    else
+                    {
+                        throw new Exception(response.ReasonPhrase);
+                    }
+                }
+            }
+        }
+
         private async void btnOsmTest_Click(object sender, EventArgs e)
         {
             btnOsmTest.Enabled = false;
             try
             {
-                var osmUsername = txtOsmUsername.Text;
-                var osmPassword = txtOsmPassword.Text;
-
-                if (_osmHttpClient == null)
-                {
-                    var httpHandler = new HttpClientHandler { CookieContainer = new CookieContainer() };
-                    _osmHttpClient = new HttpClient(httpHandler, false)
-                    {
-                        BaseAddress = new Uri(@"https://api.openstreetmap.org")
-                    };
-                }
-
-                _osmHttpClient.DefaultRequestHeaders.Clear();
-                _osmHttpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
-                    Convert.ToBase64String(
-                        Encoding.ASCII.GetBytes(string.Format("{0}:{1}", osmUsername, osmPassword))));
-                _osmHttpClient.DefaultRequestHeaders.Accept.Clear();
-                _osmHttpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
+                bool authenticated = false;
                 try
                 {
-                    using (var response = await _osmHttpClient.GetAsync("/api/0.6/user/details"))
-                    {
-                        if (response.IsSuccessStatusCode)
-                        {
-                            ToolkitMessageDialog.ShowDialog("Connection Successful.");
-                        }
-                        else
-                        {
-                            if (response.StatusCode == HttpStatusCode.Unauthorized)
-                            {
-                                ToolkitMessageDialog.ShowDialog("Invalid Username/Password.");
-                            }
-                            else
-                            {
-                                ToolkitMessageDialog.ShowDialog("Connection Failed: " + response.ReasonPhrase);
-                            }
-                        }
-                    }
+                    authenticated = await OsmAuthenticated();
                 }
                 catch (Exception exception)
                 {
                     ToolkitMessageDialog.ShowDialog("Connection Failed: " + exception.Message);
+                    return;
+                }
+
+                if (authenticated)
+                {
+                    ToolkitMessageDialog.ShowDialog("Connection Successful.");
+                    return;
+                }
+                
+                string redirectUrl = @"https://localhost:8008/";
+
+                var loginUrl = string.Format(
+                    "{0}?response_type=code&client_id={1}&redirect_uri={2}&scope={3}",
+                    _osmAuthUrl, _osmClientId, redirectUrl, "write_gpx%20read_prefs");
+
+                using (var browser = new ChromiumWebBrowser(loginUrl.ToString()))
+                {
+                    browser.FrameLoadStart += BrowserOnFrameLoadStart;
+                    browser.LoadError += BrowserOnLoadError;
+                        
+                    using (_loginDialog = new ToolkitForm())
+                    {
+                        _loginDialog.StartPosition = FormStartPosition.CenterParent;
+                        _loginDialog.Text = "Openstreetmap Login";
+                        _loginDialog.Size = new System.Drawing.Size(454, 798);
+                        _loginDialog.MinimumSize = new System.Drawing.Size(454, 100);
+                        _loginDialog.StartPosition = FormStartPosition.CenterScreen;
+                        _loginDialog.Controls.Add(browser);
+                        browser.Dock = DockStyle.Fill;
+                        _loginDialog.ShowDialog(this);
+                    }
+                }
+
+                if (!string.IsNullOrWhiteSpace(_oauthCode))
+                {
+                    var tokenPostData = new Dictionary<string, string>
+                    {
+                        { "grant_type", "authorization_code" },
+                        { "code", _oauthCode },
+                        { "redirect_uri", redirectUrl },
+                        { "client_id",_osmClientId },
+                        { "client_secret", _osmClientSecret }
+                    };
+
+                    try
+                    {
+                        if (_osmHttpClient == null)
+                        {
+                            var httpHandler = new HttpClientHandler { CookieContainer = new CookieContainer() };
+                            _osmHttpClient = new HttpClient(httpHandler, false)
+                            {
+                                BaseAddress = new Uri(@"https://api.openstreetmap.org")
+                            };
+                        }
+
+                        using (var content = new FormUrlEncodedContent(tokenPostData))
+                        {
+                            var response = await _osmHttpClient.PostAsync(_osmAccessTokenUrl, content);
+                            if (response.IsSuccessStatusCode)
+                            {
+                                var jsonResponse = await response.Content.ReadAsStringAsync();
+                                var osmResponse = JsonConvert.DeserializeObject<OsmTokenResponse>(jsonResponse);
+                                _osmToken = osmResponse.AccessToken;
+                                _osmHttpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _osmToken);
+                            }
+                            else
+                            {
+                                ToolkitMessageDialog.ShowDialog("Failed to acquire access token: " + response.ReasonPhrase);
+                                return;
+                            }
+                        }
+                    }
+                    catch (Exception exception)
+                    {
+                        ToolkitMessageDialog.ShowDialog("Connection Failed: " + exception.Message);
+                        return;
+                    }
+                    
+                    try
+                    {
+                        using (var response = await _osmHttpClient.GetAsync("/api/0.6/user/details"))
+                        {
+                            if (response.IsSuccessStatusCode)
+                            {
+                                ToolkitMessageDialog.ShowDialog("Connection Successful.");
+                            }
+                            else
+                            {
+                                if (response.StatusCode == HttpStatusCode.Unauthorized)
+                                {
+                                    ToolkitMessageDialog.ShowDialog("Invalid Username/Password.");
+                                }
+                                else
+                                {
+                                    ToolkitMessageDialog.ShowDialog("Connection Failed: " + response.ReasonPhrase);
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception exception)
+                    {
+                        ToolkitMessageDialog.ShowDialog("Connection Failed: " + exception.Message);
+                    }
                 }
             }
             finally

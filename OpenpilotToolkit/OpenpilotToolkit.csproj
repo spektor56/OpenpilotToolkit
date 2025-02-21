@@ -13,6 +13,8 @@
 	<ApplicationManifest>app.manifest</ApplicationManifest>
 	<EnableUnsafeBinaryFormatterSerialization>true</EnableUnsafeBinaryFormatterSerialization>
 	<ForceDesignerDPIUnaware>true</ForceDesignerDPIUnaware>
+	  <PublishTrimmed>false</PublishTrimmed>
+	  <_SuppressWinFormsTrimError>true</_SuppressWinFormsTrimError>
   </PropertyGroup>
 
 	<PropertyGroup Condition="'$(PlatformTarget)' == 'x86'">
@@ -590,14 +592,10 @@
 
   <ItemGroup>
 	<PackageReference Include="CefSharp.WinForms.NETCore" Version="132.3.11" />
-	<PackageReference Include="DnsClient" Version="1.8.0" />
-	<PackageReference Include="FFMpegCore" Version="5.1.0" />
 	<PackageReference Include="FlyleafLib" Version="3.7.46" />
 	<PackageReference Include="LibUsbDotNet" Version="2.2.29" />
     <PackageReference Include="Microsoft.Windows.Compatibility" Version="9.0.2" />
-    <PackageReference Include="Nito.AsyncEx.Coordination" Version="5.1.2" />
     <PackageReference Include="Octokit" Version="14.0.0" />
-    <PackageReference Include="Serilog" Version="4.2.0" />
     <PackageReference Include="Serilog.Sinks.Async" Version="2.1.0" />
     <PackageReference Include="Serilog.Sinks.Debug" Version="3.0.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />

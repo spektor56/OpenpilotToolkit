@@ -22,6 +22,7 @@ namespace OpenpilotToolkit
         {
             Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
             Application.SetHighDpiMode(HighDpiMode.DpiUnaware);
+            Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             
             var splashForm = new SplashScreen();

@@ -478,13 +478,11 @@ namespace OpenpilotSdk.Hardware
                 }
                 else if (segmentFile.Name.StartsWith("rlog", StringComparison.OrdinalIgnoreCase))
                 {
-                    rawLog = new LogFile(segmentFile,
-                        segmentFile.Name.Contains(".bz2", StringComparison.OrdinalIgnoreCase));
+                    rawLog = new LogFile(segmentFile, OpenPilot.Logging.LogFile.GetCompressionAlgorithm(segmentFile.Name));
                 }
                 else if (segmentFile.Name.StartsWith("qlog", StringComparison.OrdinalIgnoreCase))
                 {
-                    quickLog = new LogFile(segmentFile,
-                        segmentFile.Name.Contains(".bz2", StringComparison.OrdinalIgnoreCase));
+                    quickLog = new LogFile(segmentFile, OpenPilot.Logging.LogFile.GetCompressionAlgorithm(segmentFile.Name));
                 }
                 else if (segmentFile.Name.Equals("qcamera.ts", StringComparison.OrdinalIgnoreCase))
                 {
@@ -525,13 +523,11 @@ namespace OpenpilotSdk.Hardware
                 }
                 else if (segmentFile.Name.StartsWith("rlog", StringComparison.OrdinalIgnoreCase))
                 {
-                    rawLog = new LogFile(segmentFile,
-                        segmentFile.Name.Contains(".bz2", StringComparison.OrdinalIgnoreCase));
+                    rawLog = new LogFile(segmentFile, OpenPilot.Logging.LogFile.GetCompressionAlgorithm(segmentFile.Name));
                 }
                 else if (segmentFile.Name.StartsWith("qlog", StringComparison.OrdinalIgnoreCase))
                 {
-                    quickLog = new LogFile(segmentFile,
-                        segmentFile.Name.Contains(".bz2", StringComparison.OrdinalIgnoreCase));
+                    quickLog = new LogFile(segmentFile, OpenPilot.Logging.LogFile.GetCompressionAlgorithm(segmentFile.Name));
                 }
                 else if (segmentFile.Name.Equals("qcamera.ts", StringComparison.OrdinalIgnoreCase))
                 {
@@ -602,11 +598,15 @@ namespace OpenpilotSdk.Hardware
                 {
                     foreach (var routeSegment in route.Segments.Where(segment => segment.QuickLog != null).OrderBy(segment => segment.Index))
                     {
-                        var firmware = await OpenPilot.Logging.LogFile.GetFirmwareAsync(SftpClient.OpenRead(routeSegment.QuickLog.File.FullName), routeSegment.QuickLog.IsCompressed).ConfigureAwait(false);
-
-                        if (firmware != null && firmware.Any())
+                        SftpFileStream fileStream;
+                        await using ((fileStream = await SftpClient.OpenAsync(routeSegment.QuickLog.File.FullName, FileMode.Open, FileAccess.Read, CancellationToken.None)).ConfigureAwait(false))
                         {
-                            return firmware;
+                            var firmware = await OpenPilot.Logging.LogFile.GetFirmwareAsync(fileStream, routeSegment.QuickLog.CompressionAlgorithm).ConfigureAwait(false);
+
+                            if (firmware != null && firmware.Any())
+                            {
+                                return firmware;
+                            }
                         }
                     }
                 }
@@ -637,7 +637,7 @@ namespace OpenpilotSdk.Hardware
             SftpFileStream fileStream;
             await using ((fileStream = await SftpClient.OpenAsync(routeSegment.QuickLog.File.FullName, FileMode.Open, FileAccess.Read, CancellationToken.None)).ConfigureAwait(false))
             {
-                return await OpenPilot.Logging.LogFile.GetWaypointsAsync(fileStream, routeSegment.QuickLog.IsCompressed).ConfigureAwait(false);
+                return await OpenPilot.Logging.LogFile.GetWaypointsAsync(fileStream, routeSegment.QuickLog.CompressionAlgorithm).ConfigureAwait(false);
             }
         }
 
