@@ -18,7 +18,6 @@ using Serilog.Core;
 using Xamarin.Essentials;
 using Environment = System.Environment;
 using Toolbar = AndroidX.AppCompat.Widget.Toolbar;
-using System.Net.NetworkInformation;
 
 namespace OpenpilotToolkitAndroid
 {

@@ -7,5 +7,6 @@
 	<string name="label">Openpilot Device</string>
 	<string name="fork_username">Fork Username</string>
 	<string name="fork_branch">Branch Name</string>
+	<string name="ssh_key_algorithm">Key Algorithm</string>
 
 </resources>

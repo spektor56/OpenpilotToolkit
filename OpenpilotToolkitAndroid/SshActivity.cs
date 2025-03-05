@@ -1,16 +1,19 @@
 ﻿using Android.Content;
 using Android.Runtime;
 using Android.Views;
-using System.Text;
 using Android.Webkit;
 using AndroidX.AppCompat.App;
 using AndroidX.Core.View;
 using AndroidX.DrawerLayout.Widget;
 using Google.Android.Material.Navigation;
+using Google.Android.Material.Snackbar;
 using Java.Interop;
 using Octokit;
 using Serilog;
 using Serilog.Core;
+using SshNet.Keygen;
+using SshNet.Keygen.Extensions;
+using System.Text;
 using Xamarin.Essentials;
 using Toolbar = AndroidX.AppCompat.Widget.Toolbar;
 
@@ -24,6 +27,8 @@ namespace OpenpilotToolkitAndroid
         private string _clientSecret = "M2ViZmJkNjI5ZjhiNWM4M2RjYjNjZDk5Y2I3MGM5Y2Y2OTgyOTE3OQ==";
         private string _oauthCode = "";
         private WebView web_view;
+        private AutoCompleteTextView _cmbSshAlgorithms;
+        private string _githubToken = "";
 
         protected override void OnCreate(Bundle? savedInstanceState)
         {
@@ -73,6 +78,13 @@ namespace OpenpilotToolkitAndroid
             sshWebViewClient.TokenReceived += SshWebViewClientOnTokenReceived;
             web_view.SetWebViewClient(sshWebViewClient);
             web_view.Visibility = ViewStates.Gone;
+            
+            var algorithmList = Enum.GetValues(typeof(SshKeyType)).Cast<SshKeyType>().Select(key => key.ToString()).ToArray();
+            ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
+                Resource.Layout.list_item, algorithmList);
+            _cmbSshAlgorithms = FindViewById<AutoCompleteTextView>(Resource.Id.autocomplete_algorithm);
+            _cmbSshAlgorithms.Adapter = adapter;
+            _cmbSshAlgorithms.SetText(SshKeyType.ED25519.ToString(), false);
         }
 
         [Export("GithubLogin")]
@@ -93,15 +105,22 @@ namespace OpenpilotToolkitAndroid
             web_view.LoadUrl(loginUrl.ToString());
         }
 
-        private async void SshWebViewClientOnTokenReceived(object? sender, TokenEventArgs e)
+        [Export("GenerateSshKey")]
+        public async void GenerateSshKey(View? view)
         {
-            web_view = FindViewById<WebView>(Resource.Id.webView1);
-            var sshLayout = FindViewById<LinearLayout>(Resource.Id.sshLoginLayout);
+            var keyAlgorithm = _cmbSshAlgorithms.Text;
+            if (string.IsNullOrWhiteSpace(keyAlgorithm))
+            {
+                Snackbar.Make(view, $"Key Algorithm is required.", BaseTransientBottomBar.LengthLong).Show();
+                return;
+            }
+
+            var sshAlgorithmLayout = FindViewById<LinearLayout>(Resource.Id.sshAlgorithmLayout);
             var progressSection = FindViewById<LinearLayout>(Resource.Id.progressSectionSSH);
             var progressText = FindViewById<TextView>(Resource.Id.progressTextSSH);
+            var sshLayout = FindViewById<LinearLayout>(Resource.Id.sshLoginLayout);
 
-            web_view.Visibility = ViewStates.Gone;
-            sshLayout.Visibility = ViewStates.Invisible;
+            sshAlgorithmLayout.Visibility = ViewStates.Gone;
             progressSection.Visibility = ViewStates.Visible;
 
             try
@@ -110,10 +129,11 @@ namespace OpenpilotToolkitAndroid
                 {
                     var accessToken =
                         await _githubClient.Oauth.CreateAccessToken(new OauthTokenRequest(_clientId, _clientSecret,
-                            e.Token));
+                            _githubToken));
                     _githubClient.Credentials = new Credentials(accessToken.AccessToken, AuthenticationType.Oauth);
 
-                    var keygen = new SshKeyGenerator.SshKeyGenerator(4096);
+                    var sshKeyGenerateInfo = new SshKeyGenerateInfo(Enum.Parse<SshKeyType>(keyAlgorithm.ToString()));
+                    var generatedKey = SshKey.Generate(sshKeyGenerateInfo);
 
                     try
                     {
@@ -150,7 +170,7 @@ namespace OpenpilotToolkitAndroid
                             progressText.Text = "Uploading public SSH key";
                         });
                         await _githubClient.User.GitSshKey.Create(new NewPublicKey("OpenpilotToolkitAndroidKey",
-                            keygen.ToRfcPublicKey()));
+                            generatedKey.ToPublic()));
                         Serilog.Log.Information("Created new github SSH public key '{key}'",
                             "OpenpilotToolkitAndroidKey");
                     }
@@ -168,7 +188,7 @@ namespace OpenpilotToolkitAndroid
                         });
                         await File.WriteAllTextAsync(
                             Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.Personal),
-                                "opensshkey"), keygen.ToPrivateKey());
+                                "opensshkey"), generatedKey.ToOpenSshFormat());
                         Serilog.Log.Information("Updated opensshkey private key file");
 
                         Intent mainActivity = new Intent(this, typeof(MainActivity));
@@ -196,6 +216,29 @@ namespace OpenpilotToolkitAndroid
             finally
             {
                 sshLayout.Visibility = ViewStates.Visible;
+            }
+
+        }
+        
+        private async void SshWebViewClientOnTokenReceived(object? sender, TokenEventArgs e)
+        {
+            web_view = FindViewById<WebView>(Resource.Id.webView1);
+            var sshLayout = FindViewById<LinearLayout>(Resource.Id.sshLoginLayout);
+            var sshAlgorithmLayout = FindViewById<LinearLayout>(Resource.Id.sshAlgorithmLayout);
+
+            _githubToken = e.Token;
+
+            if (!string.IsNullOrWhiteSpace(_githubToken))
+            {
+                web_view.Visibility = ViewStates.Gone;
+                sshLayout.Visibility = ViewStates.Gone;
+                sshAlgorithmLayout.Visibility = ViewStates.Visible;
+            }
+            else
+            {
+                web_view.Visibility = ViewStates.Gone;
+                sshLayout.Visibility = ViewStates.Visible;
+                sshAlgorithmLayout.Visibility = ViewStates.Gone;
             }
         }
 
