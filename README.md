@@ -12,7 +12,7 @@ Current Features
 ------
 
 Windows app:
-- Drive video preview and raw export of all cameras (video preview is first segment only for now)
+- Drive video player and raw export of all cameras
 - SSH wizard to generate and install SSH keys
 - Remote control for common functions
 - Fork installer
