@@ -40,8 +40,11 @@ jobs:
       - name: Install Capn Proto
         run: choco install capnproto
 
-      - name: Restore dependencies
+      - name: Restore ALL dependencies
         run: dotnet restore
+
+      - name: Restore OPTK dependencies
+        run: dotnet restore OpenpilotToolkit.sln
 
       - name: Restore dependencies (MaterialSkin)
         run: dotnet restore MaterialSkin/MaterialSkin.sln
