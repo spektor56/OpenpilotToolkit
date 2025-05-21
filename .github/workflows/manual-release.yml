@@ -1,0 +1,59 @@
+name: Manual Release Publisher
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., v1.0.0 or 1.0.0)'
+        required: true
+      release_notes:
+        description: 'Release notes (optional)'
+        required: false
+        default: ''
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+    permissions:
+      contents: write # Required to create releases/tags
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x' # Assuming .NET 9 based on project files
+
+      - name: Set version environment variable (strip v)
+        id: version_env
+        run: |
+          VERSION_FROM_INPUT="${{ github.event.inputs.version }}"
+          # Strip 'v' prefix if it exists
+          VERSION_NO_V="${VERSION_FROM_INPUT#v}"
+          echo "DOTNET_VERSION=$VERSION_NO_V" >> $GITHUB_ENV
+        shell: bash
+
+      - name: Restore dependencies
+        run: dotnet restore OpenpilotToolkit.sln
+
+      - name: Build project # This builds the whole solution including the updater if it's part of the .sln
+        run: dotnet build OpenpilotToolkit.sln --configuration Release --no-restore -p:Version=${{ env.DOTNET_VERSION }} # Pass version for main project
+
+      - name: Publish main project
+        run: dotnet publish OpenpilotToolkit/OpenpilotToolkit.csproj --configuration Release --output ./publish_output --no-build -p:Version=${{ env.DOTNET_VERSION }}
+
+      - name: Package application
+        run: |
+          Compress-Archive -Path ./publish_output/* -DestinationPath ./OpenpilotToolkit-${{ github.event.inputs.version }}.zip
+        shell: pwsh
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.event.inputs.version }}
+          name: Release ${{ github.event.inputs.version }}
+          body: ${{ github.event.inputs.release_notes }}
+          files: ./OpenpilotToolkit-${{ github.event.inputs.version }}.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
