@@ -43,6 +43,9 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore
 
+      - name: Restore dependencies (MaterialSkin)
+        run: dotnet restore OpenpilotToolkit/MaterialSkin/MaterialSkin.csproj
+
       - name: Build project # This builds the whole solution including the updater if it's part of the .sln
         run: dotnet build OpenpilotToolkit.sln --configuration Release --no-restore -p:Version=${{ env.DOTNET_VERSION }} # Pass version for main project
 
