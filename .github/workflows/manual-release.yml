@@ -37,8 +37,11 @@ jobs:
           echo "DOTNET_VERSION=$VERSION_NO_V" >> $GITHUB_ENV
         shell: bash
 
+      - name: Install Capn Proto
+        run: choco install capnproto
+
       - name: Restore dependencies
-        run: dotnet restore OpenpilotToolkit.sln
+        run: dotnet restore
 
       - name: Build project # This builds the whole solution including the updater if it's part of the .sln
         run: dotnet build OpenpilotToolkit.sln --configuration Release --no-restore -p:Version=${{ env.DOTNET_VERSION }} # Pass version for main project
