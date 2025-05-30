@@ -1,19 +1,51 @@
-﻿using Serilog;
+﻿using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace OpenpilotSdk.OpenPilot.Media
 {
-    public class CombinedStream : Stream
+    public sealed class CombinedStream : Stream
     {
-        private readonly Stream[] _streams;
-        private long _position;
-        private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
-        private readonly Lazy<long> _length;
-        private readonly double _duration;
+        private readonly SemaphoreSlim _asyncLock = new(1, 1); // For async operations
         private readonly bool _shouldDisposeStreams;
-
-        public event Action<int>? CurrentStreamIndexChanged;
+        private readonly Stream[] _streams;
+        private readonly long[] _streamStartPositions; // Precomputed cumulative positions for O(log n) seeking
+        private readonly Lock _syncLock = new(); // C# 13 Lock type for synchronous operations
 
         private int _currentStreamIndex;
+        private long _position;
+
+        public CombinedStream(IEnumerable<Stream> streams, bool shouldDisposeStreams = true)
+        {
+            _streams = streams.ToArray();
+            if (_streams.Length == 0)
+            {
+                throw new ArgumentException("At least one stream is required.", nameof(streams));
+            }
+
+            // Check all streams are seekable in one pass
+            foreach (var stream in _streams.AsSpan())
+            {
+                if (!stream.CanSeek)
+                {
+                    throw new ArgumentException("All streams must be seekable.");
+                }
+            }
+
+            _shouldDisposeStreams = shouldDisposeStreams;
+
+            // Precompute cumulative positions for O(log n) seeking
+            _streamStartPositions = new long[_streams.Length];
+            long cumulativeLength = 0;
+
+            for (var i = 0; i < _streams.Length; i++)
+            {
+                _streamStartPositions[i] = cumulativeLength;
+                cumulativeLength += _streams[i].Length;
+            }
+
+            Length = cumulativeLength;
+        }
+
         public int CurrentStreamIndex
         {
             get => _currentStreamIndex;
@@ -27,295 +59,366 @@ namespace OpenpilotSdk.OpenPilot.Media
             }
         }
 
-        public CombinedStream(IEnumerable<Stream> streams, bool shouldDisposeStreams = true)
-        {
-            _streams = streams.ToArray();
-            if (_streams.Any(s => !s.CanSeek))
-                throw new ArgumentException("All streams must be seekable.");
-            _length = new Lazy<long>(() => _streams.Sum(s => s.Length));
-            _shouldDisposeStreams = shouldDisposeStreams;
-        }
-
-        public IReadOnlyList<Stream> Streams => _streams;
+        public ReadOnlySpan<Stream> Streams => _streams.AsSpan();
 
         public override bool CanRead => true;
-
         public override bool CanSeek => true;
-
         public override bool CanWrite => false;
-
-        public override long Length => _length.Value;
+        public override long Length { get; }
 
         public override long Position
         {
             get => _position;
-            set
-            {
-                Seek(value, SeekOrigin.Begin);
-                Log.Debug(string.Format("Position Set to: {0:#0.#}%", (decimal)value / Length * 100));
-            }
+            set => Seek(value, SeekOrigin.Begin);
         }
 
-        public override void Flush() { }
+        public event Action<int>? CurrentStreamIndexChanged;
+
+        public override void Flush()
+        {
+        }
 
         public override int Read(byte[] buffer, int offset, int count)
         {
-            Log.Debug(string.Format("Reading from offset: {0} count: {1}", offset, count));
-            _semaphore.Wait();
-            try
+            return ReadCore(buffer.AsSpan(offset, count));
+        }
+
+        public override int Read(Span<byte> buffer)
+        {
+            return ReadCore(buffer);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private int ReadCore(Span<byte> buffer)
+        {
+            if (buffer.IsEmpty)
             {
-                var totalBytesRead = 0;
-
-                while (count > 0 && _currentStreamIndex < _streams.Length)
-                {
-                    var currentStream = _streams[_currentStreamIndex];
-                    var bytesRead = currentStream.Read(buffer, offset, count);
-                    if (bytesRead == 0)
-                    {
-                        if (_currentStreamIndex == _streams.Length - 1)
-                        {
-                            _position = _length.Value;
-                            break;
-                        }
-                        if (_streams[_currentStreamIndex + 1].Position != 0)
-                        {
-                            _streams[_currentStreamIndex + 1].Position = 0;
-                        }
-                        CurrentStreamIndex++;
-                        continue;
-                    }
-
-                    totalBytesRead += bytesRead;
-                    offset += bytesRead;
-                    count -= bytesRead;
-                    _position += bytesRead;
-                }
-
-                return totalBytesRead;
+                return 0;
             }
-            finally
+
+            lock (_syncLock)
             {
-                _semaphore.Release();
+                return ReadCoreUnsafe(buffer);
             }
         }
 
-        public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+        private int ReadCoreUnsafe(Span<byte> buffer)
         {
-            Log.Debug(string.Format("Reading async from offset: {0} count: {1}", offset, count));
-            await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
-            try
-            {
-                var totalBytesRead = 0;
+            var totalBytesRead = 0;
+            var remainingCount = buffer.Length;
 
-                while (count > 0 && _currentStreamIndex < _streams.Length)
+            while (remainingCount > 0 && _currentStreamIndex < _streams.Length)
+            {
+                var currentStream = _streams[_currentStreamIndex];
+                var bytesToRead = Math.Min(remainingCount,
+                    (int)Math.Min(currentStream.Length - currentStream.Position, remainingCount));
+
+                if (bytesToRead <= 0)
                 {
-                    var currentStream = _streams[_currentStreamIndex];
-                    var bytesRead = await currentStream.ReadAsync(buffer.AsMemory(offset, count), cancellationToken).ConfigureAwait(false);
-                    if (bytesRead == 0)
+                    // Move to next stream
+                    if (!MoveToNextStreamUnsafe())
                     {
-                        if (_currentStreamIndex == _streams.Length - 1)
-                        {
-                            _position = _length.Value;
-                            break;
-                        }
-                        if (_streams[_currentStreamIndex + 1].Position != 0)
-                        {
-                            _streams[_currentStreamIndex + 1].Position = 0;
-                        }   
-                        CurrentStreamIndex++;
-                        continue;
+                        break;
                     }
 
-                    totalBytesRead += bytesRead;
-                    offset += bytesRead;
-                    count -= bytesRead;
-                    _position += bytesRead;
+                    continue;
                 }
 
-                return totalBytesRead;
+                var currentBuffer = buffer.Slice(totalBytesRead, bytesToRead);
+                var bytesRead = currentStream.Read(currentBuffer);
+
+                if (bytesRead == 0)
+                {
+                    if (!MoveToNextStreamUnsafe())
+                    {
+                        break;
+                    }
+
+                    continue;
+                }
+
+                totalBytesRead += bytesRead;
+                remainingCount -= bytesRead;
+                _position += bytesRead;
+            }
+
+            return totalBytesRead;
+        }
+
+        public override async Task<int> ReadAsync(byte[] buffer, int offset, int count,
+            CancellationToken cancellationToken = default)
+        {
+            return await ReadAsync(buffer.AsMemory(offset, count), cancellationToken).ConfigureAwait(false);
+        }
+
+        public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+        {
+            if (buffer.IsEmpty)
+            {
+                return 0;
+            }
+
+            await _asyncLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                return await ReadAsyncCoreUnsafe(buffer, cancellationToken).ConfigureAwait(false);
             }
             finally
             {
-                _semaphore.Release();
+                _asyncLock.Release();
             }
+        }
+
+        private async ValueTask<int> ReadAsyncCoreUnsafe(Memory<byte> buffer, CancellationToken cancellationToken)
+        {
+            var totalBytesRead = 0;
+            var remainingCount = buffer.Length;
+
+            while (remainingCount > 0 && _currentStreamIndex < _streams.Length &&
+                   !cancellationToken.IsCancellationRequested)
+            {
+                var currentStream = _streams[_currentStreamIndex];
+                var bytesToRead = Math.Min(remainingCount,
+                    (int)Math.Min(currentStream.Length - currentStream.Position, remainingCount));
+
+                if (bytesToRead <= 0)
+                {
+                    if (!MoveToNextStreamUnsafe())
+                    {
+                        break;
+                    }
+
+                    continue;
+                }
+
+                var currentBuffer = buffer.Slice(totalBytesRead, bytesToRead);
+                var bytesRead = await currentStream.ReadAsync(currentBuffer, cancellationToken).ConfigureAwait(false);
+
+                if (bytesRead == 0)
+                {
+                    if (!MoveToNextStreamUnsafe())
+                    {
+                        break;
+                    }
+
+                    continue;
+                }
+
+                totalBytesRead += bytesRead;
+                remainingCount -= bytesRead;
+                _position += bytesRead;
+            }
+
+            return totalBytesRead;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool MoveToNextStreamUnsafe()
+        {
+            if (_currentStreamIndex >= _streams.Length - 1)
+            {
+                _position = Length;
+                return false;
+            }
+
+            // Ensure next stream starts at position 0
+            var nextIndex = _currentStreamIndex + 1;
+            if (_streams[nextIndex].Position != 0)
+            {
+                _streams[nextIndex].Position = 0;
+            }
+
+            CurrentStreamIndex = nextIndex;
+            return true;
         }
 
         public override long Seek(long offset, SeekOrigin origin)
         {
-            Log.Debug(string.Format("Seeking to: {0:#0.#}%", (decimal)offset / Length * 100));
-            _semaphore.Wait();
-            try
+            lock (_syncLock)
             {
-                long targetPosition;
-
-                switch (origin)
-                {
-                    case SeekOrigin.Begin:
-                        targetPosition = Math.Max(0, Math.Min(_length.Value, offset));
-                        break;
-                    case SeekOrigin.Current:
-                        targetPosition = Math.Max(0, Math.Min(_length.Value, _position + offset));
-                        break;
-                    case SeekOrigin.End:
-                        targetPosition = Math.Max(0, Math.Min(_length.Value, _length.Value + offset));
-                        break;
-                    default:
-                        throw new ArgumentException("Invalid seek origin.");
-                }
-
-                var remainingOffset = targetPosition;
-
-                for (CurrentStreamIndex = 0; _currentStreamIndex < _streams.Length; CurrentStreamIndex++)
-                {
-                    if (remainingOffset < _streams[_currentStreamIndex].Length)
-                    {
-                        _streams[_currentStreamIndex].Position = remainingOffset;
-                        for (int i = _currentStreamIndex + 1; i < _streams.Length; i++)
-                        {
-                            _streams[i].Position = 0;
-                        }
-                        _position = targetPosition;
-                        return _position;
-                    }
-                    else
-                    {
-                        _streams[_currentStreamIndex].Position = _streams[_currentStreamIndex].Length;
-                        remainingOffset -= _streams[_currentStreamIndex].Length;
-                    }
-                }
-
-                if (_streams.Length > 0)
-                {
-                    var lastStream = _streams[_streams.Length - 1];
-                    lastStream.Position = lastStream.Length;
-                }
-
-                _position = _length.Value;
-                return _position;
-            }
-            finally
-            {
-                _semaphore.Release();
+                return SeekCoreUnsafe(offset, origin);
             }
         }
 
-        public override void SetLength(long value) => throw new NotSupportedException();
+        private long SeekCoreUnsafe(long offset, SeekOrigin origin)
+        {
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
 
-        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+            var targetPosition = origin switch
+            {
+                SeekOrigin.Begin => Math.Clamp(offset, 0, Length),
+                SeekOrigin.Current => Math.Clamp(_position + offset, 0, Length),
+                SeekOrigin.End => Math.Clamp(Length + offset, 0, Length),
+                _ => throw new ArgumentException("Invalid seek origin.", nameof(origin))
+            };
+
+            if (targetPosition == _position)
+            {
+                return _position;
+            }
+
+            // Binary search to find the correct stream - O(log n) instead of O(n)
+            var streamIndex = FindStreamIndex(targetPosition);
+            var localOffset = targetPosition - _streamStartPositions[streamIndex];
+
+            // Set position in target stream
+            _streams[streamIndex].Position = localOffset;
+
+            // Reset positions in streams after the target
+            for (var i = streamIndex + 1; i < _streams.Length; i++)
+            {
+                if (_streams[i].Position != 0)
+                {
+                    _streams[i].Position = 0;
+                }
+            }
+
+            _position = targetPosition;
+            CurrentStreamIndex = streamIndex;
+
+            stopwatch.Stop();
+            Debug.Print("EX:" + stopwatch.ElapsedMilliseconds);
+            return _position;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private int FindStreamIndex(long targetPosition)
+        {
+            // Use built-in binary search - returns bitwise complement of next larger element if not found
+            var streamPositions = _streamStartPositions.AsSpan();
+            var index = streamPositions.BinarySearch(targetPosition);
+
+            if (index >= 0)
+            {
+                // Exact match found
+                return index;
+            }
+
+            // Not found - get the index of the stream that should contain this position
+            var insertionPoint = ~index;
+            // We want the stream before the insertion point (since we're looking for the stream that contains this position)
+            return Math.Max(0, insertionPoint - 1);
+        }
+
+        public override void SetLength(long value)
+        {
+            throw new NotSupportedException();
+        }
+
+        public override void Write(byte[] buffer, int offset, int count)
+        {
+            throw new NotSupportedException();
+        }
 
         public override Task FlushAsync(CancellationToken cancellationToken)
         {
-            return Task.CompletedTask; // No-op since this stream is read-only.
+            return Task.CompletedTask;
         }
 
         public override async Task CopyToAsync(Stream destination, int bufferSize, CancellationToken cancellationToken)
         {
-            await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+            await _asyncLock.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
+                // Reset to beginning
                 _position = 0;
                 CurrentStreamIndex = 0;
-                foreach (var stream in _streams)
+
+                // Reset all stream positions - use array iteration instead of Span in async method
+                for (var i = 0; i < _streams.Length; i++)
                 {
-                    stream.Position = 0;
+                    if (_streams[i].Position != 0)
+                    {
+                        _streams[i].Position = 0;
+                    }
                 }
 
-                for (int i = _currentStreamIndex; i < _streams.Length; i++)
+                // Copy each stream sequentially
+                for (var i = 0; i < _streams.Length; i++)
                 {
+                    CurrentStreamIndex = i;
                     await _streams[i].CopyToAsync(destination, bufferSize, cancellationToken).ConfigureAwait(false);
                 }
             }
             finally
             {
-                _semaphore.Release();
+                _asyncLock.Release();
             }
         }
 
         /// <summary>
-        /// Seeks to the next stream in the CombinedStream.
+        ///     Seeks to the next stream in the CombinedStream.
         /// </summary>
         /// <returns>True if the next stream is successfully selected, false if there are no more streams.</returns>
-        public async Task<bool> SeekToNextStreamAsync()
+        public ValueTask<bool> SeekToNextStreamAsync()
         {
-            await _semaphore.WaitAsync().ConfigureAwait(false);
-            try
+            lock (_syncLock)
             {
                 if (_currentStreamIndex >= _streams.Length - 1)
                 {
-                    return false;
+                    return ValueTask.FromResult(false);
                 }
 
-                _position += _streams[_currentStreamIndex].Length - _streams[_currentStreamIndex].Position;
+                // Calculate new position
+                _position = _streamStartPositions[_currentStreamIndex + 1];
 
+                // Reset stream positions
                 _streams[_currentStreamIndex].Position = 0;
                 _streams[_currentStreamIndex + 1].Position = 0;
 
                 CurrentStreamIndex++;
-
-                return true;
-            }
-            finally
-            {
-                _semaphore.Release();
+                return ValueTask.FromResult(true);
             }
         }
 
         /// <summary>
-        /// Seeks to the previous stream in the CombinedStream.
+        ///     Seeks to the previous stream in the CombinedStream.
         /// </summary>
         /// <returns>True if the previous stream is successfully selected, false if there are no previous streams.</returns>
-        public async Task<bool> SeekToPreviousStreamAsync()
+        public ValueTask<bool> SeekToPreviousStreamAsync()
         {
-            await _semaphore.WaitAsync().ConfigureAwait(false);
-            try
+            lock (_syncLock)
             {
                 if (_currentStreamIndex <= 0)
                 {
-                    return false;
+                    return ValueTask.FromResult(false);
                 }
 
-                _position -= _streams[_currentStreamIndex].Position + _streams[_currentStreamIndex - 1].Length;
+                // Calculate new position
+                _position = _streamStartPositions[_currentStreamIndex - 1];
 
+                // Reset stream positions
                 _streams[_currentStreamIndex].Position = 0;
                 _streams[_currentStreamIndex - 1].Position = 0;
 
                 CurrentStreamIndex--;
-
-                return true;
-            }
-            finally
-            {
-                _semaphore.Release();
+                return ValueTask.FromResult(true);
             }
         }
 
-        public async Task<bool> SeekToStreamAsync(int stream)
+        public ValueTask<bool> SeekToStreamAsync(int streamIndex)
         {
-            await _semaphore.WaitAsync().ConfigureAwait(false);
-            try
+            lock (_syncLock)
             {
-                if (stream > _streams.Length - 1 || stream < 0)
+                if (streamIndex < 0 || streamIndex >= _streams.Length)
                 {
-                    throw new IndexOutOfRangeException("Invalid Index");
+                    throw new ArgumentOutOfRangeException(nameof(streamIndex), "Invalid stream index");
                 }
 
-                long position = 0;
-                for (int i = 0; i < stream; i++)
+                // Set position to start of target stream
+                _position = _streamStartPositions[streamIndex];
+
+                // Reset current and target stream positions
+                if (_currentStreamIndex < _streams.Length)
                 {
-                    position += _streams[i].Length;
+                    _streams[_currentStreamIndex].Position = 0;
                 }
 
-                _streams[_currentStreamIndex].Position = 0;
-                _streams[stream].Position = 0;
+                _streams[streamIndex].Position = 0;
 
-                _position = position;
-                CurrentStreamIndex = stream;
-
-                return true;
-            }
-            finally
-            {
-                _semaphore.Release();
+                CurrentStreamIndex = streamIndex;
+                return ValueTask.FromResult(true);
             }
         }
 
@@ -323,10 +426,9 @@ namespace OpenpilotSdk.OpenPilot.Media
         {
             if (disposing && _shouldDisposeStreams)
             {
-                _semaphore.Wait();
-                try
+                lock (_syncLock)
                 {
-                    foreach (var stream in _streams)
+                    foreach (var stream in _streams.AsSpan())
                     {
                         try
                         {
@@ -334,16 +436,13 @@ namespace OpenpilotSdk.OpenPilot.Media
                         }
                         catch (Exception ex)
                         {
-                            System.Diagnostics.Debug.WriteLine($"Error disposing stream: {ex}");
+                            Debug.WriteLine($"Error disposing stream: {ex}");
                         }
                     }
                 }
-                finally
-                {
-                    _semaphore.Release();
-                }
             }
 
+            _asyncLock.Dispose();
             base.Dispose(disposing);
         }
 
@@ -351,34 +450,36 @@ namespace OpenpilotSdk.OpenPilot.Media
         {
             if (_shouldDisposeStreams)
             {
-                await _semaphore.WaitAsync().ConfigureAwait(false);
+                await _asyncLock.WaitAsync().ConfigureAwait(false);
                 try
                 {
-                    foreach (var stream in _streams)
+                    // Use array iteration instead of Span in async method
+                    for (var i = 0; i < _streams.Length; i++)
                     {
                         try
                         {
-                            if (stream is IAsyncDisposable asyncDisposable)
+                            if (_streams[i] is IAsyncDisposable asyncDisposable)
                             {
                                 await asyncDisposable.DisposeAsync().ConfigureAwait(false);
                             }
                             else
                             {
-                                stream.Dispose();
+                                _streams[i].Dispose();
                             }
                         }
                         catch (Exception ex)
                         {
-                            System.Diagnostics.Debug.WriteLine($"Error disposing stream: {ex}");
+                            Debug.WriteLine($"Error disposing stream: {ex}");
                         }
                     }
                 }
                 finally
                 {
-                    _semaphore.Release();
+                    _asyncLock.Release();
                 }
             }
 
+            _asyncLock.Dispose();
             await base.DisposeAsync().ConfigureAwait(false);
         }
     }
