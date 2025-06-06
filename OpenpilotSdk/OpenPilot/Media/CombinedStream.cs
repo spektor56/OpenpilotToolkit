@@ -5,24 +5,25 @@ namespace OpenpilotSdk.OpenPilot.Media
 {
     public sealed class CombinedStream : Stream
     {
-        private readonly SemaphoreSlim _asyncLock = new(1, 1); // For async operations
+        private readonly SemaphoreSlim _asyncLock = new(1, 1);
         private readonly bool _shouldDisposeStreams;
         private readonly Stream[] _streams;
-        private readonly long[] _streamStartPositions; // Precomputed cumulative positions for O(log n) seeking
-        private readonly Lock _syncLock = new(); // C# 13 Lock type for synchronous operations
+        private readonly long[] _streamStartPositions;
+        private readonly Lock _syncLock = new();
 
         private int _currentStreamIndex;
         private long _position;
 
         public CombinedStream(IEnumerable<Stream> streams, bool shouldDisposeStreams = true)
         {
+            ArgumentNullException.ThrowIfNull(streams, nameof(streams));
+
             _streams = streams.ToArray();
             if (_streams.Length == 0)
             {
                 throw new ArgumentException("At least one stream is required.", nameof(streams));
             }
 
-            // Check all streams are seekable in one pass
             foreach (var stream in _streams.AsSpan())
             {
                 if (!stream.CanSeek)
@@ -33,17 +34,16 @@ namespace OpenpilotSdk.OpenPilot.Media
 
             _shouldDisposeStreams = shouldDisposeStreams;
 
-            // Precompute cumulative positions for O(log n) seeking
             _streamStartPositions = new long[_streams.Length];
-            long cumulativeLength = 0;
+            long totalLength = 0;
 
             for (var i = 0; i < _streams.Length; i++)
             {
-                _streamStartPositions[i] = cumulativeLength;
-                cumulativeLength += _streams[i].Length;
+                _streamStartPositions[i] = totalLength;
+                totalLength += _streams[i].Length;
             }
 
-            Length = cumulativeLength;
+            Length = totalLength;
         }
 
         public int CurrentStreamIndex
@@ -69,7 +69,27 @@ namespace OpenpilotSdk.OpenPilot.Media
         public override long Position
         {
             get => _position;
-            set => Seek(value, SeekOrigin.Begin);
+            set
+            {
+                if (value == _position)
+                    return;
+
+                var offsetFromCurrent = value - _position;
+                var offsetFromEnd = value - Length;
+
+                if (Math.Abs(value) <= Math.Abs(offsetFromCurrent) && Math.Abs(value) <= Math.Abs(offsetFromEnd))
+                {
+                    Seek(value, SeekOrigin.Begin);
+                }
+                else if (Math.Abs(offsetFromCurrent) <= Math.Abs(offsetFromEnd))
+                {
+                    Seek(offsetFromCurrent, SeekOrigin.Current);
+                }
+                else
+                {
+                    Seek(offsetFromEnd, SeekOrigin.End);
+                }
+            }
         }
 
         public event Action<int>? CurrentStreamIndexChanged;
@@ -115,7 +135,6 @@ namespace OpenpilotSdk.OpenPilot.Media
 
                 if (bytesToRead <= 0)
                 {
-                    // Move to next stream
                     if (!MoveToNextStreamUnsafe())
                     {
                         break;
@@ -221,7 +240,6 @@ namespace OpenpilotSdk.OpenPilot.Media
                 return false;
             }
 
-            // Ensure next stream starts at position 0
             var nextIndex = _currentStreamIndex + 1;
             if (_streams[nextIndex].Position != 0)
             {
@@ -242,9 +260,6 @@ namespace OpenpilotSdk.OpenPilot.Media
 
         private long SeekCoreUnsafe(long offset, SeekOrigin origin)
         {
-            var stopwatch = new Stopwatch();
-            stopwatch.Start();
-
             var targetPosition = origin switch
             {
                 SeekOrigin.Begin => Math.Clamp(offset, 0, Length),
@@ -258,14 +273,11 @@ namespace OpenpilotSdk.OpenPilot.Media
                 return _position;
             }
 
-            // Binary search to find the correct stream - O(log n) instead of O(n)
             var streamIndex = FindStreamIndex(targetPosition);
             var localOffset = targetPosition - _streamStartPositions[streamIndex];
 
-            // Set position in target stream
             _streams[streamIndex].Position = localOffset;
 
-            // Reset positions in streams after the target
             for (var i = streamIndex + 1; i < _streams.Length; i++)
             {
                 if (_streams[i].Position != 0)
@@ -277,27 +289,21 @@ namespace OpenpilotSdk.OpenPilot.Media
             _position = targetPosition;
             CurrentStreamIndex = streamIndex;
 
-            stopwatch.Stop();
-            Debug.Print("EX:" + stopwatch.ElapsedMilliseconds);
             return _position;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private int FindStreamIndex(long targetPosition)
         {
-            // Use built-in binary search - returns bitwise complement of next larger element if not found
             var streamPositions = _streamStartPositions.AsSpan();
             var index = streamPositions.BinarySearch(targetPosition);
 
             if (index >= 0)
             {
-                // Exact match found
                 return index;
             }
 
-            // Not found - get the index of the stream that should contain this position
             var insertionPoint = ~index;
-            // We want the stream before the insertion point (since we're looking for the stream that contains this position)
             return Math.Max(0, insertionPoint - 1);
         }
 
@@ -321,11 +327,9 @@ namespace OpenpilotSdk.OpenPilot.Media
             await _asyncLock.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
-                // Reset to beginning
                 _position = 0;
                 CurrentStreamIndex = 0;
 
-                // Reset all stream positions - use array iteration instead of Span in async method
                 for (var i = 0; i < _streams.Length; i++)
                 {
                     if (_streams[i].Position != 0)
@@ -334,7 +338,6 @@ namespace OpenpilotSdk.OpenPilot.Media
                     }
                 }
 
-                // Copy each stream sequentially
                 for (var i = 0; i < _streams.Length; i++)
                 {
                     CurrentStreamIndex = i;
