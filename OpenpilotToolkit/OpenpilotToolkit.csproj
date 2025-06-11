@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net9.0-windows7.0</TargetFramework>
+    <TargetFramework>net10.0-windows</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
 	<DebugType>embedded</DebugType>
 	<ApplicationIcon>Resources\ic_launcher-web.ico</ApplicationIcon>
@@ -12,7 +12,7 @@
 	<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
 	<ApplicationManifest>app.manifest</ApplicationManifest>
 	<EnableUnsafeBinaryFormatterSerialization>true</EnableUnsafeBinaryFormatterSerialization>
-	<ForceDesignerDPIUnaware>true</ForceDesignerDPIUnaware>
+	  <ForceDesignerDPIUnaware>true</ForceDesignerDPIUnaware>
 	  <PublishTrimmed>false</PublishTrimmed>
 	  <_SuppressWinFormsTrimError>true</_SuppressWinFormsTrimError>
   </PropertyGroup>
@@ -591,15 +591,15 @@
 	</ItemGroup>
 
   <ItemGroup>
-	<PackageReference Include="CefSharp.WinForms.NETCore" Version="132.3.11" />
+	<PackageReference Include="CefSharp.WinForms.NETCore" Version="137.0.100" />
 	<PackageReference Include="FlyleafLib" Version="3.7.46" />
 	<PackageReference Include="LibUsbDotNet" Version="2.2.29" />
-    <PackageReference Include="Microsoft.Windows.Compatibility" Version="9.0.2" />
+    <PackageReference Include="Microsoft.Windows.Compatibility" Version="10.0.0-preview.5.25277.114" />
     <PackageReference Include="Octokit" Version="14.0.0" />
     <PackageReference Include="Serilog.Sinks.Async" Version="2.1.0" />
     <PackageReference Include="Serilog.Sinks.Debug" Version="3.0.0" />
-    <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
-    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.6" />
+    <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.8" />
   </ItemGroup>
 
   <ItemGroup>
@@ -671,10 +671,6 @@
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="FFmpeg\" />
   </ItemGroup>
 
   <Target Name="PreBuild" BeforeTargets="PreBuildEvent">

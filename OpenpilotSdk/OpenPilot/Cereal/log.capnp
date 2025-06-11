@@ -80,6 +80,7 @@ struct OnroadEvent @0xc4fa6047f024e718 {
     commIssueAvgFreq @44;
     tooDistracted @45;
     posenetInvalid @46;
+    soundsUnavailableDEPRECATED @47;
     preLaneChangeLeft @48;
     preLaneChangeRight @49;
     laneChange @50;
@@ -125,8 +126,7 @@ struct OnroadEvent @0xc4fa6047f024e718 {
     espActive @90;
     personalityChanged @91;
     aeb @92;
-
-    soundsUnavailableDEPRECATED @47;
+    radarTempUnavailable @93;
   }
 }
 
@@ -150,6 +150,10 @@ struct InitData {
   gitCommitDate @21 :Text;
   gitBranch @11 :Text;
   gitRemote @13 :Text;
+
+  # this is source commit for prebuilt branches
+  gitSrcCommit @23 :Text;
+  gitSrcCommitDate @24 :Text;
 
   androidProperties @16 :Map(Text, Text);
 
@@ -724,7 +728,7 @@ struct PeripheralState {
 struct RadarState @0x9a185389d6fdd05f {
   mdMonoTime @6 :UInt64;
   carStateMonoTime @11 :UInt64;
-  radarErrors @12 :List(Car.RadarData.Error);
+  radarErrors @13 :Car.RadarData.Error;
 
   leadOne @3 :LeadData;
   leadTwo @4 :LeadData;
@@ -758,6 +762,7 @@ struct RadarState @0x9a185389d6fdd05f {
   calPercDEPRECATED @9 :Int8;
   canMonoTimesDEPRECATED @10 :List(UInt64);
   cumLagMsDEPRECATED @5 :Float32;
+  radarErrorsDEPRECATED @12 :List(Car.RadarData.ErrorDEPRECATED);
 }
 
 struct LiveCalibrationData {
@@ -1168,6 +1173,8 @@ struct ModelDataV2 {
 
   struct Action {
     desiredCurvature @0 :Float32;
+    desiredAcceleration @1 :Float32;
+    shouldStop @2 :Bool;
   }
 }
 
@@ -1193,15 +1200,13 @@ struct EncodeIndex {
   enum Type {
     bigBoxLossless @0;
     fullHEVC @1;
-    qcameraH264 @6;
-    livestreamH264 @7;
-
     # deprecated
     bigBoxHEVCDEPRECATED @2;
     chffrAndroidH264DEPRECATED @3;
     fullLosslessClipDEPRECATED @4;
     frontDEPRECATED @5;
-
+    qcameraH264 @6;
+    livestreamH264 @7;
   }
 }
 
@@ -1580,6 +1585,10 @@ struct UbloxGnss {
       svId @0 :UInt8;
       gnssId @1 :UInt8;
       flagsBitfield @2 :UInt32;
+      cno @3 :UInt8;
+      elevationDeg @4 :Int8;
+      azimuthDeg @5 :Int16;
+      pseudorangeResidual @6 :Float32;
     }
   }
 
@@ -2238,6 +2247,11 @@ struct LiveParametersData {
   roll @14 :Float32;
   debugFilterState @16 :FilterState;
 
+  angleOffsetValid @17 :Bool = true;
+  angleOffsetAverageValid @18 :Bool = true;
+  steerRatioValid @19 :Bool = true;
+  stiffnessFactorValid @20 :Bool = true;
+
   yawRateDEPRECATED @7 :Float32;
   filterStateDEPRECATED @15 :LiveLocationKalman.Measurement;
 
@@ -2261,6 +2275,22 @@ struct LiveTorqueParametersData {
   points @10 :List(List(Float32));
   version @11 :Int32;
   useParams @12 :Bool;
+}
+
+struct LiveDelayData {
+  lateralDelay @0 :Float32;
+  validBlocks @1 :Int32;
+  status @2 :Status;
+
+  lateralDelayEstimate @3 :Float32;
+  lateralDelayEstimateStd @5 :Float32;
+  points @4 :List(Float32);
+
+  enum Status {
+    unestimated @0;
+    estimated @1;
+    invalid @2;
+  }
 }
 
 struct LiveMapDataDEPRECATED {
@@ -2493,6 +2523,7 @@ struct Event {
     gnssMeasurements @91 :GnssMeasurements;
     liveParameters @61 :LiveParametersData;
     liveTorqueParameters @94 :LiveTorqueParametersData;
+    liveDelay @146 : LiveDelayData;
     cameraOdometry @63 :CameraOdometry;
     thumbnail @66: Thumbnail;
     onroadEvents @134: List(OnroadEvent);
@@ -2564,7 +2595,7 @@ struct Event {
 
     # DO change the name of the field and struct
     # DON'T change the ID (e.g. @107)
-    # DON'T change which struct it points to 
+    # DON'T change which struct it points to
     customReserved0 @107 :Custom.CustomReserved0;
     customReserved1 @108 :Custom.CustomReserved1;
     customReserved2 @109 :Custom.CustomReserved2;

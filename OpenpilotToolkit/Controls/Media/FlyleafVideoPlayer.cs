@@ -31,6 +31,21 @@ public partial class FlyleafVideoPlayer : UserControl
         flyleafHost1.Player.PropertyChanged += Player_PropertyChanged;
     }
 
+    public void Stop()
+    {
+        flyleafHost1.Player.Stop();
+    }
+
+    public void Pause()
+    {
+        flyleafHost1.Player.Pause();
+    }
+
+    public void Play()
+    {
+        flyleafHost1.Player.Play();
+    }
+
     private void Player_PropertyChanged(object sender, PropertyChangedEventArgs e)
     {
         if (_currentStream != null)
@@ -87,14 +102,25 @@ public partial class FlyleafVideoPlayer : UserControl
         return result;
     }
 
+    private bool _seekToKeyframes = true;
+
+    public async Task SetSeekToKeyframesAsync(bool seekToKeyframes)
+    {
+        _seekToKeyframes = seekToKeyframes;
+        if (_combinedStreamCollection != null)
+        {
+            await _combinedStreamCollection.SetSeekToKeyframesAsync(seekToKeyframes).ConfigureAwait(false);
+        }
+    }
+
     private async void PreviousSegmentAsync()
     {
         if (flyleafHost1.Player.Status == Status.Ended)
         {
             await OpenStreamAsync(_currentStream).ConfigureAwait(false);
-            if (_currentStream.Streams.Count - 2 >= 0)
+            if (_currentStream.Streams.Length - 2 >= 0)
             {
-                await _currentStream.SeekToStreamAsync(_currentStream.Streams.Count - 2).ConfigureAwait(false);
+                await _currentStream.SeekToStreamAsync(_currentStream.Streams.Length - 2).ConfigureAwait(false);
             }
 
             flyleafHost1.Player.Flush();
@@ -129,7 +155,7 @@ public partial class FlyleafVideoPlayer : UserControl
             await DisposeStreamAsync(_combinedStreamCollection).ConfigureAwait(false);
             _isOpening = true;
 
-            var combinedStreamCollection = new CombinedStreamCollection(openpilotDevice, route);
+            var combinedStreamCollection = new CombinedStreamCollection(openpilotDevice, route, _seekToKeyframes);
             _combinedStreamCollection = combinedStreamCollection;
 
             cmbStreamType.Invoke((MethodInvoker)(() =>

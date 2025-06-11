@@ -1,26 +1,26 @@
-﻿using System.Collections.Immutable;
+﻿using DnsClient;
+using FFMpegCore;
+using NetTopologySuite.IO;
+using OpenpilotSdk.Exceptions;
+using OpenpilotSdk.Git;
+using OpenpilotSdk.OpenPilot;
+using OpenpilotSdk.OpenPilot.FileTypes;
+using OpenpilotSdk.OpenPilot.Fork;
+using OpenpilotSdk.OpenPilot.Media;
+using OpenpilotSdk.OpenPilot.Segment;
+using OpenpilotSdk.Sftp;
+using Renci.SshNet;
+using Renci.SshNet.Common;
+using Renci.SshNet.Sftp;
+using Serilog;
+using System.Collections.Immutable;
 using System.Drawing;
+using System.Globalization;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
-using System.Text.RegularExpressions;
-using FFMpegCore;
-using NetTopologySuite.IO;
-using OpenpilotSdk.Git;
-using OpenpilotSdk.OpenPilot;
-using OpenpilotSdk.OpenPilot.Fork;
-using Renci.SshNet;
-using Renci.SshNet.Sftp;
-using OpenpilotSdk.Sftp;
-using Renci.SshNet.Common;
-using Serilog;
-using System.Globalization;
 using System.Runtime.CompilerServices;
-using OpenpilotSdk.Exceptions;
-using OpenpilotSdk.OpenPilot.Segment;
-using DnsClient;
-using OpenpilotSdk.OpenPilot.FileTypes;
-using OpenpilotSdk.OpenPilot.Media;
+using System.Text.RegularExpressions;
 
 namespace OpenpilotSdk.Hardware
 {
@@ -46,7 +46,7 @@ namespace OpenpilotSdk.Hardware
         public virtual string ShutdownCommand => @"am start -n android/com.android.internal.app.ShutdownActivity";
         public virtual string FlashCommand => @"pkill -f openpilot & cd /data/openpilot/panda/board && ./recover.sh";
         public virtual string InstallEmuCommand => @"cd /data/openpilot && echo 'y' | bash <(curl -fsSL install.emu.sh) && source /data/community/.bashrc";
-        public virtual string GitCloneCommand => @"cd /data && rm -rf openpilot; git clone -b {1} --depth 1 --single-branch --progress --recurse-submodules --shallow-submodules {0} openpilot";
+        public virtual string GitCloneCommand => @"sudo systemctl stop comma || {{ echo ""ERROR: Failed to stop 'comma' service"" >&2; exit 1; }} && cd /data || {{ echo ""ERROR: Directory '/data' not found or inaccessible"" >&2; exit 1; }} && rm -rf openpilot || {{ echo ""ERROR: Failed to remove old openpilot folder"" >&2; exit 1; }} && git clone -b {1} --depth 1 --single-branch --progress --recurse-submodules --shallow-submodules https://github.com/{0}/{2}.git openpilot || {{ echo ""ERROR: Git clone failed. Check URL, branch, or network."" >&2; exit 1; }}";
 
         public abstract IReadOnlyDictionary<CameraType,Camera> Cameras { get; }
 
@@ -206,7 +206,7 @@ namespace OpenpilotSdk.Hardware
 
         public async Task<CombinedStreamCollection> GetVideoStreams(Route route)
         {
-            return new CombinedStreamCollection(this, route);
+            return new CombinedStreamCollection(this, route,true);
         }
 
         public async Task ExportRouteAsync(string exportPath, Route route, Camera camera, bool combineSegments = false, IProgress<OpenPilot.Camera.Progress>? progress = null)
@@ -682,7 +682,7 @@ namespace OpenpilotSdk.Hardware
                 try
                 {
                     directoryListing = (await SftpClient.ListDirectoryAsync(StorageDirectory, cancellationToken)
-                            .ConfigureAwait(false));
+                        .ConfigureAwait(false));
                 }
                 catch (SftpPathNotFoundException)
                 {
@@ -1074,7 +1074,8 @@ namespace OpenpilotSdk.Hardware
                 //~26ms
                 try
                 {
-                    using (var command = sshClient.CreateCommand("hostname"))
+                    //new command here gives the model
+                    using (var command = sshClient.CreateCommand("cat /sys/firmware/devicetree/base/model"))
                     {
                         hostName = await Task.Factory.FromAsync(command.BeginExecute(), command.EndExecute).ConfigureAwait(false);
                         if (hostName != null && (hostName.StartsWith("comma") || hostName.Equals("tici")))
@@ -1196,7 +1197,7 @@ namespace OpenpilotSdk.Hardware
             await ConnectSshAsync().ConfigureAwait(false);
 
             var installCommand =
-                string.Format(@"cd /data && rm -rf openpilot ; git clone -b {1} --depth 1 --single-branch --progress --recurse-submodules --shallow-submodules https://github.com/{0}/{2}.git openpilot", username, branch, repository);
+                string.Format(GitCloneCommand, username, branch, repository);
 
             var progressRegex = new Regex(@"\d+(?=%)", RegexOptions.Compiled);
             int previousProgress = 0;
@@ -1253,8 +1254,8 @@ namespace OpenpilotSdk.Hardware
             await ConnectSshAsync().ConfigureAwait(false);
 
             var installCommand =
-                string.Format(@"cd /data && rm -rf openpilot; git clone -b {1} --depth 1 --single-branch --recurse-submodules --shallow-submodules https://github.com/{0}/{2}.git openpilot", username, branch, repository);
-
+                string.Format(GitCloneCommand, username, branch, repository);
+            
             using (var command = SshClient.CreateCommand(installCommand))
             {
                 var result = await Task.Factory.FromAsync(command.BeginExecute(), command.EndExecute).ConfigureAwait(false);

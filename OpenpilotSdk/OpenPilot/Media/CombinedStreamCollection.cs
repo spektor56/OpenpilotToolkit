@@ -1,8 +1,6 @@
 ﻿using Nito.AsyncEx;
 using OpenpilotSdk.Hardware;
-using Serilog;
 using System.Collections.Frozen;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
 namespace OpenpilotSdk.OpenPilot.Media
@@ -27,7 +25,8 @@ namespace OpenpilotSdk.OpenPilot.Media
         /// </summary>
         /// <param name="openpilotDevice">The Openpilot device from which to read video stream segments.</param>
         /// <param name="route">The route containing segment information for various camera types.</param>
-        public CombinedStreamCollection(OpenpilotDevice openpilotDevice, Route route)
+        /// <param name="seekToKeyFrames">When seeking the read operation will skip to the nearest keyframe</param>
+        public CombinedStreamCollection(OpenpilotDevice openpilotDevice, Route route, bool seekToKeyFrames)
         {
             var streamsDictionary = new Dictionary<CameraType, AsyncLazy<CombinedStream>>(openpilotDevice.Cameras.Count);
 
@@ -35,7 +34,7 @@ namespace OpenpilotSdk.OpenPilot.Media
             {
                 if (route.Segments.Any(segment => segment.RawVideoSegments.ContainsKey(cameraType)))
                 {
-                    streamsDictionary[cameraType] = CreateAsyncLazyStream(openpilotDevice, cameraType, route);
+                    streamsDictionary[cameraType] = CreateAsyncLazyStream(openpilotDevice, cameraType, route, seekToKeyFrames);
                 }
             }
 
@@ -46,7 +45,8 @@ namespace OpenpilotSdk.OpenPilot.Media
         private static AsyncLazy<CombinedStream> CreateAsyncLazyStream(
             OpenpilotDevice openpilotDevice,
             CameraType cameraType,
-            Route route)
+            Route route,
+            bool seekToKeyFrames)
         {
             var asyncLazyStream = new AsyncLazy<CombinedStream>(async () =>
             {
@@ -56,7 +56,7 @@ namespace OpenpilotSdk.OpenPilot.Media
                     .ToArray();
 
                 var streams = await Task.WhenAll(videoStreamTasks).ConfigureAwait(false);
-                return new CombinedStream(streams);
+                return new CombinedStream(streams,true, seekToKeyFrames);
             });
 
             _ = asyncLazyStream.Task.ContinueWith(
@@ -106,6 +106,14 @@ namespace OpenpilotSdk.OpenPilot.Media
             {
                 var stream = await asyncLazyStream.ConfigureAwait(false);
                 await stream.DisposeAsync().ConfigureAwait(false);
+            }
+        }
+
+        public async Task SetSeekToKeyframesAsync(bool seekToKeyframes)
+        {
+            foreach (var cameraStream in CameraStreams)
+            {
+                (await cameraStream.Value.ConfigureAwait(false)).SeekToKeyframes = seekToKeyframes;
             }
         }
     }

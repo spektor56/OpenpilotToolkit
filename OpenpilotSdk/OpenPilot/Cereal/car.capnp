@@ -24,6 +24,8 @@ struct OnroadEventDEPRECATED @0x9b1657f34caf3ad3 {
   enum EventName @0xbaa8c5d505f727de {
     canError @0;
     steerUnavailable @1;
+    brakeUnavailableDEPRECATED @2;
+    gasUnavailableDEPRECATED @3;
     wrongGear @4;
     doorOpen @5;
     seatbeltNotLatched @6;
@@ -34,121 +36,118 @@ struct OnroadEventDEPRECATED @0x9b1657f34caf3ad3 {
     buttonCancel @11;
     buttonEnable @12;
     pedalPressed @13;  # exits active state
-    preEnableStandstill @73;  # added during pre-enable state with brake
-    gasPressedOverride @108;  # added when user is pressing gas with no disengage on gas
-    steerOverride @114;
     cruiseDisabled @14;
+    radarCanErrorDEPRECATED @15;
+    dataNeededDEPRECATED @16;
     speedTooLow @17;
     outOfSpace @18;
     overheat @19;
     calibrationIncomplete @20;
     calibrationInvalid @21;
-    calibrationRecalibrating @117;
     controlsMismatch @22;
     pcmEnable @23;
     pcmDisable @24;
+    noTargetDEPRECATED @25;
     radarFault @26;
+    modelCommIssueDEPRECATED @27;
     brakeHold @28;
     parkBrake @29;
     manualRestart @30;
+    lowSpeedLockoutDEPRECATED @31;
+    plannerErrorDEPRECATED @32;
+    ipasOverrideDEPRECATED @33;
     joystickDebug @34;
-    longitudinalManeuver @124;
     steerTempUnavailableSilent @35;
     resumeRequired @36;
     preDriverDistracted @37;
     promptDriverDistracted @38;
     driverDistracted @39;
+    geofenceDEPRECATED @40;
+    driverMonitorOnDEPRECATED @41;
+    driverMonitorOffDEPRECATED @42;
     preDriverUnresponsive @43;
     promptDriverUnresponsive @44;
     driverUnresponsive @45;
     belowSteerSpeed @46;
+    calibrationProgressDEPRECATED @47;
     lowBattery @48;
+    invalidGiraffeHondaDEPRECATED @49;
+    paramsdTemporaryError @50;
     accFaulted @51;
     sensorDataInvalid @52;
     commIssue @53;
-    commIssueAvgFreq @109;
     tooDistracted @54;
     posenetInvalid @55;
+    soundsUnavailableDEPRECATED @56;
     preLaneChangeLeft @57;
     preLaneChangeRight @58;
     laneChange @59;
+    invalidGiraffeToyotaDEPRECATED @60;
+    internetConnectivityNeededDEPRECATED @61;
+    communityFeatureDisallowedDEPRECATED @62;
     lowMemory @63;
     stockAeb @64;
     ldw @65;
     carUnrecognized @66;
+    radarCommIssueDEPRECATED @67;
+    driverMonitorLowAccDEPRECATED @68;
     invalidLkasSetting @69;
     speedTooHigh @70;
     laneChangeBlocked @71;
     relayMalfunction @72;
+    preEnableStandstill @73;  # added during pre-enable state with brake
     stockFcw @74;
     startup @75;
     startupNoCar @76;
     startupNoControl @77;
-    startupNoSecOcKey @125;
     startupMaster @78;
     fcw @79;
     steerSaturated @80;
+    whitePandaUnsupportedDEPRECATED @81;
+    startupOneplusDEPRECATED @82;
+    commIssueWarningDEPRECATED @83;
     belowEngageSpeed @84;
     noGps @85;
+    focusRecoverActiveDEPRECATED @86;
     wrongCruiseMode @87;
+    neosUpdateRequiredDEPRECATED @88;
     modeldLagging @89;
     deviceFalling @90;
     fanMalfunction @91;
     cameraMalfunction @92;
-    cameraFrameRate @110;
+    modelLagWarningDEPRECATED @93;
+    gpsMalfunctionDEPRECATED @94;
     processNotRunning @95;
     dashcamMode @96;
+    startupFuzzyFingerprintDEPRECATED @97;
     selfdriveInitializing @98;
     usbError @99;
+    roadCameraErrorDEPRECATED @100;
+    driverCameraErrorDEPRECATED @101;
+    wideRoadCameraErrorDEPRECATED @102;
+    locationdTemporaryError @103;
+    startupNoFwDEPRECATED @104;
+    highCpuUsageDEPRECATED @105;
     cruiseMismatch @106;
+    lkasDisabledDEPRECATED @107;
+    gasPressedOverride @108;  # added when user is pressing gas with no disengage on gas
+    commIssueAvgFreq @109;
+    cameraFrameRate @110;
     canBusMissing @111;
     selfdrivedLagging @112;
     resumeBlocked @113;
+    steerOverride @114;
     steerTimeLimit @115;
     vehicleSensorsInvalid @116;
-    locationdTemporaryError @103;
+    calibrationRecalibrating @117;
     locationdPermanentError @118;
-    paramsdTemporaryError @50;
     paramsdPermanentError @119;
     actuatorsApiUnavailable @120;
     espActive @121;
     personalityChanged @122;
     aeb @123;
-
-    radarCanErrorDEPRECATED @15;
-    communityFeatureDisallowedDEPRECATED @62;
-    radarCommIssueDEPRECATED @67;
-    driverMonitorLowAccDEPRECATED @68;
-    gasUnavailableDEPRECATED @3;
-    dataNeededDEPRECATED @16;
-    modelCommIssueDEPRECATED @27;
-    ipasOverrideDEPRECATED @33;
-    geofenceDEPRECATED @40;
-    driverMonitorOnDEPRECATED @41;
-    driverMonitorOffDEPRECATED @42;
-    calibrationProgressDEPRECATED @47;
-    invalidGiraffeHondaDEPRECATED @49;
-    invalidGiraffeToyotaDEPRECATED @60;
-    internetConnectivityNeededDEPRECATED @61;
-    whitePandaUnsupportedDEPRECATED @81;
-    commIssueWarningDEPRECATED @83;
-    focusRecoverActiveDEPRECATED @86;
-    neosUpdateRequiredDEPRECATED @88;
-    modelLagWarningDEPRECATED @93;
-    startupOneplusDEPRECATED @82;
-    startupFuzzyFingerprintDEPRECATED @97;
-    noTargetDEPRECATED @25;
-    brakeUnavailableDEPRECATED @2;
-    plannerErrorDEPRECATED @32;
-    gpsMalfunctionDEPRECATED @94;
-    roadCameraErrorDEPRECATED @100;
-    driverCameraErrorDEPRECATED @101;
-    wideRoadCameraErrorDEPRECATED @102;
-    highCpuUsageDEPRECATED @105;
-    startupNoFwDEPRECATED @104;
-    lowSpeedLockoutDEPRECATED @31;
-    lkasDisabledDEPRECATED @107;
-    soundsUnavailableDEPRECATED @56;
+    longitudinalManeuver @124;
+    startupNoSecOcKey @125;
   }
 }
 
@@ -300,13 +299,14 @@ struct CarState {
 # ******* radar state @ 20hz *******
 
 struct RadarData @0x888ad6581cf0aacb {
-  errors @0 :List(Error);
+  errors @3 :Error;
   points @1 :List(RadarPoint);
 
-  enum Error {
-    canError @0;
-    fault @1;
-    wrongConfig @2;
+  struct Error {
+    canError @0 :Bool;
+    radarFault @1 :Bool;
+    wrongConfig @2 :Bool;
+    radarUnavailableTemporary @3 :Bool;  # radar data is temporarily unavailable due to conditions the car sets
   }
 
   # similar to LiveTracks
@@ -327,8 +327,15 @@ struct RadarData @0x888ad6581cf0aacb {
     measured @6 :Bool;
   }
 
+  enum ErrorDEPRECATED {
+    canError @0;
+    fault @1;
+    wrongConfig @2;
+  }
+
   # deprecated
   canMonoTimesDEPRECATED @2 :List(UInt64);
+  errorsDEPRECATED @0 :List(ErrorDEPRECATED);
 }
 
 # ******* car controls @ 100hz *******
@@ -348,13 +355,14 @@ struct CarControl {
 
   orientationNED @13 :List(Float32);
   angularVelocity @14 :List(Float32);
+  currentCurvature @17 :Float32;  # From vehicle model
 
   cruiseControl @4 :CruiseControl;
   hudControl @5 :HUDControl;
 
   struct Actuators {
     # lateral commands, mutually exclusive
-    steer @2: Float32;  # [0.0, 1.0]
+    torque @2: Float32;  # [0.0, 1.0]
     steeringAngleDeg @3: Float32;
     curvature @7: Float32;
 
@@ -365,7 +373,7 @@ struct CarControl {
     # these are only for logging the actual values sent to the car over CAN
     gas @0: Float32;   # [0.0, 1.0]
     brake @1: Float32; # [0.0, 1.0]
-    steerOutputCan @8: Float32;   # value sent over can to the car
+    torqueOutputCan @8: Float32;   # value sent over can to the car
     speed @6: Float32;  # m/s
 
     enum LongControlState @0xe40f3a917d908282{
@@ -457,14 +465,15 @@ struct CarParams {
   enableDsu @5 :Bool;        # driving support unit
   enableBsm @56 :Bool;       # blind spot monitoring
   flags @64 :UInt32;         # flags for car specific quirks
-  experimentalLongitudinalAvailable @71 :Bool;
+  alphaLongitudinalAvailable @71 :Bool;
 
   minEnableSpeed @7 :Float32;
   minSteerSpeed @8 :Float32;
+  steerAtStandstill @77 :Bool;  # is steering available at standstill? just check if it faults
   safetyConfigs @62 :List(SafetyConfig);
   alternativeExperience @65 :Int16;      # panda flag for features like no disengage on gas
 
-  # Car docs fields
+  # Car docs fields, not used for control
   maxLateralAccel @68 :Float32;
   autoResumeSng @69 :Bool;               # describes whether car can resume from a stop automatically
 
@@ -625,6 +634,8 @@ struct CarParams {
     chryslerCusw @30;
     psa @31;
     fcaGiorgio @32;
+    rivian @33;
+    volkswagenMeb @34;
   }
 
   enum SteerControlType {
@@ -662,30 +673,25 @@ struct CarParams {
     fwdCamera @3;
     engine @4;
     unknown @5;
+    dsu @6;
+    parkingAdas @7;  # parking assist system ECU, e.g. Toyota's IPAS, Hyundai's RSPA, etc.
     transmission @8; # Transmission Control Module
-    hybrid @18; # hybrid control unit, e.g. Chrysler's HCP, Honda's IMA Control Unit, Toyota's hybrid control computer
     srs @9; # airbag
     gateway @10; # can gateway
     hud @11; # heads up display
     combinationMeter @12; # instrument cluster
+    vsa @13; # Vehicle Stability Assist
+    programmedFuelInjection @14;
     electricBrakeBooster @15;
     shiftByWire @16;
+    debug @17;
+    hybrid @18; # hybrid control unit, e.g. Chrysler's HCP, Honda's IMA Control Unit, Toyota's hybrid control computer
     adas @19;
-    cornerRadar @21;
     hvac @20;
-    parkingAdas @7;  # parking assist system ECU, e.g. Toyota's IPAS, Hyundai's RSPA, etc.
+    cornerRadar @21;
     epb @22;  # electronic parking brake
     telematics @23;
     body @24;  # body control module
-
-    # Toyota only
-    dsu @6;
-
-    # Honda only
-    vsa @13; # Vehicle Stability Assist
-    programmedFuelInjection @14;
-
-    debug @17;
   }
 
   enum FingerprintSource {

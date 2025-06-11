@@ -12,7 +12,6 @@ using CefSharp.WinForms;
 using Octokit;
 using SshNet.Keygen;
 using SshNet.Keygen.Extensions;
-using SshNet.Keygen.SshKeyEncryption;
 
 namespace OpenpilotToolkit.Controls.Wizards
 {
@@ -50,7 +49,7 @@ namespace OpenpilotToolkit.Controls.Wizards
             cmbKeyAlgorithm.Items.AddRange(Enum.GetValues(typeof(SshKeyType)).Cast<SshKeyType>().Select(key => key.ToString()).ToArray());
             cmbKeyAlgorithm.SelectedItem = SshKeyType.ED25519.ToString();
 
-             if (!DesignMode)
+            if (!DesignMode)
             {
                 string githubToken = "";
                 try
@@ -65,7 +64,7 @@ namespace OpenpilotToolkit.Controls.Wizards
                 if (!string.IsNullOrWhiteSpace(githubToken))
                 {
                     _githubClient.Credentials =
-                        new Credentials(Properties.Settings.Default.GithubToken, AuthenticationType.Oauth);
+                        new Credentials(githubToken, AuthenticationType.Oauth);
                     NextStep();
                 }
                 

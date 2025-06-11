@@ -10,6 +10,7 @@ namespace OpenpilotSdk.Hardware
     {
         Comma2,
         Comma3,
+        Comma3X,
         Unknown
     }
 }

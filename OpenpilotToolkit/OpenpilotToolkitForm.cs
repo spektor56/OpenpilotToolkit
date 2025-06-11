@@ -1,5 +1,6 @@
 ﻿using CefSharp;
 using CefSharp.WinForms;
+using FFMpegCore;
 using FlyleafLib;
 using FlyleafLib.MediaPlayer;
 using MaterialSkin;
@@ -13,6 +14,8 @@ using OpenpilotSdk.OpenPilot;
 using OpenpilotSdk.OpenPilot.Fork;
 using OpenpilotToolkit.Android;
 using OpenpilotToolkit.Controls;
+using OpenpilotToolkit.Controls.Media;
+using OpenpilotToolkit.Json;
 using Renci.SshNet;
 using Renci.SshNet.Common;
 using SixLabors.ImageSharp;
@@ -33,7 +36,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
 using System.Windows.Forms;
-using OpenpilotToolkit.Json;
 using Exception = System.Exception;
 using FileMode = System.IO.FileMode;
 using MethodInvoker = System.Windows.Forms.MethodInvoker;
@@ -44,7 +46,7 @@ namespace OpenpilotToolkit
     public partial class OpenpilotToolkitForm : MaterialForm
     {
         private ConcurrentDictionary<string, DateTime?> _watchedFiles = new ConcurrentDictionary<string, DateTime?>();
-        private readonly string _tempExplorerFiles = Path.Combine(AppContext.BaseDirectory, "tmp", "explorer");
+        private readonly string _tempExplorerFiles;
         private readonly ConcurrentDictionary<string, Task> _activeTaskList = new ConcurrentDictionary<string, Task>();
         private const string AdbConnectedMessage = "Device in fastboot mode connected";
         private const string AdbDisconnectedMessage = "Device in fastboot mode disconnected";
@@ -64,19 +66,11 @@ namespace OpenpilotToolkit
                 (argb & 0x00FF00) >> 8,
                 argb & 0x0000FF);
         }
-        
-        protected override CreateParams CreateParams
+
+        public OpenpilotToolkitForm(string tempFolder = null)
         {
-            get
-            {
-                CreateParams cp = base.CreateParams;
-                cp.ExStyle |= 0x02000000; // WS_EX_COMPOSITED
-                return cp;
-            }
-        }
-        
-        public OpenpilotToolkitForm()
-        {
+            _tempExplorerFiles = tempFolder;
+
             InitializeComponent();
             AutoScaleMode = AutoScaleMode.None;
 
@@ -100,6 +94,27 @@ namespace OpenpilotToolkit
 
         private async void Form1_Load(object sender, EventArgs e)
         {
+            if (!DesignMode)
+            {
+                string githubToken = "";
+                try
+                {
+                    githubToken = Properties.Settings.Default.GithubToken;
+                }
+                catch (Exception)
+                {
+                    Debug.Print("Uri Exception");
+                }
+
+                if (!string.IsNullOrWhiteSpace(githubToken))
+                {
+                    _githubClient.Credentials =
+                        new Credentials(githubToken, AuthenticationType.Oauth);
+                }
+
+                UpdateForkBranches("commaai", "openpilot").ConfigureAwait(false);
+            }
+
             _osmClientId = Encoding.UTF8.GetString(Convert.FromBase64String(_osmClientId));
             _osmClientSecret = Encoding.UTF8.GetString(Convert.FromBase64String(_osmClientSecret));
 
@@ -123,9 +138,22 @@ namespace OpenpilotToolkit
             tlpExplorerTasks.Padding = new Padding(0, 0, SystemInformation.VerticalScrollBarWidth - 1, 0);
 
             var terminalPath = Path.Combine(AppContext.BaseDirectory, @"Controls\Terminal\index.html");
-            _sshTerminal =
-                new ChromiumWebBrowser(terminalPath);
-            
+            _sshTerminal = new ChromiumWebBrowser(terminalPath)
+            {
+                BrowserSettings = new BrowserSettings
+                {
+                    Javascript = CefState.Enabled,
+                    WebGl = CefState.Enabled,
+                    ImageLoading = CefState.Disabled,
+                    LocalStorage = CefState.Disabled,
+                },
+                RequestContext = new RequestContext(new RequestContextSettings
+                {
+                    CachePath = null,
+                    PersistSessionCookies = false
+                })
+            };
+
             //Terminal messages from C# instead of webbrowser
             //sshTerminal.KeyboardHandler = new TerminalKeyboardHandler();
             //sshTerminal.PreviewKeyDown += txtSshCommand_PreviewKeyDown;
@@ -184,19 +212,35 @@ namespace OpenpilotToolkit
                 }
             };
             _flyPlayer = new Player(config);
+            _flyPlayer.PropertyChanged += (o, args) =>
+            {
+                if (args.PropertyName == "Status")
+                {
+                    if (tcSettings.SelectedTab != tpExport && flyleafVideoPlayer.flyleafHost1.Player.IsPlaying)
+                    {
+                        _videoPauseFromTabSwitch = true;
+                        flyleafVideoPlayer.Pause();
+                    }
+                }
+            };
             flyleafVideoPlayer.Initialize(_flyPlayer);
 
             var source = new AutoCompleteStringCollection
             {
-                "spektor56"
+                "spektor56",
+                "sunnypilot",
+                "commaai",
+                "FrogAi"
             };
             txtForkUsername.AutoCompleteCustomSource = source;
+
             cbCombineSegments.Checked = Properties.Settings.Default.CombineSegments;
+            cbSeekToKeyframes.Checked = Properties.Settings.Default.SeekToKeyframes;
 
             cbFrontCamera.Checked = Properties.Settings.Default.FrontCamera;
             cbWideCamera.Checked = Properties.Settings.Default.WideCamera;
             cbDriverCamera.Checked = Properties.Settings.Default.DriverCamera;
-            
+
             _osmToken = Properties.Settings.Default.OsmToken;
             //txtOsmUsername.Text = Properties.Settings.Default.OsmUsername;
             //txtOsmPassword.Text = Properties.Settings.Default.OsmPassword;
@@ -275,6 +319,11 @@ namespace OpenpilotToolkit
             //flowLayoutPanel1.HorizontalScroll.Visible = false;
 
             await ScanDevices().ConfigureAwait(false);
+
+            //Look for updates
+
+            //TODO: implement self-updater
+            //var test = await _githubClient.Repository.Release.GetLatest("spektor56", "openpilotToolkit");
         }
 
         private async void FileWatcherOnChanged(object sender, FileSystemEventArgs e)
@@ -387,7 +436,7 @@ namespace OpenpilotToolkit
             lbRoutes.Items.Clear();
             Task.Run(() =>
             {
-                flyleafVideoPlayer.flyleafHost1.Player.Stop();
+                flyleafVideoPlayer.Stop();
             });
             dgvRouteInfo.DataSource = null;
             wifiConnected.SetEnabled(false);
@@ -403,7 +452,7 @@ namespace OpenpilotToolkit
                         await foreach (var device in OpenpilotDevice.DiscoverAsync().ConfigureAwait(false))
                         {
                             foundDevices++;
-                            
+
                             if (!_devices.Contains(device))
                             {
                                 if (device is not UnknownDevice)
@@ -620,7 +669,7 @@ namespace OpenpilotToolkit
                                 await Task.Run(async () =>
                                 {
                                     var cts = new CancellationTokenSource();
-                                
+
                                     await _routeSemaphoreSlim.WaitAsync().ConfigureAwait(false);
                                     try
                                     {
@@ -636,7 +685,6 @@ namespace OpenpilotToolkit
                                         _routeSemaphoreSlim.Release();
                                     }
                                     await flyleafVideoPlayer.PlayRouteAsync(openpilotDevice, route, cts.Token).ConfigureAwait(false);
-                                
                                 });
                             }
                         }
@@ -669,6 +717,7 @@ namespace OpenpilotToolkit
             Properties.Settings.Default.ExportFolder = txtExportFolder.Text;
 
             Properties.Settings.Default.CombineSegments = cbCombineSegments.Checked;
+            Properties.Settings.Default.SeekToKeyframes = cbSeekToKeyframes.Checked;
 
             Properties.Settings.Default.FrontCamera = cbFrontCamera.Checked;
             Properties.Settings.Default.WideCamera = cbWideCamera.Checked;
@@ -682,6 +731,11 @@ namespace OpenpilotToolkit
             }
 
             Properties.Settings.Default.Save();
+
+            flyleafVideoPlayer.Stop();
+
+            _sshTerminal.Dispose();
+            Cef.PreShutdown();
         }
 
         private HttpClient _osmHttpClient;
@@ -926,11 +980,36 @@ namespace OpenpilotToolkit
             SetTheme(MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT);
         }
 
+        private bool _videoPauseFromTabSwitch = false;
+
         private OpenpilotDevice _lastExplorerDevice = null;
         private async void tcSettings_Selected(object sender, TabControlEventArgs e)
         {
             if (e.TabPage != null)
             {
+                if (e.TabPage != tpExport)
+                {
+                    if (flyleafVideoPlayer.flyleafHost1.Player.IsPlaying)
+                    {
+                        _videoPauseFromTabSwitch = true;
+                        flyleafVideoPlayer.Pause();
+                    }
+                }
+                else
+                {
+                    if (cmbDevices.SelectedItem is OpenpilotDevice openpilotDevice)
+                    {
+                        if (openpilotDevice.IsAuthenticated)
+                        {
+                            if (_videoPauseFromTabSwitch)
+                            {
+                                _videoPauseFromTabSwitch = false;
+                                flyleafVideoPlayer.Play();
+                            }
+                        }
+                    }
+                }
+
                 if (e.TabPage == tpLogFile)
                 {
                     var directoryInfo = new DirectoryInfo(Path.Combine(AppContext.BaseDirectory, "logs"));
@@ -997,7 +1076,7 @@ namespace OpenpilotToolkit
                             foreach (var firmware in firmwares)
                             {
                                 sb.AppendLine(string.Format("ecu = {0}", firmware.Ecu));
-                                sb.AppendLine(string.Format("fwVersion = {0}", firmware.Version));
+                                sb.AppendLine(string.Format("fwVersion = b'{0}'", firmware.Version));
                                 sb.AppendLine(string.Format("address = {0}", firmware.Address));
                                 sb.AppendLine(string.Format("subAddress = {0}", firmware.SubAddress));
                                 sb.AppendLine("");
@@ -1253,11 +1332,6 @@ namespace OpenpilotToolkit
             Process.Start("explorer.exe", "https://www.buymeacoffee.com/spektor56");
         }
 
-        private void OpenpilotToolkitForm_FormClosed(object sender, FormClosedEventArgs e)
-        {
-            Cef.Shutdown();
-        }
-
         private async void btnInstallFork_Click(object sender, EventArgs e)
         {
             btnInstallFork.Enabled = false;
@@ -1269,8 +1343,7 @@ namespace OpenpilotToolkit
 
                 if (string.IsNullOrWhiteSpace(forkUser))
                 {
-                    ToolkitMessageDialog.ShowDialog("Fork Username is Required", this);
-                    return;
+                    forkUser = "commaai";
                 }
 
                 if (string.IsNullOrWhiteSpace(forkBranch))
@@ -2101,7 +2174,7 @@ namespace OpenpilotToolkit
                     ToolkitMessageDialog.ShowDialog("Connection Successful.");
                     return;
                 }
-                
+
                 string redirectUrl = @"https://localhost:8008/";
 
                 var loginUrl = string.Format(
@@ -2112,7 +2185,7 @@ namespace OpenpilotToolkit
                 {
                     browser.FrameLoadStart += BrowserOnFrameLoadStart;
                     browser.LoadError += BrowserOnLoadError;
-                        
+
                     using (_loginDialog = new ToolkitForm())
                     {
                         _loginDialog.StartPosition = FormStartPosition.CenterParent;
@@ -2170,7 +2243,7 @@ namespace OpenpilotToolkit
                         ToolkitMessageDialog.ShowDialog("Connection Failed: " + exception.Message);
                         return;
                     }
-                    
+
                     try
                     {
                         using (var response = await _osmHttpClient.GetAsync("/api/0.6/user/details"))
@@ -2321,25 +2394,72 @@ namespace OpenpilotToolkit
                 }
             }
         }
-        readonly GitHubClient _githubClient = new GitHubClient(new Octokit.ProductHeaderValue("OpenpilotToolkit", "2.1.0"));
+        GitHubClient _githubClient = new GitHubClient(new Octokit.ProductHeaderValue("OpenpilotToolkit", "2.1.0"));
         private async void txtForkUsername_Leave(object sender, EventArgs e)
         {
             var repository = txtRepositoryName.Text;
+            var githubUser = txtForkUsername.Text;
             if (string.IsNullOrWhiteSpace(repository))
             {
                 repository = "openpilot";
             }
+
+            if (string.IsNullOrWhiteSpace(githubUser))
+            {
+                githubUser = "commaai";
+            }
+
+            await UpdateForkBranches(githubUser, repository).ConfigureAwait(false);
+        }
+        
+        private string _previousGithubUser = "";
+        private string _previousGithubRepository = "";
+        private async Task UpdateForkBranches(string githubUser, string repository)
+        {
+            if (_previousGithubRepository.Equals(repository, StringComparison.OrdinalIgnoreCase) &&  _previousGithubUser.Equals(githubUser, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(githubUser) || string.IsNullOrWhiteSpace(repository))
+            {
+                txtForkBranch.AutoCompleteCustomSource = null;
+                return;
+            }
+
             try
             {
-                var branches = await _githubClient.Repository.Branch.GetAll(txtForkUsername.Text, repository);
+                var branches = await _githubClient.Repository.Branch.GetAll(githubUser, repository);
+                _previousGithubRepository = repository;
+                _previousGithubUser = githubUser;
                 var source = new AutoCompleteStringCollection();
                 source.AddRange(branches.Select(branch => branch.Name).OrderByDescending(branch => branch).ToArray());
                 txtForkBranch.AutoCompleteCustomSource = source;
             }
+            catch (AuthorizationException exception)
+            {
+                _githubClient = new GitHubClient(new Octokit.ProductHeaderValue("OpenpilotToolkit", "2.1.0"));
+
+                try
+                {
+                    var branches = await _githubClient.Repository.Branch.GetAll(githubUser, repository);
+                    _previousGithubRepository = repository;
+                    _previousGithubUser = githubUser;
+                    var source = new AutoCompleteStringCollection();
+                    source.AddRange(branches.Select(branch => branch.Name).OrderByDescending(branch => branch).ToArray());
+                    txtForkBranch.AutoCompleteCustomSource = source;
+                }
+                catch (Exception e)
+                {
+                    txtForkBranch.AutoCompleteCustomSource = null;
+                    Console.WriteLine(e);
+                }
+            }
             catch (Exception exception)
             {
+                txtForkBranch.AutoCompleteCustomSource = null;
                 Console.WriteLine(exception);
             }
+
         }
 
         private void panel2_Paint(object sender, PaintEventArgs e)
@@ -2365,6 +2485,12 @@ namespace OpenpilotToolkit
                     autoScan = false;
                 }
             }
+        }
+
+        private void cbSeekToKeyframes_CheckedChanged(object sender, EventArgs e)
+        {
+            flyleafVideoPlayer.SetSeekToKeyframesAsync(cbSeekToKeyframes.Checked).ConfigureAwait(false);
+            Properties.Settings.Default.SeekToKeyframes = cbSeekToKeyframes.Checked;
         }
     }
 }

@@ -1,23 +1,22 @@
-﻿using System.Text;
-using Cereal;
+﻿using Cereal;
+using System.Text;
 
 namespace OpenpilotSdk.OpenPilot
 {
     public sealed class Firmware
     {
-        static string EncodeNonAsciiCharacters(string value)
+        static string EncodeNonAsciiCharacters(byte[] value)
         {
             StringBuilder sb = new StringBuilder();
-            foreach (char c in value)
+            foreach (var c in value)
             {
-                if (c > 126 || c < 32)
+                if (c > 0x7E || c < 0x20)
                 {
-                    string encodedValue = "\\x" + ((long)c).ToString("x2");
-                    sb.Append(encodedValue);
+                    sb.Append($"\\x{c:x2}");
                 }
                 else
                 {
-                    sb.Append(c);
+                    sb.Append((char)c);
                 }
             }
             return sb.ToString();
@@ -31,10 +30,9 @@ namespace OpenpilotSdk.OpenPilot
 
         public Firmware(CarParams.Ecu ecu, byte[] version, uint address, byte subAddress)
         {
-            var unparsedVersion = Encoding.UTF8.GetString(version);
-            var parsedVersion = EncodeNonAsciiCharacters(unparsedVersion);
-            
-            RawVersion = BitConverter.ToString(version);
+            var parsedVersion = EncodeNonAsciiCharacters(version);
+
+            RawVersion = Convert.ToHexString(version);
             Ecu = ecu.ToString();
             Version = parsedVersion;
             Address = address;

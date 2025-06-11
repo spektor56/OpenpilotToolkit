@@ -153,5 +153,17 @@ namespace OpenpilotToolkit.Properties {
                 this["OsmToken"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool SeekToKeyframes {
+            get {
+                return ((bool)(this["SeekToKeyframes"]));
+            }
+            set {
+                this["SeekToKeyframes"] = value;
+            }
+        }
     }
 }

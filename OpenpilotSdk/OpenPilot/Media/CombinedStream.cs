@@ -1,4 +1,6 @@
-﻿using System.Diagnostics;
+﻿using Serilog;
+using System;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
 namespace OpenpilotSdk.OpenPilot.Media
@@ -10,11 +12,14 @@ namespace OpenpilotSdk.OpenPilot.Media
         private readonly Stream[] _streams;
         private readonly long[] _streamStartPositions;
         private readonly Lock _syncLock = new();
-
+        private bool _seekToKeyframe;
+        private bool _seekToKeyframes;
+        private readonly byte[] _keyframeBuffer = new byte[1000000];
+        private static readonly byte[] HevcSyncSequence = [0x00, 0x00, 0x00, 0x01, 0x26, 0x01];
         private int _currentStreamIndex;
-        private long _position;
+        private long _globalPosition;
 
-        public CombinedStream(IEnumerable<Stream> streams, bool shouldDisposeStreams = true)
+        public CombinedStream(IEnumerable<Stream> streams, bool shouldDisposeStreams = true, bool seekToKeyframes = true)
         {
             ArgumentNullException.ThrowIfNull(streams, nameof(streams));
 
@@ -33,6 +38,7 @@ namespace OpenpilotSdk.OpenPilot.Media
             }
 
             _shouldDisposeStreams = shouldDisposeStreams;
+            _seekToKeyframes = seekToKeyframes;
 
             _streamStartPositions = new long[_streams.Length];
             long totalLength = 0;
@@ -68,13 +74,13 @@ namespace OpenpilotSdk.OpenPilot.Media
 
         public override long Position
         {
-            get => _position;
+            get => _globalPosition;
             set
             {
-                if (value == _position)
+                if (value == _globalPosition)
                     return;
 
-                var offsetFromCurrent = value - _position;
+                var offsetFromCurrent = value - _globalPosition;
                 var offsetFromEnd = value - Length;
 
                 if (Math.Abs(value) <= Math.Abs(offsetFromCurrent) && Math.Abs(value) <= Math.Abs(offsetFromEnd))
@@ -89,6 +95,20 @@ namespace OpenpilotSdk.OpenPilot.Media
                 {
                     Seek(offsetFromEnd, SeekOrigin.End);
                 }
+            }
+        }
+
+        public bool SeekToKeyframes
+        {
+            get => _seekToKeyframes;
+            set
+            {
+                if (!value)
+                {
+                    _seekToKeyframe = false;
+                }
+                
+                _seekToKeyframes = value;
             }
         }
 
@@ -124,6 +144,12 @@ namespace OpenpilotSdk.OpenPilot.Media
 
         private int ReadCoreUnsafe(Span<byte> buffer)
         {
+            if (_seekToKeyframe)
+            {
+                _seekToKeyframe = false;
+                SeekToNextKeyframe();
+            }
+
             var totalBytesRead = 0;
             var remainingCount = buffer.Length;
 
@@ -158,7 +184,7 @@ namespace OpenpilotSdk.OpenPilot.Media
 
                 totalBytesRead += bytesRead;
                 remainingCount -= bytesRead;
-                _position += bytesRead;
+                _globalPosition += bytesRead;
             }
 
             return totalBytesRead;
@@ -225,7 +251,7 @@ namespace OpenpilotSdk.OpenPilot.Media
 
                 totalBytesRead += bytesRead;
                 remainingCount -= bytesRead;
-                _position += bytesRead;
+                _globalPosition += bytesRead;
             }
 
             return totalBytesRead;
@@ -236,7 +262,7 @@ namespace OpenpilotSdk.OpenPilot.Media
         {
             if (_currentStreamIndex >= _streams.Length - 1)
             {
-                _position = Length;
+                _globalPosition = Length;
                 return false;
             }
 
@@ -246,6 +272,7 @@ namespace OpenpilotSdk.OpenPilot.Media
                 _streams[nextIndex].Position = 0;
             }
 
+            _globalPosition = _streamStartPositions[nextIndex];
             CurrentStreamIndex = nextIndex;
             return true;
         }
@@ -263,18 +290,26 @@ namespace OpenpilotSdk.OpenPilot.Media
             var targetPosition = origin switch
             {
                 SeekOrigin.Begin => Math.Clamp(offset, 0, Length),
-                SeekOrigin.Current => Math.Clamp(_position + offset, 0, Length),
+                SeekOrigin.Current => Math.Clamp(_globalPosition + offset, 0, Length),
                 SeekOrigin.End => Math.Clamp(Length + offset, 0, Length),
                 _ => throw new ArgumentException("Invalid seek origin.", nameof(origin))
             };
 
-            if (targetPosition == _position)
+            if (targetPosition == _globalPosition)
             {
-                return _position;
+                return _globalPosition;
             }
 
             var streamIndex = FindStreamIndex(targetPosition);
             var localOffset = targetPosition - _streamStartPositions[streamIndex];
+
+            if (_seekToKeyframes)
+            {
+                if (localOffset != 0)
+                {
+                    _seekToKeyframe = true;
+                }
+            }
 
             _streams[streamIndex].Position = localOffset;
 
@@ -286,10 +321,10 @@ namespace OpenpilotSdk.OpenPilot.Media
                 }
             }
 
-            _position = targetPosition;
+            _globalPosition = targetPosition;
             CurrentStreamIndex = streamIndex;
 
-            return _position;
+            return _globalPosition;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -327,7 +362,7 @@ namespace OpenpilotSdk.OpenPilot.Media
             await _asyncLock.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
-                _position = 0;
+                _globalPosition = 0;
                 CurrentStreamIndex = 0;
 
                 for (var i = 0; i < _streams.Length; i++)
@@ -364,7 +399,7 @@ namespace OpenpilotSdk.OpenPilot.Media
                 }
 
                 // Calculate new position
-                _position = _streamStartPositions[_currentStreamIndex + 1];
+                _globalPosition = _streamStartPositions[_currentStreamIndex + 1];
 
                 // Reset stream positions
                 _streams[_currentStreamIndex].Position = 0;
@@ -389,7 +424,7 @@ namespace OpenpilotSdk.OpenPilot.Media
                 }
 
                 // Calculate new position
-                _position = _streamStartPositions[_currentStreamIndex - 1];
+                _globalPosition = _streamStartPositions[_currentStreamIndex - 1];
 
                 // Reset stream positions
                 _streams[_currentStreamIndex].Position = 0;
@@ -410,7 +445,7 @@ namespace OpenpilotSdk.OpenPilot.Media
                 }
 
                 // Set position to start of target stream
-                _position = _streamStartPositions[streamIndex];
+                _globalPosition = _streamStartPositions[streamIndex];
 
                 // Reset current and target stream positions
                 if (_currentStreamIndex < _streams.Length)
@@ -423,6 +458,45 @@ namespace OpenpilotSdk.OpenPilot.Media
                 CurrentStreamIndex = streamIndex;
                 return ValueTask.FromResult(true);
             }
+        }
+
+        private void SeekToNextKeyframe()
+        {
+            ref var currentStream = ref _streams[_currentStreamIndex];
+            var bufferSpan = _keyframeBuffer.AsSpan();
+
+            while (currentStream.Position < (currentStream.Length - (HevcSyncSequence.Length - 1)))
+            {
+                var bytesToRead = Math.Min(_keyframeBuffer.Length, (int)(currentStream.Length - currentStream.Position));
+                var bytesRead = currentStream.Read(bufferSpan.Slice(0, bytesToRead));
+
+                if (bytesRead == 0)
+                {
+                    MoveToNextStreamUnsafe();
+                    return;
+                }
+                var searchSpan = bufferSpan.Slice(0, bytesRead);
+                var index = searchSpan.IndexOf(HevcSyncSequence);
+
+                if (index >= 0)
+                {
+                    currentStream.Position -= (bytesRead - index);
+                    _globalPosition = _streamStartPositions[_currentStreamIndex] + currentStream.Position;
+                    return;
+                }
+
+                if (bytesToRead == _keyframeBuffer.Length && currentStream.Position < (currentStream.Length - (HevcSyncSequence.Length - 1)))
+                {
+                    currentStream.Position -= (HevcSyncSequence.Length - 1);
+                }
+                else
+                {
+                    MoveToNextStreamUnsafe();
+                    return;
+                }
+            }
+
+            MoveToNextStreamUnsafe();
         }
 
         protected override void Dispose(bool disposing)
