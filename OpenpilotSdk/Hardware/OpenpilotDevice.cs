@@ -1,11 +1,14 @@
-﻿using DnsClient;
+﻿using Cereal;
+using DnsClient;
 using FFMpegCore;
 using NetTopologySuite.IO;
+using OpenpilotSdk.Caching;
 using OpenpilotSdk.Exceptions;
 using OpenpilotSdk.Git;
 using OpenpilotSdk.OpenPilot;
 using OpenpilotSdk.OpenPilot.FileTypes;
 using OpenpilotSdk.OpenPilot.Fork;
+using OpenpilotSdk.OpenPilot.Logging;
 using OpenpilotSdk.OpenPilot.Media;
 using OpenpilotSdk.OpenPilot.Segment;
 using OpenpilotSdk.Sftp;
@@ -13,14 +16,21 @@ using Renci.SshNet;
 using Renci.SshNet.Common;
 using Renci.SshNet.Sftp;
 using Serilog;
+using System.Collections.Concurrent;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Drawing;
 using System.Globalization;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
+using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using Zeroconf;
+using static System.Runtime.InteropServices.JavaScript.JSType;
+using LogFile = OpenpilotSdk.OpenPilot.FileTypes.LogFile;
 
 namespace OpenpilotSdk.Hardware
 {
@@ -538,6 +548,54 @@ namespace OpenpilotSdk.Hardware
             return new RouteSegment(index, segmentFolder, rawVideoSegments, videoSegments, quickLog, rawLog);
         }
 
+        public async Task<IEnumerable<TorqueTest>> ExportTorque(IEnumerable<Route> routes)
+        {
+            await ConnectSftpAsync().ConfigureAwait(false);
+
+            var torqueData = new List<TorqueTest>();
+
+            foreach (var route in routes)
+            {
+                
+                var wayPointTasks = route.Segments.OrderBy(segment => segment.Index)
+                    .Select(GetTorqueFromSegment).ToArray();
+
+                int i = 0;
+                foreach (var wayPointTask in wayPointTasks)
+                {
+                    i++;
+                    torqueData.AddRange(await wayPointTask.ConfigureAwait(false));
+
+
+                }
+                
+                //torqueData.AddRange(await GetTorqueFromSegment(route.Segments.First()));
+            }
+
+            /*
+
+            string filePath = @"C:\Users\l-bre\Desktop\torqueData.csv";
+
+            using (StreamWriter writer = new StreamWriter(filePath))
+            {
+                writer.WriteLine(string.Format("{0},{1},{2},{3},{4},{5},{6},{7},{8}", "TorqueOutput", "0-5", "5-10", "10-15", "15-20", "20-25", "25-30", "30-35", "35-40"));
+                foreach (var data in torqueData)
+                {
+                    writer.WriteLine(string.Format("{0},{1},{2},{3},{4},{5},{6},{7},{8}", data.Torque.Output
+                        , data.Speed < 5 ? data.Torque.ActualLateralAccel : ""
+                        , data.Speed >= 5 && data.Speed < 10 ? data.Torque.ActualLateralAccel : ""
+                        , data.Speed >= 10 && data.Speed < 15 ? data.Torque.ActualLateralAccel : ""
+                        , data.Speed >= 15 && data.Speed < 20 ? data.Torque.ActualLateralAccel : ""
+                        , data.Speed >= 20 && data.Speed < 25 ? data.Torque.ActualLateralAccel : ""
+                        , data.Speed >= 25 && data.Speed < 30 ? data.Torque.ActualLateralAccel : ""
+                        , data.Speed >= 30 && data.Speed < 35 ? data.Torque.ActualLateralAccel : ""
+                        , data.Speed >= 35 && data.Speed < 40 ? data.Torque.ActualLateralAccel : ""));
+                }
+            }
+            */
+            return torqueData;
+        }
+
         public async Task<List<GpxWaypoint>> MapillaryExportAsync(Route route)
         {
             await ConnectSftpAsync().ConfigureAwait(false);
@@ -641,6 +699,15 @@ namespace OpenpilotSdk.Hardware
             }
         }
 
+        private async Task<IEnumerable<TorqueTest>> GetTorqueFromSegment(RouteSegment routeSegment)
+        {
+            SftpFileStream fileStream;
+            await using ((fileStream = await SftpClient.OpenAsync(routeSegment.RawLog.File.FullName, FileMode.Open, FileAccess.Read, CancellationToken.None)).ConfigureAwait(false))
+            {
+                return await OpenPilot.Logging.LogFile.GetTorque(fileStream, routeSegment.RawLog.CompressionAlgorithm).ConfigureAwait(false);
+            }
+        }
+
         public async Task<GpxFile> GenerateGpxFileAsync(Route route, IProgress<int>? progress = null)
         {
             await ConnectSftpAsync().ConfigureAwait(false);
@@ -681,8 +748,7 @@ namespace OpenpilotSdk.Hardware
                 IEnumerable<ISftpFile>? directoryListing;
                 try
                 {
-                    directoryListing = (await SftpClient.ListDirectoryAsync(StorageDirectory, cancellationToken)
-                        .ConfigureAwait(false));
+                    directoryListing = await SftpClient.ListDirectoryAsync(StorageDirectory, cancellationToken).ToListAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
                 }
                 catch (SftpPathNotFoundException)
                 {
@@ -849,7 +915,7 @@ namespace OpenpilotSdk.Hardware
         {
             await ConnectSftpAsync().ConfigureAwait(false);
 
-            var directoryListing = await SftpClient.ListDirectoryAsync(path, CancellationToken.None).ConfigureAwait(false);
+            var directoryListing = await SftpClient.ListDirectoryAsync(path, CancellationToken.None).ToListAsync().ConfigureAwait(false);
             return directoryListing;
         }
         
@@ -867,108 +933,248 @@ namespace OpenpilotSdk.Hardware
             [
                 new PrivateKeyFile(PrivateSshKeyFile)
             ];
-
-            Log.Information("Scanning network for devices.");
+            
             var connectionRequests = new List<Task<OpenpilotDevice?>>();
-            var addressList = new HashSet<string>();
 
-            foreach (var networkInterface in NetworkInterface.GetAllNetworkInterfaces())
+            var discoveryTasks = new List<Task<IReadOnlyList<IZeroconfHost>>>();
+            var discoveredDevices = new ConcurrentQueue<OpenpilotDevice>();
+            var scannedHostSet = new HashSet<string>();
+
+            var discoveredDeviceInfoList = new List<DeviceInfo>();
+
+            try
             {
-                Log.Information("Found network interface: {interface}", networkInterface.Name);
-
-                if (!(networkInterface.OperationalStatus == OperationalStatus.Up ||
-                     networkInterface.OperationalStatus == OperationalStatus.Unknown ||
-                     networkInterface.OperationalStatus == OperationalStatus.Dormant ||
-                     networkInterface.OperationalStatus == OperationalStatus.Testing) || networkInterface.NetworkInterfaceType == NetworkInterfaceType.Loopback)
+                //Look for previously discovered devices.
+                try
                 {
-                    Log.Information("Network interface is not enabled: {interface}", networkInterface.Name);
-                    continue;
+                    var devices = await DeviceCache.LoadAsync().ConfigureAwait(false);
+                    if(devices.Count > 0)
+                    {
+                        Log.Information("Looking for previously connected devices.");
+                        foreach (var device in devices)
+                        {
+                            var host = !string.IsNullOrWhiteSpace(device.Hostname) ? device.Hostname : device.IpAddress.ToString();
+                            if (scannedHostSet.Add(host))
+                            {
+                                connectionRequests.Add(GetOpenpilotDeviceAsync(host));
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Failed to load device cache");
                 }
 
-                var unicastAddresses = networkInterface.GetIPProperties().UnicastAddresses;
-                foreach (var unicastAddress in unicastAddresses)
+                //GetAllNetworkInterfaces is slow, so run it in a task so we can return any devices if they are already found.
+                NetworkInterface[]? networkInferfaces = null;
+                var networkInterfaceTask = Task.Run(() => { networkInferfaces = NetworkInterface.GetAllNetworkInterfaces(); });
+
+                var firstTask = await Task.WhenAny(connectionRequests.Concat<Task>(new[] { networkInterfaceTask })).ConfigureAwait(false);
+
+                if (firstTask != networkInterfaceTask)
                 {
-                    if (unicastAddress.Address.AddressFamily != AddressFamily.InterNetwork)
+                    Task<OpenpilotDevice?>? completed;
+                    while ((completed = connectionRequests.FirstOrDefault(t => t.IsCompleted)) != null)
                     {
-                        Log.Information("Network is not an IPv4 network: {interface}", networkInterface.Name);
-                        continue;
-                    }
-
-                    var subnetMask = unicastAddress.IPv4Mask.GetAddressBytes();
-                    var ipAddress = unicastAddress.Address.GetAddressBytes();
-                    
-                    if (BitConverter.IsLittleEndian)
-                    {
-                        Array.Reverse(subnetMask);
-                        Array.Reverse(ipAddress);
-                    }
-                    var endAddress = ~BitConverter.ToUInt32(subnetMask, 0);
-                    
-                    if (endAddress > 1024)
-                    {
-                        Log.Information("Subnet contains more than 1024 addresses, skipping: {interface}.  End Address: {address}", networkInterface.Name, endAddress);
-                        continue;
-                    }
-                    
-                    var localIp = BitConverter.ToUInt32(ipAddress, 0);
-
-                    var startAddress = BitConverter.ToUInt32(ipAddress, 0) & BitConverter.ToUInt32(subnetMask, 0);
-
-                    var startAddressBytes = BitConverter.GetBytes(startAddress + 1);
-                    if (BitConverter.IsLittleEndian) Array.Reverse(startAddressBytes);
-                    var startIPAddress = new IPAddress(startAddressBytes).ToString();
-
-                    if (startIPAddress == "192.168.43.1")
-                    {
-                        if (addressList.Add(startIPAddress))
+                        var openpilotDevice = await completed.ConfigureAwait(false);
+                        if (openpilotDevice != null)
                         {
-                            connectionRequests.Add(GetOpenpilotDeviceAsync(startIPAddress));
+                            discoveredDeviceInfoList.Add(new DeviceInfo() { Hostname = openpilotDevice.HostName, IpAddress = openpilotDevice.IpAddress.ToString(), LastSeen = DateTime.UtcNow });
+                            yield return openpilotDevice;
+                        }
+                        connectionRequests.Remove(completed);
+                    }
+
+                    await networkInterfaceTask.ConfigureAwait(false);
+                }
+
+                if (networkInferfaces is null)
+                {
+                    yield break;
+                }
+
+                Log.Information("Scanning network for devices."); //~300ms
+                foreach (var networkInterface in networkInferfaces)
+                {
+                    Log.Information("Found network interface: {interface}", networkInterface.Name);
+
+                    if (networkInterface.OperationalStatus != OperationalStatus.Up)
+                    {
+                        Log.Information("Network interface is not enabled: {interface}", networkInterface.Name);
+                        continue;
+                    }
+
+                    if (!(networkInterface.NetworkInterfaceType == NetworkInterfaceType.Ethernet || networkInterface.NetworkInterfaceType == NetworkInterfaceType.Wireless80211))
+                    {
+                        Log.Information("Network interface is not Ethernet or Wireless: {interface}", networkInterface.Name);
+                        continue;
+                    }
+
+                    if (networkInterface.Description.Contains("Hyper-V"))
+                    {
+                        Log.Information("Skipping Hyper-V Network interface: {interface}", networkInterface.Name);
+                        continue;
+                    }
+
+                    var unicastAddresses = networkInterface.GetIPProperties().UnicastAddresses;
+                    int ipV4Count = 0;
+                    foreach (var unicastAddress in unicastAddresses)
+                    {
+                        if (unicastAddress.Address.AddressFamily != AddressFamily.InterNetwork)
+                        {
+                            Log.Information("Network is not an IPv4 network: {interface}", networkInterface.Name);
                             continue;
                         }
-                    }
 
-                    var endAddressBytes = BitConverter.GetBytes(startAddress + endAddress);
-                    if (BitConverter.IsLittleEndian) Array.Reverse(endAddressBytes);
-                    var endIPAddress = new IPAddress(endAddressBytes).ToString();
-
-                    Log.Information("Scanning IP range: {startAddress} - {endAddress}", startIPAddress, endIPAddress);
-
-                    for (uint i = 1; i <= endAddress; i++)
-                    {
-                        var host = startAddress + i;
-                        if (host == localIp) continue;
-
-                        var hostBytes = BitConverter.GetBytes(host);
-                        if (BitConverter.IsLittleEndian) Array.Reverse(hostBytes);
-
-                        var hostAddress = new IPAddress(hostBytes).ToString();
-
-                        if (addressList.Add(hostAddress))
+                        //Broadcast search if network supports multicast and it's the first ipv4 network found
+                        if (networkInterface.SupportsMulticast)
                         {
-                            connectionRequests.Add(GetOpenpilotDeviceAsync(hostAddress));
+                            ipV4Count++;
+                            if (ipV4Count == 1)
+                            {
+                                Log.Information("Attempting discovery on multicast network: {interface}", networkInterface.Name);
+                                discoveryTasks.Add(ZeroconfResolver
+                                .ResolveAsync("_ssh._tcp.local.", TimeSpan.FromMilliseconds(1000), 2, 200, service =>
+                                {
+                                    ReadOnlySpan<char> span = service.DisplayName.AsSpan();
+                                    int start = span.IndexOf('[');
+                                    int end = span.IndexOf(']');
+                                    var host = "";
+                                    if (start >= 0 && end > start)
+                                    {
+                                        host = span.Slice(start + 1, end - start - 1).ToString();
+                                    }
+                                    discoveredDeviceInfoList.Add(new DeviceInfo() { Hostname = host, IpAddress = service.IPAddress.ToString(), LastSeen = DateTime.UtcNow });
+                                    discoveredDevices.Enqueue(new Comma3(IPAddress.Parse(service.IPAddress), host, false));
+                                }, CancellationToken.None, new NetworkInterface[] { networkInterface }));
+                            }
+                        }
+
+                        var subnetMask = unicastAddress.IPv4Mask.GetAddressBytes();
+                        var ipAddress = unicastAddress.Address.GetAddressBytes();
+
+                        if (BitConverter.IsLittleEndian)
+                        {
+                            Array.Reverse(subnetMask);
+                            Array.Reverse(ipAddress);
+                        }
+                        var endAddress = ~BitConverter.ToUInt32(subnetMask, 0);
+
+                        if (endAddress > 1024)
+                        {
+                            Log.Information("Subnet contains more than 1024 addresses, skipping: {interface}.  End Address: {address}", networkInterface.Name, endAddress);
+                            continue;
+                        }
+
+                        var localIp = BitConverter.ToUInt32(ipAddress, 0);
+
+                        var startAddress = BitConverter.ToUInt32(ipAddress, 0) & BitConverter.ToUInt32(subnetMask, 0);
+
+                        var startAddressBytes = BitConverter.GetBytes(startAddress + 1);
+                        if (BitConverter.IsLittleEndian) Array.Reverse(startAddressBytes);
+                        var startIPAddress = new IPAddress(startAddressBytes).ToString();
+
+                        if (startIPAddress == "192.168.43.1")
+                        {
+                            if (scannedHostSet.Add(startIPAddress))
+                            {
+                                connectionRequests.Add(GetOpenpilotDeviceAsync(startIPAddress));
+                                continue;
+                            }
+                        }
+
+                        var endAddressBytes = BitConverter.GetBytes(startAddress + endAddress);
+                        if (BitConverter.IsLittleEndian) Array.Reverse(endAddressBytes);
+                        var endIPAddress = new IPAddress(endAddressBytes).ToString();
+
+                        Log.Information("Scanning IP range: {startAddress} - {endAddress}", startIPAddress, endIPAddress);
+
+                        for (uint i = 1; i <= endAddress; i++)
+                        {
+                            var host = startAddress + i;
+                            if (host == localIp) continue;
+
+                            var hostBytes = BitConverter.GetBytes(host);
+                            if (BitConverter.IsLittleEndian) Array.Reverse(hostBytes);
+
+                            var hostAddress = new IPAddress(hostBytes).ToString();
+
+                            if (scannedHostSet.Add(hostAddress))
+                            {
+                                connectionRequests.Add(GetOpenpilotDeviceAsync(hostAddress));
+                            }
                         }
                     }
                 }
-            }
 
-            var timeout = TimeSpan.FromSeconds(10);
-            var cts = new CancellationTokenSource(timeout);
-            await foreach (var connectionRequest in Task.WhenEach(connectionRequests).WithCancellation(cts.Token).ConfigureAwait(false))
-            {
-                if (!cts.TryReset())
+                //If any devices have been found via discovery so far, return them now
+                while (discoveredDevices.Count > 0)
                 {
-                    cts.Token.ThrowIfCancellationRequested();
+                    if (discoveredDevices.TryDequeue(out var openpilotDevice))
+                    {
+                        yield return openpilotDevice;
+                    }
                 }
 
-                var openpilotDevice = await connectionRequest.ConfigureAwait(false);
-                if (openpilotDevice != null)
+                //Return IP scanned devices and discovery devices
+                var timeout = TimeSpan.FromSeconds(10);
+                var cts = new CancellationTokenSource(timeout);
+                await foreach (var connectionRequest in Task.WhenEach(connectionRequests).WithCancellation(cts.Token).ConfigureAwait(false))
                 {
-                    yield return openpilotDevice;
-                };
-                cts.CancelAfter(timeout); // Start the timer again
+                    if (!cts.TryReset())
+                    {
+                        cts.Token.ThrowIfCancellationRequested();
+                    }
+
+                    cts.CancelAfter(Timeout.Infinite);
+
+                    while (discoveredDevices.Count > 0)
+                    {
+                        if (discoveredDevices.TryDequeue(out var device))
+                        {
+                            yield return device;
+                        }
+                    }
+
+                    var openpilotDevice = await connectionRequest.ConfigureAwait(false);
+                    if (openpilotDevice != null)
+                    {
+                        discoveredDeviceInfoList.Add(new DeviceInfo() { Hostname = openpilotDevice.HostName, IpAddress = openpilotDevice.IpAddress.ToString(), LastSeen = DateTime.UtcNow });
+                        yield return openpilotDevice;
+                    }
+
+                    //Reset the 10 second limit between responses
+                    cts.CancelAfter(timeout);
+                }
+
+                //if the IP scan has completed, make sure the discovery tasks get to complete.
+                await Task.WhenAll(discoveryTasks).ConfigureAwait(false);
+
+                while (discoveredDevices.Count > 0)
+                {
+                    if (discoveredDevices.TryDequeue(out var openpilotDevice))
+                    {
+                        yield return openpilotDevice;
+                    }
+                }
+            }
+            finally
+            {
+                if(discoveredDeviceInfoList.Count > 0)
+                {
+                    try
+                    {
+                        await DeviceCache.MergeDevicesAsync(discoveredDeviceInfoList).ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "Failed to update device cache");
+                    }
+                }
             }
         }
-
+        
         public static async Task<OpenpilotDevice?> GetOpenpilotDeviceAsync(string host, int timeout = 500)
         {
             try
@@ -1045,7 +1251,6 @@ namespace OpenpilotSdk.Hardware
                 {
                     Log.Information("Connected to Comma3 device at {Address} on port {port}",
                         host, port);
-
                     return new Comma3(ipAddress, hostName, false);
                 }
                 

@@ -8,7 +8,7 @@ namespace OpenpilotSdk.Sftp
     {
         public static async IAsyncEnumerable<ISftpFile> GetFilesAsync(this SftpClient client, string directory, [EnumeratorCancellation] CancellationToken cancellationToken = default(CancellationToken))
         {
-            var directoryListing = (await client.ListDirectoryAsync(directory, cancellationToken).ConfigureAwait(false)).OrderBy(dir => dir.FullName);
+            var directoryListing = (await client.ListDirectoryAsync(directory, cancellationToken).ToListAsync(cancellationToken: cancellationToken).ConfigureAwait(false)).OrderBy(dir => dir.FullName);
             foreach (var directoryItem in directoryListing)
             {
                 if (directoryItem.Name == ".." || directoryItem.Name == ".")

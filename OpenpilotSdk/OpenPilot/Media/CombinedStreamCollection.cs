@@ -109,6 +109,16 @@ namespace OpenpilotSdk.OpenPilot.Media
             }
         }
 
+        /*
+        public async Task PopulateKeyframes()
+        {
+            foreach (var cameraStream in CameraStreams)
+            {
+                (await cameraStream.Value.ConfigureAwait(false)).SeekToKeyframes = seekToKeyframes;
+            }
+        }
+        */
+
         public async Task SetSeekToKeyframesAsync(bool seekToKeyframes)
         {
             foreach (var cameraStream in CameraStreams)

@@ -448,7 +448,15 @@ namespace Cereal
             espActive,
             personalityChanged,
             aeb,
-            radarTempUnavailable
+            radarTempUnavailable,
+            steerDisengage,
+            userFlag,
+            manualSteeringRequired,
+            manualLongitudinalRequired,
+            silentPedalPressed,
+            silentButtonEnable,
+            silentBrakeHold,
+            silentWrongGear
         }
     }
 
@@ -3668,6 +3676,7 @@ namespace Cereal
             IntakeTempC = reader.IntakeTempC;
             ExhaustTempC = reader.ExhaustTempC;
             CaseTempC = reader.CaseTempC;
+            DspTempC = reader.DspTempC;
             applyDefaults();
         }
 
@@ -3722,6 +3731,7 @@ namespace Cereal
             writer.IntakeTempC = IntakeTempC;
             writer.ExhaustTempC = ExhaustTempC;
             writer.CaseTempC = CaseTempC;
+            writer.DspTempC = DspTempC;
         }
 
         void ICapnpSerializable.Serialize(SerializerState arg_)
@@ -4027,6 +4037,12 @@ namespace Cereal
             set;
         }
 
+        public float DspTempC
+        {
+            get;
+            set;
+        }
+
         public struct READER
         {
             readonly DeserializerState ctx;
@@ -4087,6 +4103,7 @@ namespace Cereal
             public float IntakeTempC => ctx.ReadDataFloat(768UL, 0F);
             public float ExhaustTempC => ctx.ReadDataFloat(800UL, 0F);
             public float CaseTempC => ctx.ReadDataFloat(832UL, 0F);
+            public float DspTempC => ctx.ReadDataFloat(864UL, 0F);
         }
 
         public class WRITER : SerializerState
@@ -4388,6 +4405,12 @@ namespace Cereal
             {
                 get => this.ReadDataFloat(832UL, 0F);
                 set => this.WriteData(832UL, value, 0F);
+            }
+
+            public float DspTempC
+            {
+                get => this.ReadDataFloat(864UL, 0F);
+                set => this.WriteData(864UL, value, 0F);
             }
         }
 
@@ -24717,6 +24740,7 @@ namespace Cereal
             Points = reader.Points;
             Version = reader.Version;
             UseParams = reader.UseParams;
+            CalPerc = reader.CalPerc;
             applyDefaults();
         }
 
@@ -24735,6 +24759,7 @@ namespace Cereal
             writer.Points.Init(Points, (_s2, _v2) => _s2.Init(_v2));
             writer.Version = Version;
             writer.UseParams = UseParams;
+            writer.CalPerc = CalPerc;
         }
 
         void ICapnpSerializable.Serialize(SerializerState arg_)
@@ -24824,6 +24849,12 @@ namespace Cereal
             set;
         }
 
+        public sbyte CalPerc
+        {
+            get;
+            set;
+        }
+
         public struct READER
         {
             readonly DeserializerState ctx;
@@ -24848,6 +24879,7 @@ namespace Cereal
             public IReadOnlyList<IReadOnlyList<float>> Points => ctx.ReadList(0).Cast(_0 => _0.RequireList().CastFloat());
             public int Version => ctx.ReadDataInt(320UL, 0);
             public bool UseParams => ctx.ReadDataBool(1UL, false);
+            public sbyte CalPerc => ctx.ReadDataSByte(8UL, (sbyte)0);
         }
 
         public class WRITER : SerializerState
@@ -24934,6 +24966,12 @@ namespace Cereal
                 get => this.ReadDataBool(1UL, false);
                 set => this.WriteData(1UL, value, false);
             }
+
+            public sbyte CalPerc
+            {
+                get => this.ReadDataSByte(8UL, (sbyte)0);
+                set => this.WriteData(8UL, value, (sbyte)0);
+            }
         }
     }
 
@@ -24950,6 +24988,7 @@ namespace Cereal
             LateralDelayEstimate = reader.LateralDelayEstimate;
             Points = reader.Points;
             LateralDelayEstimateStd = reader.LateralDelayEstimateStd;
+            CalPerc = reader.CalPerc;
             applyDefaults();
         }
 
@@ -24961,6 +25000,7 @@ namespace Cereal
             writer.LateralDelayEstimate = LateralDelayEstimate;
             writer.Points.Init(Points);
             writer.LateralDelayEstimateStd = LateralDelayEstimateStd;
+            writer.CalPerc = CalPerc;
         }
 
         void ICapnpSerializable.Serialize(SerializerState arg_)
@@ -25008,6 +25048,12 @@ namespace Cereal
             set;
         }
 
+        public sbyte CalPerc
+        {
+            get;
+            set;
+        }
+
         public struct READER
         {
             readonly DeserializerState ctx;
@@ -25025,6 +25071,7 @@ namespace Cereal
             public float LateralDelayEstimate => ctx.ReadDataFloat(96UL, 0F);
             public IReadOnlyList<float> Points => ctx.ReadList(0).CastFloat();
             public float LateralDelayEstimateStd => ctx.ReadDataFloat(128UL, 0F);
+            public sbyte CalPerc => ctx.ReadDataSByte(80UL, (sbyte)0);
         }
 
         public class WRITER : SerializerState
@@ -25068,6 +25115,12 @@ namespace Cereal
             {
                 get => this.ReadDataFloat(128UL, 0F);
                 set => this.WriteData(128UL, value, 0F);
+            }
+
+            public sbyte CalPerc
+            {
+                get => this.ReadDataSByte(80UL, (sbyte)0);
+                set => this.WriteData(80UL, value, (sbyte)0);
             }
         }
 

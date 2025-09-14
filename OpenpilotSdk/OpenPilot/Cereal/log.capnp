@@ -127,6 +127,17 @@ struct OnroadEvent @0xc4fa6047f024e718 {
     personalityChanged @91;
     aeb @92;
     radarTempUnavailable @93;
+    steerDisengage @94;  # exits active state
+    userFlag @95;
+
+    manualSteeringRequired @96;
+    manualLongitudinalRequired @97;
+    silentPedalPressed @98;
+    silentButtonEnable @99;
+    silentBrakeHold @100;
+    silentWrongGear @101;
+
+    
   }
 }
 
@@ -487,6 +498,7 @@ struct DeviceState @0xa4d8b5af2aa492eb {
   # device thermals
   cpuTempC @26 :List(Float32);
   gpuTempC @27 :List(Float32);
+  dspTempC @49 :Float32;
   memoryTempC @28 :Float32;
   nvmeTempC @35 :List(Float32);
   modemTempC @36 :List(Float32);
@@ -2275,6 +2287,7 @@ struct LiveTorqueParametersData {
   points @10 :List(List(Float32));
   version @11 :Int32;
   useParams @12 :Bool;
+  calPerc @13 :Int8;
 }
 
 struct LiveDelayData {
@@ -2285,6 +2298,7 @@ struct LiveDelayData {
   lateralDelayEstimate @3 :Float32;
   lateralDelayEstimateStd @5 :Float32;
   points @4 :List(Float32);
+  calPerc @6 :Int8;
 
   enum Status {
     unestimated @0;

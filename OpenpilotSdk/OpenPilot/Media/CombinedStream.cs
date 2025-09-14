@@ -170,7 +170,17 @@ namespace OpenpilotSdk.OpenPilot.Media
                 }
 
                 var currentBuffer = buffer.Slice(totalBytesRead, bytesToRead);
-                var bytesRead = currentStream.Read(currentBuffer);
+                int bytesRead;
+                try
+                {
+                    bytesRead = currentStream.Read(currentBuffer);
+                }
+                catch (Renci.SshNet.Common.SshConnectionException exception)
+                {
+                    return 0;
+                    //TODO: temp until fixed in flyleaf
+                    throw new IOException(exception.Message, exception);
+                }
 
                 if (bytesRead == 0)
                 {
@@ -468,8 +478,19 @@ namespace OpenpilotSdk.OpenPilot.Media
             while (currentStream.Position < (currentStream.Length - (HevcSyncSequence.Length - 1)))
             {
                 var bytesToRead = Math.Min(_keyframeBuffer.Length, (int)(currentStream.Length - currentStream.Position));
-                var bytesRead = currentStream.Read(bufferSpan.Slice(0, bytesToRead));
 
+                int bytesRead;
+                try
+                {
+                    bytesRead = currentStream.Read(bufferSpan.Slice(0, bytesToRead));
+                }
+                catch (Renci.SshNet.Common.SshConnectionException exception)
+                {
+                    return;
+                    //TODO: temp until fixed in flyleaf
+                    throw new IOException(exception.Message, exception);
+                }
+                
                 if (bytesRead == 0)
                 {
                     MoveToNextStreamUnsafe();
