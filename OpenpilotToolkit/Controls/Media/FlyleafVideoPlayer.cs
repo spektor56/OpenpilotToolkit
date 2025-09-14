@@ -155,7 +155,7 @@ public partial class FlyleafVideoPlayer : UserControl
             await DisposeStreamAsync(_combinedStreamCollection).ConfigureAwait(false);
             _isOpening = true;
 
-            var combinedStreamCollection = new CombinedStreamCollection(openpilotDevice, route, _seekToKeyframes);
+            var combinedStreamCollection = await openpilotDevice.GetVideoStreams(route);
             _combinedStreamCollection = combinedStreamCollection;
 
             cmbStreamType.Invoke((MethodInvoker)(() =>

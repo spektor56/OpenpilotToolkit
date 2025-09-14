@@ -94,6 +94,11 @@ namespace OpenpilotToolkit
             colType = new System.Windows.Forms.DataGridViewTextBoxColumn();
             colChanged = new System.Windows.Forms.DataGridViewTextBoxColumn();
             txtSearch = new MaterialTextBox();
+            panel5 = new System.Windows.Forms.Panel();
+            btnParameters = new MaterialButton();
+            btnPersis = new MaterialButton();
+            btnMediaAndLogs = new MaterialButton();
+            btnOpenpilot = new MaterialButton();
             tpFingerprint = new System.Windows.Forms.TabPage();
             txtFingerprint = new MaterialMultiLineTextBox();
             tpSSH = new System.Windows.Forms.TabPage();
@@ -140,6 +145,7 @@ namespace OpenpilotToolkit
             tableLayoutPanel2.SuspendLayout();
             panel3.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)dgvExplorer).BeginInit();
+            panel5.SuspendLayout();
             tpFingerprint.SuspendLayout();
             tpSSH.SuspendLayout();
             tpFork.SuspendLayout();
@@ -602,7 +608,6 @@ namespace OpenpilotToolkit
             panel2.Name = "panel2";
             panel2.Size = new System.Drawing.Size(204, 434);
             panel2.TabIndex = 2;
-            panel2.Paint += panel2_Paint;
             // 
             // btnOsmUpload
             // 
@@ -984,16 +989,19 @@ namespace OpenpilotToolkit
             // 
             // tableLayoutPanel2
             // 
-            tableLayoutPanel2.ColumnCount = 2;
+            tableLayoutPanel2.ColumnCount = 3;
             tableLayoutPanel2.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
             tableLayoutPanel2.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 200F));
-            tableLayoutPanel2.Controls.Add(tlpExplorerTasks, 1, 0);
+            tableLayoutPanel2.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 200F));
+            tableLayoutPanel2.Controls.Add(tlpExplorerTasks, 2, 0);
             tableLayoutPanel2.Controls.Add(panel3, 0, 0);
+            tableLayoutPanel2.Controls.Add(panel5, 1, 0);
             tableLayoutPanel2.Dock = System.Windows.Forms.DockStyle.Fill;
             tableLayoutPanel2.Location = new System.Drawing.Point(0, 0);
             tableLayoutPanel2.Name = "tableLayoutPanel2";
             tableLayoutPanel2.RowCount = 1;
             tableLayoutPanel2.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            tableLayoutPanel2.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
             tableLayoutPanel2.Size = new System.Drawing.Size(1096, 496);
             tableLayoutPanel2.TabIndex = 0;
             // 
@@ -1010,7 +1018,7 @@ namespace OpenpilotToolkit
             tlpExplorerTasks.RowCount = 1;
             tlpExplorerTasks.RowStyles.Add(new System.Windows.Forms.RowStyle());
             tlpExplorerTasks.Size = new System.Drawing.Size(192, 490);
-            tlpExplorerTasks.TabIndex = 17;
+            tlpExplorerTasks.TabIndex = 18;
             // 
             // panel3
             // 
@@ -1020,7 +1028,7 @@ namespace OpenpilotToolkit
             panel3.Dock = System.Windows.Forms.DockStyle.Fill;
             panel3.Location = new System.Drawing.Point(3, 3);
             panel3.Name = "panel3";
-            panel3.Size = new System.Drawing.Size(890, 490);
+            panel3.Size = new System.Drawing.Size(690, 490);
             panel3.TabIndex = 0;
             // 
             // txtWorkingDirectory
@@ -1037,7 +1045,7 @@ namespace OpenpilotToolkit
             txtWorkingDirectory.MouseState = MaterialSkin.MouseState.OUT;
             txtWorkingDirectory.Multiline = false;
             txtWorkingDirectory.Name = "txtWorkingDirectory";
-            txtWorkingDirectory.Size = new System.Drawing.Size(884, 50);
+            txtWorkingDirectory.Size = new System.Drawing.Size(684, 50);
             txtWorkingDirectory.TabIndex = 0;
             txtWorkingDirectory.Text = "Current Directory";
             txtWorkingDirectory.TrailingIcon = null;
@@ -1084,7 +1092,7 @@ namespace OpenpilotToolkit
             dgvExplorer.RowHeadersWidth = 51;
             dgvExplorer.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
             dgvExplorer.ShowCellToolTips = false;
-            dgvExplorer.Size = new System.Drawing.Size(884, 429);
+            dgvExplorer.Size = new System.Drawing.Size(684, 429);
             dgvExplorer.TabIndex = 1;
             dgvExplorer.CellDoubleClick += dgvExplorer_CellDoubleClick;
             dgvExplorer.CellFormatting += dgvExplorer_CellFormatting;
@@ -1142,7 +1150,7 @@ namespace OpenpilotToolkit
             txtSearch.Font = new System.Drawing.Font("Roboto", 16F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel);
             txtSearch.Hint = "Search";
             txtSearch.LeadingIcon = null;
-            txtSearch.Location = new System.Drawing.Point(679, 3);
+            txtSearch.Location = new System.Drawing.Point(479, 3);
             txtSearch.MaxLength = 50;
             txtSearch.MouseState = MaterialSkin.MouseState.OUT;
             txtSearch.Multiline = false;
@@ -1152,6 +1160,110 @@ namespace OpenpilotToolkit
             txtSearch.Text = "";
             txtSearch.TrailingIcon = null;
             txtSearch.Visible = false;
+            // 
+            // panel5
+            // 
+            panel5.Controls.Add(btnParameters);
+            panel5.Controls.Add(btnPersis);
+            panel5.Controls.Add(btnMediaAndLogs);
+            panel5.Controls.Add(btnOpenpilot);
+            panel5.Dock = System.Windows.Forms.DockStyle.Fill;
+            panel5.Location = new System.Drawing.Point(699, 3);
+            panel5.Name = "panel5";
+            panel5.Size = new System.Drawing.Size(194, 490);
+            panel5.TabIndex = 19;
+            // 
+            // btnParameters
+            // 
+            btnParameters.AccentTextColor = System.Drawing.Color.FromArgb(255, 64, 129);
+            btnParameters.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
+            btnParameters.AutoSize = false;
+            btnParameters.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            btnParameters.Density = MaterialButton.MaterialButtonDensity.Default;
+            btnParameters.Depth = 0;
+            btnParameters.HighEmphasis = true;
+            btnParameters.Icon = null;
+            btnParameters.Location = new System.Drawing.Point(4, 102);
+            btnParameters.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+            btnParameters.MouseState = MaterialSkin.MouseState.HOVER;
+            btnParameters.Name = "btnParameters";
+            btnParameters.NoAccentTextColor = System.Drawing.Color.FromArgb(63, 81, 181);
+            btnParameters.Size = new System.Drawing.Size(186, 36);
+            btnParameters.TabIndex = 29;
+            btnParameters.Text = "&Parameters";
+            btnParameters.Type = MaterialButton.MaterialButtonType.Contained;
+            btnParameters.UseAccentColor = true;
+            btnParameters.UseVisualStyleBackColor = true;
+            btnParameters.Click += btnParameters_Click;
+            // 
+            // btnPersis
+            // 
+            btnPersis.AccentTextColor = System.Drawing.Color.FromArgb(255, 64, 129);
+            btnPersis.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
+            btnPersis.AutoSize = false;
+            btnPersis.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            btnPersis.Density = MaterialButton.MaterialButtonDensity.Default;
+            btnPersis.Depth = 0;
+            btnPersis.HighEmphasis = true;
+            btnPersis.Icon = null;
+            btnPersis.Location = new System.Drawing.Point(4, 150);
+            btnPersis.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+            btnPersis.MouseState = MaterialSkin.MouseState.HOVER;
+            btnPersis.Name = "btnPersis";
+            btnPersis.NoAccentTextColor = System.Drawing.Color.FromArgb(63, 81, 181);
+            btnPersis.Size = new System.Drawing.Size(186, 36);
+            btnPersis.TabIndex = 30;
+            btnPersis.Text = "P&ersist";
+            btnPersis.Type = MaterialButton.MaterialButtonType.Contained;
+            btnPersis.UseAccentColor = true;
+            btnPersis.UseVisualStyleBackColor = true;
+            btnPersis.Click += btnPersis_Click;
+            // 
+            // btnMediaAndLogs
+            // 
+            btnMediaAndLogs.AccentTextColor = System.Drawing.Color.FromArgb(255, 64, 129);
+            btnMediaAndLogs.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
+            btnMediaAndLogs.AutoSize = false;
+            btnMediaAndLogs.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            btnMediaAndLogs.Density = MaterialButton.MaterialButtonDensity.Default;
+            btnMediaAndLogs.Depth = 0;
+            btnMediaAndLogs.HighEmphasis = true;
+            btnMediaAndLogs.Icon = null;
+            btnMediaAndLogs.Location = new System.Drawing.Point(4, 54);
+            btnMediaAndLogs.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+            btnMediaAndLogs.MouseState = MaterialSkin.MouseState.HOVER;
+            btnMediaAndLogs.Name = "btnMediaAndLogs";
+            btnMediaAndLogs.NoAccentTextColor = System.Drawing.Color.FromArgb(63, 81, 181);
+            btnMediaAndLogs.Size = new System.Drawing.Size(186, 36);
+            btnMediaAndLogs.TabIndex = 31;
+            btnMediaAndLogs.Text = "&Media and Logs";
+            btnMediaAndLogs.Type = MaterialButton.MaterialButtonType.Contained;
+            btnMediaAndLogs.UseAccentColor = true;
+            btnMediaAndLogs.UseVisualStyleBackColor = true;
+            btnMediaAndLogs.Click += btnMediaAndLogs_Click;
+            // 
+            // btnOpenpilot
+            // 
+            btnOpenpilot.AccentTextColor = System.Drawing.Color.FromArgb(255, 64, 129);
+            btnOpenpilot.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
+            btnOpenpilot.AutoSize = false;
+            btnOpenpilot.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            btnOpenpilot.Density = MaterialButton.MaterialButtonDensity.Default;
+            btnOpenpilot.Depth = 0;
+            btnOpenpilot.HighEmphasis = true;
+            btnOpenpilot.Icon = null;
+            btnOpenpilot.Location = new System.Drawing.Point(4, 6);
+            btnOpenpilot.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+            btnOpenpilot.MouseState = MaterialSkin.MouseState.HOVER;
+            btnOpenpilot.Name = "btnOpenpilot";
+            btnOpenpilot.NoAccentTextColor = System.Drawing.Color.FromArgb(63, 81, 181);
+            btnOpenpilot.Size = new System.Drawing.Size(186, 36);
+            btnOpenpilot.TabIndex = 32;
+            btnOpenpilot.Text = "&Openpilot";
+            btnOpenpilot.Type = MaterialButton.MaterialButtonType.Contained;
+            btnOpenpilot.UseAccentColor = true;
+            btnOpenpilot.UseVisualStyleBackColor = true;
+            btnOpenpilot.Click += btnOpenpilot_Click;
             // 
             // tpFingerprint
             // 
@@ -1717,6 +1829,7 @@ namespace OpenpilotToolkit
             tableLayoutPanel2.ResumeLayout(false);
             panel3.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)dgvExplorer).EndInit();
+            panel5.ResumeLayout(false);
             tpFingerprint.ResumeLayout(false);
             tpSSH.ResumeLayout(false);
             tpFork.ResumeLayout(false);
@@ -1803,7 +1916,6 @@ namespace OpenpilotToolkit
         private MaterialButton btnOsmTest;
         private System.Windows.Forms.TableLayoutPanel tableLayoutPanel2;
         private System.Windows.Forms.Panel panel3;
-        private System.Windows.Forms.TableLayoutPanel tlpExplorerTasks;
         private System.Windows.Forms.Panel panel4;
         private MaterialButton btnTmux;
         private MaterialButton btnExitTmux;
@@ -1817,6 +1929,12 @@ namespace OpenpilotToolkit
         private Controls.Media.FlyleafVideoPlayer flyleafVideoPlayer;
         private MaterialCheckbox cbSeekToKeyframes;
         private System.Windows.Forms.ToolTip toolTip1;
+        private MaterialButton btnOpenpilot;
+        private System.Windows.Forms.TableLayoutPanel tlpExplorerTasks;
+        private MaterialButton btnMediaAndLogs;
+        private MaterialButton btnPersis;
+        private MaterialButton btnParameters;
+        private System.Windows.Forms.Panel panel5;
     }
 }
 

@@ -1,3 +1,4 @@
+using CefSharp;
 using CefSharp.WinForms;
 using FFMpegCore;
 using FlyleafLib;
@@ -10,7 +11,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using CefSharp;
 
 namespace OpenpilotToolkit
 {
@@ -134,8 +134,6 @@ namespace OpenpilotToolkit
             };
 
             Log.Information("Application Starting.");
-            
-            
 
             var openpilotToolkitForm = new OpenpilotToolkitForm(_toolkitTempFolder);
             openpilotToolkitForm.Shown += (s, e) =>

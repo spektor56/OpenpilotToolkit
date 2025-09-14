@@ -11,19 +11,19 @@
     <UseMaui>False</UseMaui>
 	  <EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net9.0-android|x64'">
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net10.0-android|x64'">
     <IsTrimmable>True</IsTrimmable>
     <IsAotCompatible>True</IsAotCompatible>
     <EnableLLVM>False</EnableLLVM>
     <AndroidKeyStore>False</AndroidKeyStore>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net9.0-android|ARM64'">
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net10.0-android|ARM64'">
     <IsTrimmable>True</IsTrimmable>
     <IsAotCompatible>True</IsAotCompatible>
     <EnableLLVM>False</EnableLLVM>
     <AndroidKeyStore>False</AndroidKeyStore>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net9.0-android|x64'">
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net10.0-android|x64'">
     <IsTrimmable>True</IsTrimmable>
     <IsAotCompatible>True</IsAotCompatible>
     <EnableLLVM>False</EnableLLVM>
@@ -34,7 +34,7 @@
     <AndroidLinkTool>r8</AndroidLinkTool>
     <AndroidKeyStore>False</AndroidKeyStore>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net9.0-android|ARM64'">
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net10.0-android|ARM64'">
     <IsTrimmable>True</IsTrimmable>
     <IsAotCompatible>True</IsAotCompatible>
     <EnableLLVM>False</EnableLLVM>

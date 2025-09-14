@@ -3,6 +3,8 @@ using CefSharp.WinForms;
 using FFMpegCore;
 using FlyleafLib;
 using FlyleafLib.MediaPlayer;
+using LiveChartsCore.SkiaSharpView;
+using LiveChartsCore.SkiaSharpView.WinForms;
 using MaterialSkin;
 using MaterialSkin.Controls;
 using NetTopologySuite.IO;
@@ -18,7 +20,6 @@ using OpenpilotToolkit.Controls.Media;
 using OpenpilotToolkit.Json;
 using Renci.SshNet;
 using Renci.SshNet.Common;
-using SixLabors.ImageSharp;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -36,6 +37,16 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
 using System.Windows.Forms;
+using LiveChartsCore;
+using LiveChartsCore.Defaults;
+using LiveChartsCore.Measure;
+using LiveChartsCore.SkiaSharpView.Painting;
+using LiveChartsCore.SkiaSharpView.Painting.Effects;
+using LiveChartsCore.SkiaSharpView.SKCharts;
+using LiveChartsCore.SkiaSharpView.VisualElements;
+using OpenpilotToolkit.Controls.Wizards;
+using SkiaSharp;
+using Color = System.Drawing.Color;
 using Exception = System.Exception;
 using FileMode = System.IO.FileMode;
 using MethodInvoker = System.Windows.Forms.MethodInvoker;
@@ -54,8 +65,6 @@ namespace OpenpilotToolkit
         readonly BindingList<OpenpilotDevice> _devices = new BindingList<OpenpilotDevice>();
         private Stack<string> _workingDirectory = new Stack<string>();
         private ShellStream _shellStream = null;
-        private StreamReader _streamReader = null;
-        private readonly SemaphoreSlim _terminalLock = new SemaphoreSlim(1, 1);
         private ChromiumWebBrowser _sshTerminal;
         private Player _flyPlayer;
 
@@ -390,7 +399,7 @@ namespace OpenpilotToolkit
                                                 }
                                             }
                                         }
-                                    });
+                                    }).ConfigureAwait(false);
                                 }
                             }
                         }
@@ -401,7 +410,7 @@ namespace OpenpilotToolkit
 
         public async void TerminalData(string data)
         {
-            if (_shellStream != null && data != null)
+            if (_shellStream != null && _shellStream.CanWrite && data != null)
             {
                 await _shellStream.WriteAsync(new ReadOnlyMemory<byte>(Encoding.UTF8.GetBytes(data)));
                 await _shellStream.FlushAsync();
@@ -423,15 +432,16 @@ namespace OpenpilotToolkit
         */
         private async void SshTerminal_JavascriptMessageReceived(object sender, JavascriptMessageReceivedEventArgs e)
         {
-            if (_shellStream != null)
+            if (_shellStream != null && _shellStream.CanWrite)
             {
                 var param = e.Message.ToString().Split(',');
-                _shellStream.SendWindowSizeChange(Convert.ToUInt32(param[1]), Convert.ToUInt32(param[0]), 0, 0);
+                _shellStream.ChangeWindowSize(Convert.ToUInt32(param[1]), Convert.ToUInt32(param[0]), 0, 0);
             }
         }
 
         private async Task ScanDevices()
         {
+            _videoPauseFromTabSwitch = false;
             _devices.Clear();
             lbRoutes.Items.Clear();
             Task.Run(() =>
@@ -444,45 +454,47 @@ namespace OpenpilotToolkit
 
             try
             {
-                int foundDevices = 0;
+                var discoveredDevices = new HashSet<OpenpilotDevice>();
                 await Task.Run(async () =>
                 {
+                    var connectionTasks = new List<Task>();
                     try
                     {
                         await foreach (var device in OpenpilotDevice.DiscoverAsync().ConfigureAwait(false))
                         {
-                            foundDevices++;
-
-                            if (!_devices.Contains(device))
+                            if (discoveredDevices.Add(device))
                             {
-                                if (device is not UnknownDevice)
+                                connectionTasks.Add(Task.Run(async () =>
                                 {
-                                    if (!device.IsAuthenticated)
+                                    if (device is not UnknownDevice)
                                     {
-                                        try
+                                        if (!device.IsAuthenticated)
                                         {
-                                            await device.ConnectSftpAsync().ConfigureAwait(false);
-                                        }
-                                        catch (SshAuthenticationException ex)
-                                        {
-                                            Serilog.Log.Information(ex, "Authentication failed for {Device}", device);
+                                            try
+                                            {
+                                                await device.ConnectSftpAsync().ConfigureAwait(false);
+                                            }
+                                            catch (SshAuthenticationException ex)
+                                            {
+                                                Serilog.Log.Information(ex, "Authentication failed for {Device}", device);
+                                            }
                                         }
                                     }
-                                }
 
-                                if (device.IsAuthenticated)
-                                {
-                                    Invoke(new MethodInvoker(async () =>
+                                    if (device.IsAuthenticated)
                                     {
-                                        _devices.Add(device);
-                                        if (_devices.Count == 1)
+                                        Invoke(new MethodInvoker(async () =>
                                         {
-                                            wifiConnected.SetEnabled(true);
-                                            cmbDevices.SelectedIndex = -1;
-                                            cmbDevices.SelectedIndex = 0;
-                                        }
-                                    }));
-                                }
+                                            _devices.Add(device);
+                                            if (_devices.Count == 1)
+                                            {
+                                                wifiConnected.SetEnabled(true);
+                                                cmbDevices.SelectedIndex = -1;
+                                                cmbDevices.SelectedIndex = 0;
+                                            }
+                                        }));
+                                    }
+                                }));
                             }
                         }
                     }
@@ -491,17 +503,18 @@ namespace OpenpilotToolkit
                         Serilog.Log.Error("Discovery Timed Out.");
                     }
 
+                    await Task.WhenAll(connectionTasks).ConfigureAwait(false);
                 });
 
-                if (foundDevices < 1)
+                if (discoveredDevices.Count < 1)
                 {
                     ToolkitMessageDialog.ShowDialog(
                         "No devices were found, please check that SSH is enabled on your device and the device is connected to the network.", parent: this);
                 }
-                else if (_devices.Count < 1 && foundDevices > 0)
+                else if (_devices.Count < 1 && discoveredDevices.Count > 0)
                 {
                     if (ToolkitMessageDialog.ShowDialog(
-                        $"{foundDevices} device(s) found but authentication failed, do you want to start the SSH wizard?", this, MessageBoxButtons.YesNo) == DialogResult.Yes)
+                        $"{discoveredDevices.Count} device(s) found but authentication failed, do you want to start the SSH wizard?", this, MessageBoxButtons.YesNo) == DialogResult.Yes)
                     {
                         ucSshWizard.Reset();
                         tcSettings.SelectedTab = tpSSH;
@@ -628,6 +641,117 @@ namespace OpenpilotToolkit
             }
         }
 
+        /* TODO: Live Charts
+
+            if (cmbDevices.SelectedItem is OpenpilotDevice openpilotDevice)
+           {
+               if (lbRoutes.SelectedItem is Route route)
+               {
+                   var routes = lbRoutes.Items.Cast<Route>();
+                   //new List<Route>() { routes.Last() }
+                   var data = (await openpilotDevice.ExportTorque(routes)).ToArray();
+           
+                   var speedBins = data
+                       .GroupBy(torqueTest => (int)(torqueTest.Speed / 5) * 5)
+                       .ToDictionary(g => g.Key, g => g.ToList());
+           
+                   var divisions = speedBins.Count;
+                   var stepSize = 325 / divisions;
+                   int currentColour = 0;
+                   var scatterCollection = new List<ISeries>();
+           
+                   foreach (var speedBin in speedBins.OrderBy(k => k.Key))
+                   {
+                       Debug.Print(speedBin.Key.ToString());
+                       var scatterSeries = new ScatterSeries<ObservablePoint>
+                       {
+                           GeometrySize = 2,
+                           MinGeometrySize = 2,
+                           EasingFunction = null,
+                           AnimationsSpeed = TimeSpan.Zero,
+                           ClippingMode = ClipMode.XY,
+                           Fill = new SolidColorPaint(SKColor.FromHsl(currentColour, 100, 50)),
+                           Stroke = null,
+                           IsVisibleAtLegend = true,
+                           Name = string.Format("{0}-{1} m/s ({2} points)", speedBin.Key,(speedBin.Key + 5), speedBin.Value.Count)
+                       };
+                       scatterSeries.Values = speedBin.Value.Select(torque => new ObservablePoint(   torque.Torque, torque.LateralAccel)).ToArray();
+                       scatterCollection.Add(scatterSeries);
+                       currentColour += stepSize;
+                   }
+           
+                   var legend = new SKDefaultLegend();
+                   legend.Easing = null;
+                   legend.AnimationsSpeed = TimeSpan.Zero;
+                   
+                   var cartesianChart = new CartesianChart
+                   {
+                       Legend = legend,
+                       Series = scatterCollection,
+                       EasingFunction = null,
+                       // out of livecharts properties...
+                       Location = new System.Drawing.Point(0, 0),
+                       Dock = DockStyle.Fill,
+                       Tooltip = null,
+                       TooltipPosition = TooltipPosition.Hidden,
+                       LegendPosition = LegendPosition.Right,
+                       LegendTextPaint = new SolidColorPaint(SKColors.White),
+                       Title = new LabelVisual() { Text = "Lateral Acceleration vs Steering Torque by Speed", Paint = new SolidColorPaint(SKColors.White), TextSize = 20},
+                       
+                   };
+           
+                   cartesianChart.XAxes = new Axis[]
+                   {
+                       new Axis
+                       {
+                           Name = "Torque Output",
+                           NamePaint = new SolidColorPaint(SKColors.White),
+           
+                           LabelsPaint = new SolidColorPaint(SKColors.White),
+                           TextSize = 20,
+           
+                           SeparatorsPaint = new SolidColorPaint(SKColors.LightSlateGray) { StrokeThickness = 2 },
+                           MinLimit = -1,
+                           MaxLimit = 1,
+                           EasingFunction = null,
+                           MinStep = 0.25
+                       }
+                   };
+                   
+                   cartesianChart.YAxes = new Axis[]
+                   {
+                       new Axis
+                       {
+                           Name = "Lateral Acceleration (m/s²)",
+                           NamePaint = new SolidColorPaint(SKColors.White),
+           
+                           LabelsPaint = new SolidColorPaint(SKColors.White),
+                           TextSize = 20,
+           
+                           SeparatorsPaint = new SolidColorPaint(SKColors.LightSlateGray)
+                           {
+                               StrokeThickness = 2,
+                               PathEffect = new DashEffect(new float[] { 3, 3 })
+                           },
+                           MinLimit = -3,
+                           MaxLimit = 3,
+                           EasingFunction = null,
+                           MinStep = 1,
+                       }
+                   };
+           
+           
+                   var form = new ToolkitForm();
+                   
+                   form.Controls.Add(cartesianChart);
+                   form.Show();
+           
+               }
+           
+               
+           }
+        */
+
         private async void btnRefreshVideos_Click(object sender, EventArgs e)
         {
             try
@@ -732,9 +856,16 @@ namespace OpenpilotToolkit
 
             Properties.Settings.Default.Save();
 
+            _explorerFileWatcher.Changed -= FileWatcherOnChanged;
+            _explorerFileWatcher.Dispose();
+            
             flyleafVideoPlayer.Stop();
 
+            _devices.Clear();
+
+            _shellStream?.Dispose();
             _sshTerminal.Dispose();
+
             Cef.PreShutdown();
         }
 
@@ -785,6 +916,7 @@ namespace OpenpilotToolkit
             }
         }
 
+        /*
         private Rational[] GetRational(double coordinate)
         {
             double decimal_degrees = Math.Floor(coordinate);
@@ -795,6 +927,7 @@ namespace OpenpilotToolkit
 
             return new[] { new Rational(decimal_degrees), new Rational(minutes), new Rational(seconds) };
         }
+        */
 
         private void ExportFrames(string exportFolder, Route route, string selectStatement, int startNumber)
         {
@@ -1104,7 +1237,6 @@ namespace OpenpilotToolkit
                             await Task.Run(async () =>
                             {
                                 _shellStream = await openpilotDevice.GetShellStreamAsync();
-                                _streamReader = new StreamReader(_shellStream);
                             });
                             await _sshTerminal.EvaluateScriptAsync("resizeTerminal()");
                             _shellStream.DataReceived += ShellStreamOnDataReceived;
@@ -1118,23 +1250,15 @@ namespace OpenpilotToolkit
             }
         }
 
-        private async void ShellStreamOnDataReceived(object sender, ShellDataEventArgs e)
+        private void ShellStreamOnDataReceived(object sender, ShellDataEventArgs e)
         {
-            await _terminalLock.WaitAsync();
-            try
+            if (_shellStream.DataAvailable)
             {
-                if (_shellStream.DataAvailable)
+                var terminalText = _shellStream.Read();
+                Invoke(new MethodInvoker(async () =>
                 {
-                    var terminalText = await _streamReader.ReadToEndAsync();
-                    Invoke(new MethodInvoker(async () =>
-                    {
-                        await _sshTerminal.EvaluateScriptAsync("WriteText", new object[] { terminalText });
-                    }));
-                }
-            }
-            finally
-            {
-                _terminalLock.Release();
+                    await _sshTerminal.EvaluateScriptAsync("WriteText", new object[] { terminalText }).ConfigureAwait(false);
+                }));
             }
         }
 
@@ -2280,7 +2404,7 @@ namespace OpenpilotToolkit
         private async void btnTmux_Click(object sender, EventArgs e)
         {
             _sshTerminal.Focus();
-            if (_shellStream != null)
+            if (_shellStream != null && _shellStream.CanWrite)
             {
                 await _shellStream.WriteAsync(new ReadOnlyMemory<byte>(Encoding.UTF8.GetBytes("tmux a\n")));
                 await _shellStream.FlushAsync();
@@ -2291,7 +2415,7 @@ namespace OpenpilotToolkit
         private async void btnExitTmux_Click(object sender, EventArgs e)
         {
             _sshTerminal.Focus();
-            if (_shellStream != null)
+            if (_shellStream != null && _shellStream.CanWrite)
             {
                 await _shellStream.WriteAsync(new ReadOnlyMemory<byte>(Encoding.UTF8.GetBytes("`d")));
                 await _shellStream.FlushAsync();
@@ -2322,7 +2446,7 @@ namespace OpenpilotToolkit
         private async void btnTmuxScroll_Click(object sender, EventArgs e)
         {
             _sshTerminal.Focus();
-            if (_shellStream != null)
+            if (_shellStream != null && _shellStream.CanWrite)
             {
                 await _shellStream.WriteAsync(new ReadOnlyMemory<byte>(Encoding.UTF8.GetBytes("`[")));
                 await _shellStream.FlushAsync();
@@ -2332,7 +2456,7 @@ namespace OpenpilotToolkit
         private async void btnTmuxEndScroll_Click(object sender, EventArgs e)
         {
             _sshTerminal.Focus();
-            if (_shellStream != null)
+            if (_shellStream != null && _shellStream.CanWrite)
             {
                 await _shellStream.WriteAsync(new ReadOnlyMemory<byte>(Encoding.UTF8.GetBytes("q")));
                 await _shellStream.FlushAsync();
@@ -2411,12 +2535,12 @@ namespace OpenpilotToolkit
 
             await UpdateForkBranches(githubUser, repository).ConfigureAwait(false);
         }
-        
+
         private string _previousGithubUser = "";
         private string _previousGithubRepository = "";
         private async Task UpdateForkBranches(string githubUser, string repository)
         {
-            if (_previousGithubRepository.Equals(repository, StringComparison.OrdinalIgnoreCase) &&  _previousGithubUser.Equals(githubUser, StringComparison.OrdinalIgnoreCase))
+            if (_previousGithubRepository.Equals(repository, StringComparison.OrdinalIgnoreCase) && _previousGithubUser.Equals(githubUser, StringComparison.OrdinalIgnoreCase))
             {
                 return;
             }
@@ -2462,11 +2586,6 @@ namespace OpenpilotToolkit
 
         }
 
-        private void panel2_Paint(object sender, PaintEventArgs e)
-        {
-
-        }
-
         private bool autoScan = false;
         private void btnScan_MouseDown(object sender, MouseEventArgs e)
         {
@@ -2491,6 +2610,119 @@ namespace OpenpilotToolkit
         {
             flyleafVideoPlayer.SetSeekToKeyframesAsync(cbSeekToKeyframes.Checked).ConfigureAwait(false);
             Properties.Settings.Default.SeekToKeyframes = cbSeekToKeyframes.Checked;
+        }
+
+        private async void btnOpenpilot_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (cmbDevices.SelectedItem is OpenpilotDevice openpilotDevice)
+                {
+                    var workingDirectory = @"/data/openpilot";
+                    await openpilotDevice.ChangeDirectoryAsync(workingDirectory);
+
+                    _workingDirectory.Clear();
+                    var directories = workingDirectory.Split("/");
+                    foreach (var directory in directories)
+                    {
+                        _workingDirectory.Push(directory);
+                    }
+
+                    txtWorkingDirectory.Text = openpilotDevice.WorkingDirectory;
+
+                    var files = (await openpilotDevice.EnumerateFilesAsync(workingDirectory)).OrderBy(file => file.Name).ToArray();
+                    dgvExplorer.DataSource = files;
+                }
+            }
+            catch (Exception)
+            {
+                //TODO: finish this and move to method
+            }
+        }
+
+        private async void btnMediaAndLogs_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (cmbDevices.SelectedItem is OpenpilotDevice openpilotDevice)
+                {
+                    var workingDirectory = @"/data/media/0/realdata";
+                    await openpilotDevice.ChangeDirectoryAsync(workingDirectory);
+
+                    _workingDirectory.Clear();
+                    var directories = workingDirectory.Split("/");
+                    foreach (var directory in directories)
+                    {
+                        _workingDirectory.Push(directory);
+                    }
+
+                    txtWorkingDirectory.Text = openpilotDevice.WorkingDirectory;
+
+                    var files = (await openpilotDevice.EnumerateFilesAsync(workingDirectory)).OrderBy(file => file.Name).ToArray();
+                    dgvExplorer.DataSource = files;
+                }
+            }
+            catch (Exception)
+            {
+                //TODO: finish this and move to method
+            }
+        }
+
+        private async void btnParameters_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (cmbDevices.SelectedItem is OpenpilotDevice openpilotDevice)
+                {
+                    var workingDirectory = @"/data/params/d";
+                    await openpilotDevice.ChangeDirectoryAsync(workingDirectory);
+
+                    _workingDirectory.Clear();
+                    var directories = workingDirectory.Split("/");
+                    foreach (var directory in directories)
+                    {
+                        _workingDirectory.Push(directory);
+                    }
+
+                    txtWorkingDirectory.Text = openpilotDevice.WorkingDirectory;
+
+                    var files = (await openpilotDevice.EnumerateFilesAsync(workingDirectory)).OrderBy(file => file.Name).ToArray();
+                    dgvExplorer.DataSource = files;
+                }
+            }
+            catch (Exception)
+            {
+                //TODO: finish this and move to method
+            }
+        }
+
+        private async void btnPersis_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (cmbDevices.SelectedItem is OpenpilotDevice openpilotDevice)
+                {
+                    //TODO: /dev/shm/ ??
+                    var workingDirectory = @"/persist/comma";
+                    await openpilotDevice.ChangeDirectoryAsync(workingDirectory);
+
+                    _workingDirectory.Clear();
+                    var directories = workingDirectory.Split("/");
+                    foreach (var directory in directories)
+                    {
+                        _workingDirectory.Push(directory);
+                    }
+
+                    txtWorkingDirectory.Text = openpilotDevice.WorkingDirectory;
+
+                    var files = (await openpilotDevice.EnumerateFilesAsync(workingDirectory)).OrderBy(file => file.Name).ToArray();
+                    dgvExplorer.DataSource = files;
+                }
+            }
+            catch (Exception)
+            {
+                //TODO: finish this and move to method
+            }
         }
     }
 }
