@@ -980,7 +980,7 @@ namespace OpenpilotSdk.Hardware
                         var openpilotDevice = await completed.ConfigureAwait(false);
                         if (openpilotDevice != null)
                         {
-                            discoveredDeviceInfoList.Add(new DeviceInfo() { Hostname = openpilotDevice.HostName, IpAddress = openpilotDevice.IpAddress.ToString(), LastSeen = DateTime.UtcNow });
+                            discoveredDeviceInfoList.Add(new DeviceInfo() { Hostname = openpilotDevice.HostName, IpAddress = openpilotDevice.IpAddress != null ? openpilotDevice.IpAddress.ToString() : "", LastSeen = DateTime.UtcNow });
                             yield return openpilotDevice;
                         }
                         connectionRequests.Remove(completed);
@@ -1037,7 +1037,7 @@ namespace OpenpilotSdk.Hardware
                                 discoveryTasks.Add(ZeroconfResolver
                                 .ResolveAsync("_ssh._tcp.local.", TimeSpan.FromMilliseconds(1000), 2, 200, service =>
                                 {
-                                    ReadOnlySpan<char> span = service.DisplayName.AsSpan();
+                                    ReadOnlySpan<char> span = service.Id.AsSpan();
                                     int start = span.IndexOf('[');
                                     int end = span.IndexOf(']');
                                     var host = "";
@@ -1045,8 +1045,28 @@ namespace OpenpilotSdk.Hardware
                                     {
                                         host = span.Slice(start + 1, end - start - 1).ToString();
                                     }
-                                    discoveredDeviceInfoList.Add(new DeviceInfo() { Hostname = host, IpAddress = service.IPAddress.ToString(), LastSeen = DateTime.UtcNow });
-                                    discoveredDevices.Enqueue(new Comma3(IPAddress.Parse(service.IPAddress), host, false));
+
+                                    IPAddress? ipAddress = null;
+                                    //When on wifi, IPAddress isn't always populated but exists in Id
+                                    if (service.IPAddress == null)
+                                    {
+                                        int colonIndex = span.IndexOf(':');
+                                        if (colonIndex > 0)
+                                        {
+                                            ReadOnlySpan<char> ipSpan = span.Slice(0, colonIndex);
+                                            IPAddress.TryParse(ipSpan, out ipAddress);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        ipAddress = IPAddress.Parse(service.IPAddress);
+                                    }
+
+                                    discoveredDeviceInfoList.Add(new DeviceInfo() { Hostname = host, IpAddress = ipAddress != null ? ipAddress.ToString() : "", LastSeen = DateTime.UtcNow });
+                                    if (ipAddress != null)
+                                    {
+                                        discoveredDevices.Enqueue(new Comma3(ipAddress, host, false));
+                                    }
                                 }, CancellationToken.None, new NetworkInterface[] { networkInterface }));
                             }
                         }
@@ -1140,7 +1160,7 @@ namespace OpenpilotSdk.Hardware
                     var openpilotDevice = await connectionRequest.ConfigureAwait(false);
                     if (openpilotDevice != null)
                     {
-                        discoveredDeviceInfoList.Add(new DeviceInfo() { Hostname = openpilotDevice.HostName, IpAddress = openpilotDevice.IpAddress.ToString(), LastSeen = DateTime.UtcNow });
+                        discoveredDeviceInfoList.Add(new DeviceInfo() { Hostname = openpilotDevice.HostName, IpAddress = openpilotDevice.IpAddress != null ? openpilotDevice.IpAddress.ToString() : "", LastSeen = DateTime.UtcNow });
                         yield return openpilotDevice;
                     }
 
