@@ -1,5 +1,4 @@
-﻿using Cereal;
-using DnsClient;
+﻿using DnsClient;
 using FFMpegCore;
 using NetTopologySuite.IO;
 using OpenpilotSdk.Caching;
@@ -18,18 +17,14 @@ using Renci.SshNet.Sftp;
 using Serilog;
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
-using System.Diagnostics;
 using System.Drawing;
 using System.Globalization;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using Zeroconf;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 using LogFile = OpenpilotSdk.OpenPilot.FileTypes.LogFile;
 
 namespace OpenpilotSdk.Hardware
@@ -843,7 +838,7 @@ namespace OpenpilotSdk.Hardware
 
         protected bool Equals(OpenpilotDevice other)
         {
-            return Equals(IpAddress, other.IpAddress);
+            return (IpAddress != null && Equals(IpAddress, other.IpAddress)) || (!string.IsNullOrWhiteSpace(HostName) && Equals(HostName, other.HostName));
         }
 
         public override bool Equals(object? obj)
@@ -858,17 +853,17 @@ namespace OpenpilotSdk.Hardware
                 return true;
             }
 
-            if (obj.GetType() != GetType())
+            if (obj is not OpenpilotDevice openpilotDevice)
             {
                 return false;
             }
 
-            return Equals((OpenpilotDevice)obj);
+            return Equals(openpilotDevice);
         }
 
         public override int GetHashCode()
         {
-            return IpAddress != null ? IpAddress.GetHashCode() : 0;
+            return IpAddress != null ? IpAddress.GetHashCode() : ((!string.IsNullOrWhiteSpace(HostName) ? HostName.GetHashCode() : 0));
         }
 
         public static bool operator ==(OpenpilotDevice left, OpenpilotDevice right)
@@ -1005,7 +1000,7 @@ namespace OpenpilotSdk.Hardware
                         continue;
                     }
 
-                    if (!(networkInterface.NetworkInterfaceType == NetworkInterfaceType.Ethernet || networkInterface.NetworkInterfaceType == NetworkInterfaceType.Wireless80211))
+                    if (!(networkInterface.NetworkInterfaceType == NetworkInterfaceType.Ethernet || networkInterface.NetworkInterfaceType == NetworkInterfaceType.Wireless80211 || networkInterface.NetworkInterfaceType == NetworkInterfaceType.Unknown))
                     {
                         Log.Information("Network interface is not Ethernet or Wireless: {interface}", networkInterface.Name);
                         continue;
@@ -1046,9 +1041,13 @@ namespace OpenpilotSdk.Hardware
                                         host = span.Slice(start + 1, end - start - 1).ToString();
                                     }
 
+                                    IPAddress? firstIpV4 = service.IPAddresses
+                                        .Select(ip => IPAddress.TryParse(ip, out var ipParsed) ? ipParsed : null) 
+                                        .FirstOrDefault(ip => ip != null && ip.AddressFamily == AddressFamily.InterNetwork);
+
                                     IPAddress? ipAddress = null;
                                     //When on wifi, IPAddress isn't always populated but exists in Id
-                                    if (service.IPAddress == null)
+                                    if (firstIpV4 == null)
                                     {
                                         int colonIndex = span.IndexOf(':');
                                         if (colonIndex > 0)
@@ -1059,7 +1058,7 @@ namespace OpenpilotSdk.Hardware
                                     }
                                     else
                                     {
-                                        ipAddress = IPAddress.Parse(service.IPAddress);
+                                        ipAddress = firstIpV4;
                                     }
 
                                     discoveredDeviceInfoList.Add(new DeviceInfo() { Hostname = host, IpAddress = ipAddress != null ? ipAddress.ToString() : "", LastSeen = DateTime.UtcNow });
@@ -1168,8 +1167,10 @@ namespace OpenpilotSdk.Hardware
                     cts.CancelAfter(timeout);
                 }
 
-                //if the IP scan has completed, make sure the discovery tasks get to complete.
-                await Task.WhenAll(discoveryTasks).ConfigureAwait(false);
+                var discoveryTimeout = TimeSpan.FromSeconds(1);
+                var allDiscoveryTasks = Task.WhenAll(discoveryTasks);
+
+                await Task.WhenAny(allDiscoveryTasks, Task.Delay(discoveryTimeout)).ConfigureAwait(false);
 
                 while (discoveredDevices.Count > 0)
                 {
@@ -1287,13 +1288,13 @@ namespace OpenpilotSdk.Hardware
                 catch (SshAuthenticationException)
                 {
                     sshClient.Dispose();
-                    return new UnknownDevice();
+                    return new UnknownDevice(ipAddress, hostName);
                 }
 
                 if (!sshClient.IsConnected)
                 {
                     sshClient.Dispose();
-                    return null;
+                    return new UnknownDevice(ipAddress, hostName);
                 }
 
                 //~26ms
@@ -1319,7 +1320,7 @@ namespace OpenpilotSdk.Hardware
                 }
                 catch (Exception)
                 {
-                    return new UnknownDevice();
+                    return new UnknownDevice(ipAddress, hostName);
                 }
             }
             catch (Exception e)
@@ -1354,7 +1355,6 @@ namespace OpenpilotSdk.Hardware
                 }
                 return new ForkResult(string.IsNullOrWhiteSpace(result) ? command.Error : result, false);
             }
-            
         }
 
         public virtual async Task<bool> FlashPandaAsync()
