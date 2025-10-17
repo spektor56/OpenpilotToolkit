@@ -79,13 +79,6 @@ SSH.NET → SshNet.Keygen → OpenpilotSdk → MaterialSkin → OpenpilotToolkit
 sudo apt-get install capnproto libcapnp-dev
 ```
 
-### Issue: `Import failed: ./include/c++.capnp`
-**Cause**: Cap'n Proto headers missing  
-**Fix**:
-```bash
-sudo apt-get install libcapnp-dev
-```
-
 ### Issue: `PWD environment variable doesn't match`
 **Cause**: Cap'n Proto PWD sensitivity  
 **Fix**: Scripts handle automatically with `unset PWD`
