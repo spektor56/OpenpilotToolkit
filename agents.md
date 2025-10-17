@@ -1,16 +1,8 @@
 # Agent Instructions for OpenpilotToolkit
 
-## Project Overview
-This is a .NET 10 WinForms application for Openpilot management. The main project to build is OpenpilotToolkit.
-
 ## Environment Setup
 
-### Prerequisites
-- .NET 10 SDK
-- Cap'n Proto compiler and development libraries
-- capnpc-csharp dotnet tool
-
-### Setup Script
+This script sets up the build environment. Run this once before building.
 ```bash
 #!/usr/bin/env bash
 set -euo pipefail
@@ -44,28 +36,43 @@ export PATH="$HOME/.dotnet/tools:$PATH"
 
 echo "✅ capnpc-csharp installed"
 
-# Fix PWD for Cap'n Proto and set working directory
+# Fix PWD for Cap'n Proto
 unset PWD
 cd /app
 
-# Restore dependencies in dependency order
-echo "Restoring dependencies..."
-for project in \
-  "SSH.NET/src/Renci.SshNet/Renci.SshNet.csproj" \
-  "SshNet.Keygen/SshNet.Keygen/SshNet.Keygen.csproj" \
-  "OpenpilotSdk/OpenpilotSdk.csproj" \
-  "OpenpilotToolkit/OpenpilotToolkit.csproj"
-do
-  dotnet restore "$project" \
-    --runtime win-x64 \
-    /p:EnableWindowsTargeting=true \
-    --verbosity quiet
-done
+echo "✅ Environment setup complete!"
+```
 
-echo "✅ Dependencies restored"
+## Build Instructions
 
-# Build OpenpilotToolkit
-echo "Building OpenpilotToolkit..."
+After environment setup, restore and build the project:
+
+### Restore Dependencies
+```bash
+# Restore in dependency order
+dotnet restore SSH.NET/src/Renci.SshNet/Renci.SshNet.csproj \
+  --runtime win-x64 \
+  /p:EnableWindowsTargeting=true \
+  --verbosity quiet
+
+dotnet restore SshNet.Keygen/SshNet.Keygen/SshNet.Keygen.csproj \
+  --runtime win-x64 \
+  /p:EnableWindowsTargeting=true \
+  --verbosity quiet
+
+dotnet restore OpenpilotSdk/OpenpilotSdk.csproj \
+  --runtime win-x64 \
+  /p:EnableWindowsTargeting=true \
+  --verbosity quiet
+
+dotnet restore OpenpilotToolkit/OpenpilotToolkit.csproj \
+  --runtime win-x64 \
+  /p:EnableWindowsTargeting=true \
+  --verbosity quiet
+```
+
+### Build OpenpilotToolkit
+```bash
 dotnet build OpenpilotToolkit/OpenpilotToolkit.csproj \
   --configuration Release \
   --runtime win-x64 \
@@ -73,32 +80,13 @@ dotnet build OpenpilotToolkit/OpenpilotToolkit.csproj \
   /p:EnableWindowsTargeting=true \
   --verbosity quiet \
   --nologo
-
-echo "✅ OpenpilotToolkit build complete!"
 ```
 
-## Build Instructions
-
-### Main Project
-- **Project to build**: `OpenpilotToolkit/OpenpilotToolkit.csproj`
-- **Configuration**: Release
-- **Platform**: x64 (win-x64)
-
-### Project Dependencies (in order)
-1. SSH.NET/src/Renci.SshNet/Renci.SshNet.csproj
-2. SshNet.Keygen/SshNet.Keygen/SshNet.Keygen.csproj
-3. OpenpilotSdk/OpenpilotSdk.csproj
-4. OpenpilotToolkit/OpenpilotToolkit.csproj
-
-### Notes
-- Skip the OpenpilotToolkitAndroid project (Android-specific)
-- Cap'n Proto schemas are used in OpenpilotSdk
-- Build requires EnableWindowsTargeting=true on Linux
-
-## Testing
-After build, the executable will be at:
-`OpenpilotToolkit/bin/Release/net10.0-windows7.0/win-x64/OpenpilotToolkit.exe`
-
-## Common Issues
-- **PWD mismatch**: Unset PWD before building
-- **WFO1000 warnings**: These are designer serialization warnings, safe to ignore
+### Quick Build Command
+```bash
+# One-liner to build after environment is set up
+dotnet build OpenpilotToolkit/OpenpilotToolkit.csproj \
+  --configuration Release \
+  --runtime win-x64 \
+  /p:EnableWindowsTargeting=true
+```
