@@ -11,9 +11,9 @@
 	<DebugSymbols>false</DebugSymbols>
 	<GenerateDocumentationFile>false</GenerateDocumentationFile>
 
-	  <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-	  <WarningLevel>0</WarningLevel>
-	  <NoWarn>$(NoWarn);NU1701;WFO1000</NoWarn>
-	  <WarningsAsErrors></WarningsAsErrors>
+	<TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+	<WarningLevel>0</WarningLevel>
+	<NoWarn>$(NoWarn);NU1701;WFO1000</NoWarn>
+	<WarningsAsErrors></WarningsAsErrors>
   </PropertyGroup>
 </Project>
