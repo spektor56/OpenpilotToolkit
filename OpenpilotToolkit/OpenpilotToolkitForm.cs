@@ -2430,6 +2430,18 @@ namespace OpenpilotToolkit
                     ? txtExportFolder.Text
                     : txtExportFolder.Text + Path.DirectorySeparatorChar;
 
+                if(!Directory.Exists(path))
+                {
+                    if(ToolkitMessageDialog.ShowDialog("The folder does not exist, do you want to create it?",this, MessageBoxButtons.YesNo) == DialogResult.Yes)
+                    {
+                        Directory.CreateDirectory(path);
+                    }
+                    else
+                    {
+                        return;
+                    }
+                }
+
                 Process.Start(new ProcessStartInfo()
                 {
                     FileName = path,

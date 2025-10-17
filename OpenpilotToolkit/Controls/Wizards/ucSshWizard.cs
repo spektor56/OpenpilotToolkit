@@ -22,6 +22,7 @@ namespace OpenpilotToolkit.Controls.Wizards
         private string _clientSecret = "M2ViZmJkNjI5ZjhiNWM4M2RjYjNjZDk5Y2I3MGM5Y2Y2OTgyOTE3OQ==";
         private string _oauthCode = "";
         private ToolkitForm _loginDialog;
+        private readonly string _sshKeyPath = Path.Combine(AppContext.BaseDirectory, "opensshkey");
 
         public event EventHandler WizardCompleted;
 
@@ -221,11 +222,16 @@ namespace OpenpilotToolkit.Controls.Wizards
                             }
                         }
                     }
+                    catch (Octokit.AuthorizationException exception)
+                    {
+                        Serilog.Log.Error(exception, "Github authorize failed");
+                        throw;
+                    }
                     catch (Exception exception)
                     {
                         Serilog.Log.Error(exception, "Failed to retrieve github SSH public key list");
                     }
-                    
+
                     try
                     {
                         await _githubClient.User.GitSshKey.Create(new NewPublicKey("OpenpilotToolkitKey", generatedKey.ToPublic()));
@@ -239,7 +245,7 @@ namespace OpenpilotToolkit.Controls.Wizards
 
                     try
                     {
-                        await File.WriteAllTextAsync("opensshkey",generatedKey.ToOpenSshFormat());
+                        await File.WriteAllTextAsync(_sshKeyPath, generatedKey.ToOpenSshFormat());
                         Serilog.Log.Information("Updated opensshkey private key file");
                     }
                     catch (Exception exception)
@@ -248,7 +254,13 @@ namespace OpenpilotToolkit.Controls.Wizards
                         throw;
                     }
                 });
-                
+
+            }
+            catch (Octokit.AuthorizationException exception)
+            {
+                ToolkitMessageDialog.ShowDialog(exception.Message, this);
+                PreviousStep();
+                return;
             }
             catch (Exception exception)
             {
