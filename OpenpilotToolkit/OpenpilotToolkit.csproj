@@ -23,6 +23,8 @@
 		<CustomResourceTypesSupport>true</CustomResourceTypesSupport>
 		<AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
 		<GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
+
+		<CopyDocumentationFilesFromReferences>false</CopyDocumentationFilesFromReferences>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(PlatformTarget)' == 'x86'">
@@ -599,11 +601,11 @@
 	</ItemGroup>
 
   <ItemGroup>
-	<PackageReference Include="CefSharp.WinForms.NETCore" Version="139.0.280" />
+	<PackageReference Include="CefSharp.WinForms.NETCore" Version="140.1.140" />
 	<PackageReference Include="FlyleafLib" Version="3.7.46" />
 	<PackageReference Include="LibUsbDotNet" Version="2.2.29" />
 	<PackageReference Include="LiveChartsCore.SkiaSharpView.WinForms" Version="2.0.0-rc6.1" />
-    <PackageReference Include="Microsoft.Windows.Compatibility" Version="10.0.0-rc.1.25451.107" />
+    <PackageReference Include="Microsoft.Windows.Compatibility" Version="10.0.0-rc.2.25502.107" />
     <PackageReference Include="Octokit" Version="14.0.0" />
     <PackageReference Include="Serilog.Sinks.Async" Version="2.1.0" />
     <PackageReference Include="Serilog.Sinks.Debug" Version="3.0.0" />
@@ -680,10 +682,6 @@
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
   </ItemGroup>
-
-  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
-    <Exec Command="if not exist &quot;$(TargetDir)tmp&quot; mkdir &quot;$(TargetDir)tmp&quot;" />
-  </Target>
 
 	<Target Name="CefSharpAfterBuildDiagnostic" AfterTargets="AfterBuild">
 		<Message Importance="high" Text="CefSharp After Build Diagnostic" />
