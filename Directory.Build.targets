@@ -1,0 +1,19 @@
+<Project>
+ <PropertyGroup>
+   <LangVersion>preview</LangVersion>
+ </PropertyGroup>
+ 
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <Optimize>true</Optimize>
+	<DebugSymbols>false</DebugSymbols>
+	<DebugType>none</DebugType>
+	<PublishReadyToRun>true</PublishReadyToRun>
+	<DebugSymbols>false</DebugSymbols>
+	<GenerateDocumentationFile>false</GenerateDocumentationFile>
+
+	  <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+	  <WarningLevel>0</WarningLevel>
+	  <NoWarn>$(NoWarn);NU1701;WFO1000</NoWarn>
+	  <WarningsAsErrors></WarningsAsErrors>
+  </PropertyGroup>
+</Project>
