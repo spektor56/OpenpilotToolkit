@@ -13,7 +13,7 @@ on:
 
 jobs:
   build-and-release:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     permissions:
       contents: write # Required to create releases/tags
     steps:
@@ -22,43 +22,14 @@ jobs:
         with:
           submodules: 'recursive'
 
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '9.0.x' # Assuming .NET 9 based on project files
-
-      - name: Set version environment variable (strip v)
-        id: version_env
+      - name: Setup and Build
         run: |
-          VERSION_FROM_INPUT="${{ github.event.inputs.version }}"
-          # Strip 'v' prefix if it exists
-          VERSION_NO_V="${VERSION_FROM_INPUT#v}"
-          echo "DOTNET_VERSION=$VERSION_NO_V" >> $GITHUB_ENV
-        shell: bash
-
-      - name: Install Capn Proto
-        run: choco install capnproto
-
-      - name: Restore ALL dependencies
-        run: dotnet restore
-
-      - name: Restore OPTK dependencies
-        run: dotnet restore OpenpilotToolkit.sln
-
-      - name: Restore dependencies (MaterialSkin)
-        run: dotnet restore MaterialSkin/MaterialSkin.sln
-
-      - name: Build project # This builds the whole solution including the updater if it's part of the .sln
-        run: dotnet build OpenpilotToolkit.sln --configuration Release --no-restore -p:Version=${{ env.DOTNET_VERSION }} # Pass version for main project
-
-      - name: Publish main project
-        run: dotnet publish OpenpilotToolkit/OpenpilotToolkit.csproj --configuration Release --output ./publish_output --no-build -p:Version=${{ env.DOTNET_VERSION }}
+          bash .agent/setup.sh
+          bash .agent/quick-build.sh
 
       - name: Package application
         run: |
-          Compress-Archive -Path ./publish_output/* -DestinationPath ./OpenpilotToolkit-${{ github.event.inputs.version }}.zip
-        shell: pwsh
+          zip -r OpenpilotToolkit-${{ github.event.inputs.version }}.zip OpenpilotToolkit/bin/Release/net10.0-windows7.0/win-x64/
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
