@@ -3,6 +3,7 @@
 	<PropertyGroup>
 	    <OutputType>WinExe</OutputType>
 	    <TargetFramework>net10.0-windows</TargetFramework>
+        <TargetPlatformMinVersion>10.0.19041.0</TargetPlatformMinVersion>
 	    <UseWindowsForms>true</UseWindowsForms>
 		<DebugType>embedded</DebugType>
 		<ApplicationIcon>Resources\ic_launcher-web.ico</ApplicationIcon>
