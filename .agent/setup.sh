@@ -11,9 +11,25 @@ echo "================================================"
 # Install .NET 10
 echo ""
 echo "Installing .NET ${DOTNET_VERSION}..."
+
+# Check if correct version is installed
+NEEDS_INSTALL=false
 if command -v dotnet >/dev/null 2>&1; then
-    echo "✅ .NET already installed: $(dotnet --version)"
+    CURRENT_VERSION=$(dotnet --version)
+    MAJOR_VERSION=$(echo "$CURRENT_VERSION" | cut -d. -f1)
+    
+    if [[ "$MAJOR_VERSION" == "10" ]]; then
+        echo "✅ .NET 10 already installed: $CURRENT_VERSION"
+    else
+        echo "⚠️  Found .NET $CURRENT_VERSION, but need .NET 10"
+        NEEDS_INSTALL=true
+    fi
 else
+    NEEDS_INSTALL=true
+fi
+
+if [[ "$NEEDS_INSTALL" == "true" ]]; then
+    echo "Installing .NET ${DOTNET_VERSION}..."
     wget -q https://dot.net/v1/dotnet-install.sh -O dotnet-install.sh
     chmod +x dotnet-install.sh
     ./dotnet-install.sh --channel "$DOTNET_VERSION" --install-dir "$DOTNET_ROOT" --no-path
