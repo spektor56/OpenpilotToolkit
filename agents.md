@@ -6,7 +6,7 @@
 - **Language**: C# 
 - **Target**: Windows x64
 - **Main Project**: `OpenpilotToolkit/OpenpilotToolkit.csproj`
-- **Build Output**: `OpenpilotToolkit/bin/{Configuration}/net10.0-windows/win-x64/OpenpilotToolkit.exe`
+- **Build Output**: `OpenpilotToolkit/bin/{Configuration}/net10.0-windows10.0.19041/win-x64/OpenpilotToolkit.exe`
 
 ## Dependencies
 
@@ -122,10 +122,10 @@ When modifying code, determine rebuild requirements:
 After build:
 ```bash
 # Verify executable exists
-ls -lh OpenpilotToolkit/bin/Release/net10.0-windows/win-x64/OpenpilotToolkit.exe
+ls -lh OpenpilotToolkit/bin/Release/net10.0-windows10.0.19041/win-x64/OpenpilotToolkit.exe
 
 # Check file size (should be ~several MB)
-du -h OpenpilotToolkit/bin/Release/net10.0-windows/win-x64/OpenpilotToolkit.exe
+du -h OpenpilotToolkit/bin/Release/net10.0-windows10.0.19041/win-x64/OpenpilotToolkit.exe
 ```
 
 ## CI/CD Integration
@@ -157,7 +157,7 @@ steps:
 
 ### Output Structure
 ```
-bin/{Configuration}/net10.0-windows/win-x64/
+bin/{Configuration}/net10.0-windows10.0.19041/win-x64/
 ├── OpenpilotToolkit.exe       # Main executable
 ├── OpenpilotToolkit.dll       # Application DLL
 ├── OpenpilotSdk.dll           # SDK with generated Cap'n Proto types
