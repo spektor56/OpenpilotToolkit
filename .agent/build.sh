@@ -35,7 +35,7 @@ dotnet build "$PROJECT" \
     /p:EnableWindowsTargeting=true \
     --nologo
 
-OUTPUT_DIR="OpenpilotToolkit/bin/$CONFIGURATION/net10.0-windows/win-x64"
+OUTPUT_DIR="OpenpilotToolkit/bin/$CONFIGURATION/net10.0-windows10.0.19041/win-x64"
 EXE_PATH="$OUTPUT_DIR/OpenpilotToolkit.exe"
 
 echo ""
