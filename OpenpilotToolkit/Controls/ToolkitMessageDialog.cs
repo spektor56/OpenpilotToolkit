@@ -69,7 +69,7 @@ namespace OpenpilotToolkit.Controls
 
         private void ToolkitMessageDialog_Shown(object sender, EventArgs e)
         {
-            Opacity = 100;
+            Opacity = 1.0f;
         }
     }
 }

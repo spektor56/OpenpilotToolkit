@@ -30,7 +30,7 @@ namespace OpenpilotToolkit
             Application.SetHighDpiMode(HighDpiMode.DpiUnaware);
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            
+
             var splashForm = new SplashScreen();
             Task.Run(() =>
             {
@@ -60,9 +60,26 @@ namespace OpenpilotToolkit
             {
                 CachePath = _cefCachePath,
                 RootCachePath = _cefCachePath,
-                LogSeverity = LogSeverity.Disable,
+                LogSeverity = LogSeverity.Disable
             };
+            
+            settings.CefCommandLineArgs.Add("allow-universal-access-from-files", "1");
+            settings.CefCommandLineArgs.Add("disable-backgrounding-occluded-windows", "1");
+            settings.CefCommandLineArgs.Add("disable-frame-rate-limit", "1");
+            settings.CefCommandLineArgs.Add("disable-ipc-flooding-protection", "1");
+            settings.CefCommandLineArgs.Add("disable-low-res-tiling", "1");
+            settings.CefCommandLineArgs.Add("renderer-process-limit", "1");
+            settings.CefCommandLineArgs.Add("max-active-webgl-contexts", "1");
+            settings.CefCommandLineArgs.Add("js-flags", "--max-old-space-size=512");
+            settings.CefCommandLineArgs.Add("ignore-gpu-blocklist", "1");
+            settings.CefCommandLineArgs.Add("use-angle", "d3d11");
+            settings.CefCommandLineArgs.Add("disable-smooth-scrolling", "1");
+            settings.CefCommandLineArgs.Add("enable-native-gpu-memory-buffers", "1");
+            settings.CefCommandLineArgs.Add("gpu-preferences", "1005");
 
+            settings.CefCommandLineArgs.Add("force-device-scale-factor", "1");
+            settings.CefCommandLineArgs.Add("disable-pinch", "1");
+            
             settings.CefCommandLineArgs.Add("disable-background-timer-throttling", "1");
             settings.CefCommandLineArgs.Add("disable-renderer-backgrounding", "1");
             settings.CefCommandLineArgs.Add("disable-new-content-rendering-timeout", "1");
@@ -108,11 +125,11 @@ namespace OpenpilotToolkit
             settings.CefCommandLineArgs.Add("enable-webgl", "1");
 
             settings.CefCommandLineArgs.Add("allow-file-access-from-files", "1");
-
+            
             Cef.Initialize(settings);
 
             GlobalFFOptions.Configure(options => options.BinaryFolder = "./");
-
+            
             var logPath = Path.Combine(AppContext.BaseDirectory, @"logs\log.txt");
 
             Log.Logger = new LoggerConfiguration()

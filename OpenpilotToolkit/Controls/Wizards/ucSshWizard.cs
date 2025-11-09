@@ -116,6 +116,14 @@ namespace OpenpilotToolkit.Controls.Wizards
 
         private void BrowserOnLoadError(object sender, LoadErrorEventArgs e)
         {
+            // Only care about the main frame
+            if (!e.Frame.IsMain)
+                return;
+
+            // Ignore benign aborts (redirects, SPA navigation, etc.)
+            if (e.ErrorCode == CefErrorCode.Aborted)
+                return;
+
             _loginDialog.Invoke(new MethodInvoker(() =>
             {
                 _loginDialog.Close();

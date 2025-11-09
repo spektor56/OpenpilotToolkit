@@ -14,8 +14,12 @@
 		<EnableUnsafeBinaryFormatterSerialization>true</EnableUnsafeBinaryFormatterSerialization>
 		<ForceDesignerDPIUnaware>true</ForceDesignerDPIUnaware>
 	</PropertyGroup>
-
+	
 	<PropertyGroup>
+		<SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+		<CefSharpAnyCpuSupport>false</CefSharpAnyCpuSupport>
+		<PlatformTarget>x64</PlatformTarget>
+
 		<PublishTrimmed>false</PublishTrimmed>
 		<_SuppressWinFormsTrimError>false</_SuppressWinFormsTrimError>
 
@@ -52,6 +56,13 @@
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
 	  <NoWarn>1701;1702;WFO1000</NoWarn>
 	</PropertyGroup>
+
+	<Target Name="CleanupLocales" AfterTargets="Build" Condition="'$(Configuration)' == 'Release'">
+		<ItemGroup>
+			<LocalesToRemove Include="$(OutputPath)locales\*" Exclude="$(OutputPath)locales\en-US.pak" />
+		</ItemGroup>
+		<Delete Files="@(LocalesToRemove)" />
+	</Target>
 
 	<ItemGroup>
 	  <Compile Remove="Controls\Terminal\xterm-addon-fit\**" />
@@ -601,7 +612,7 @@
 	</ItemGroup>
 
   <ItemGroup>
-	<PackageReference Include="CefSharp.WinForms.NETCore" Version="140.1.140" />
+	<PackageReference Include="CefSharp.WinForms.NETCore" Version="141.0.110" />
 	<PackageReference Include="FlyleafLib" Version="3.7.46" />
 	<PackageReference Include="LibUsbDotNet" Version="2.2.29" />
 	<PackageReference Include="LiveChartsCore.SkiaSharpView.WinForms" Version="2.0.0-rc6.1" />
@@ -609,7 +620,7 @@
     <PackageReference Include="Octokit" Version="14.0.0" />
     <PackageReference Include="Serilog.Sinks.Async" Version="2.1.0" />
     <PackageReference Include="Serilog.Sinks.Debug" Version="3.0.0" />
-    <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="7.0.1-dev-02315" />
   </ItemGroup>
 
   <ItemGroup>

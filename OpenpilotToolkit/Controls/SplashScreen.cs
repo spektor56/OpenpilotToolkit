@@ -26,7 +26,7 @@ namespace OpenpilotToolkit.Controls
 
         private void SplashScreen_Shown(object sender, System.EventArgs e)
         {
-            Opacity = 100;
+            Opacity = 1.0f;
         }
     }
 }

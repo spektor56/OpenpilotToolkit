@@ -1,5 +1,7 @@
 <Project>
  <PropertyGroup>
    <LangVersion>preview</LangVersion>
+   <GenerateDocumentationFile>false</GenerateDocumentationFile>
+   <CopyDocumentationFilesFromPackages>false</CopyDocumentationFilesFromPackages>
  </PropertyGroup>
 </Project>

@@ -5,15 +5,22 @@
  
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
     <Optimize>true</Optimize>
-	<DebugSymbols>false</DebugSymbols>
-	<DebugType>none</DebugType>
-	<PublishReadyToRun>true</PublishReadyToRun>
-	<DebugSymbols>false</DebugSymbols>
-	<GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <DebugSymbols>false</DebugSymbols>
+    <PublishReadyToRun>true</PublishReadyToRun>
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
 
-	<TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-	<WarningLevel>0</WarningLevel>
-	<NoWarn>$(NoWarn);NU1701;WFO1000</NoWarn>
-	<WarningsAsErrors></WarningsAsErrors>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <WarningLevel>0</WarningLevel>
+    <NoWarn>$(NoWarn);NU1701;WFO1000</NoWarn>
+    <WarningsAsErrors></WarningsAsErrors>
   </PropertyGroup>
+  
+  <Target Name="RemoveReferencedProjectXmlDocs" AfterTargets="Build" Condition="'$(Configuration)' == 'Release'">
+    <ItemGroup>
+      <XmlDocsToRemove Include="$(OutputPath)*.xml" Exclude="$(OutputPath)$(AssemblyName).xml" />
+    </ItemGroup>
+    <Delete Files="@(XmlDocsToRemove)" />
+  </Target>
 </Project>

@@ -8,7 +8,26 @@
 		<LangVersion>preview</LangVersion>
 		<Platforms>x64;ARM64</Platforms>
 		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-		<GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>   
+		<GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)' == 'Release'">
+		<Optimize>true</Optimize>
+		<DebugSymbols>false</DebugSymbols>
+		<DebugType>none</DebugType>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<TieredCompilation>true</TieredCompilation>
+		<TieredPGO>true</TieredPGO>
+
+		<IsTrimmable>true</IsTrimmable>
+		<EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+
+		<IsAotCompatible>true</IsAotCompatible>
+
+		<CopyDocumentationFilesFromPackages>false</CopyDocumentationFilesFromPackages>
+		<CopyDocumentationFilesFromReferences>false</CopyDocumentationFilesFromReferences>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -39,14 +58,14 @@
 		<PackageReference Include="Capnp.Net.Runtime" Version="1.3.118" />
 		<PackageReference Include="CapnpC.CSharp.MsBuild.Generation" Version="1.3.118" />
 		<PackageReference Include="DnsClient" Version="1.8.0" />
-		<PackageReference Include="FFMpegCore" Version="5.2.0" />
+		<PackageReference Include="FFMpegCore" Version="5.4.0" />
 		<PackageReference Include="GeoCoordinate.NetStandard2" Version="1.0.1" />
 		<PackageReference Include="MathNet.Numerics" Version="6.0.0-beta2" />
 		<PackageReference Include="NetTopologySuite" Version="2.6.0" />
 		<PackageReference Include="NetTopologySuite.IO.GPX" Version="1.1.1" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
 		<PackageReference Include="Nito.AsyncEx" Version="5.1.2" />
-		<PackageReference Include="Serilog" Version="4.3.1-dev-02387" />
+		<PackageReference Include="Serilog" Version="4.3.1-dev-02390" />
 		<PackageReference Include="SharpZipLib" Version="1.4.2" />
 		<PackageReference Include="System.Drawing.Common" Version="10.0.0-rc.2.25502.107" />
 		<PackageReference Include="Zeroconf" Version="3.7.16" />

@@ -962,8 +962,8 @@ namespace OpenpilotSdk.Hardware
                 }
 
                 //GetAllNetworkInterfaces is slow, so run it in a task so we can return any devices if they are already found.
-                NetworkInterface[]? networkInferfaces = null;
-                var networkInterfaceTask = Task.Run(() => { networkInferfaces = NetworkInterface.GetAllNetworkInterfaces(); });
+                NetworkInterface[]? networkInterfaces = null;
+                var networkInterfaceTask = Task.Run(() => { networkInterfaces = NetworkInterface.GetAllNetworkInterfaces(); });
 
                 var firstTask = await Task.WhenAny(connectionRequests.Concat<Task>(new[] { networkInterfaceTask })).ConfigureAwait(false);
 
@@ -984,13 +984,13 @@ namespace OpenpilotSdk.Hardware
                     await networkInterfaceTask.ConfigureAwait(false);
                 }
 
-                if (networkInferfaces is null)
+                if (networkInterfaces is null)
                 {
                     yield break;
                 }
 
                 Log.Information("Scanning network for devices."); //~300ms
-                foreach (var networkInterface in networkInferfaces)
+                foreach (var networkInterface in networkInterfaces)
                 {
                     Log.Information("Found network interface: {interface}", networkInterface.Name);
 

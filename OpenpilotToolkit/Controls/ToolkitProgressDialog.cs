@@ -100,7 +100,7 @@ namespace OpenpilotToolkit.Controls
 
         private void ToolkitProgressDialog_Shown(object sender, EventArgs e)
         {
-            Opacity = 100;
+            Opacity = 1.0f;
         }
 
         private void ToolkitProgressDialog_Deactivate(object sender, EventArgs e)
