@@ -45,7 +45,7 @@ Openpilot Toolkit streamlines common tasks for openpilot device owners. The tool
 
 ### Installation
 
-- **Windows:** [Download the latest release](https://github.com/spektor56/OpenpilotToolkit/releases/download/1.9.7/OpenpilotToolkit.zip), extract the archive, and launch `OpenpilotToolkit.exe`.
+- **Windows:** [Download the latest release](https://github.com/spektor56/OpenpilotToolkit/releases/download/1.9.8/OpenpilotToolkit.zip), extract the archive, and launch `OpenpilotToolkit.exe`.
 - **Android:** [Download the APK](https://github.com/spektor56/OpenpilotToolkit/releases/download/1.9.5/com.spektor56.openpilottoolkitandroid.apk) and sideload it on your device.
 
 ## Usage
