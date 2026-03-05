@@ -11,6 +11,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Velopack;
 
 namespace OpenpilotToolkit
 {
@@ -26,6 +27,15 @@ namespace OpenpilotToolkit
         [STAThread]
         public static int Main(string[] args)
         {
+            try
+            {
+                VelopackApp.Build().Run();
+            }
+            catch (Exception)
+            {
+                // Ignore errors related to Velopack initialization
+            }
+
             Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
             Application.SetHighDpiMode(HighDpiMode.DpiUnaware);
             Application.EnableVisualStyles();
