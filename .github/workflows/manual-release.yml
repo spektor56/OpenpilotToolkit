@@ -30,6 +30,12 @@ jobs:
       - name: Install Velopack CLI
         run: dotnet tool install -g vpk
 
+      - name: Download Previous Release for Deltas
+        continue-on-error: true
+        run: |
+          export PATH="$PATH:$HOME/.dotnet/tools"
+          vpk download github --repoUrl https://github.com/spektor56/openpilottoolkit -o ReleasePackages
+
       - name: Package application
         run: |
           export PATH="$PATH:$HOME/.dotnet/tools"
