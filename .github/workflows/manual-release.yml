@@ -27,9 +27,24 @@ jobs:
           bash .agent/setup.sh
           bash .agent/quick-build.sh
 
+      - name: Install Velopack CLI
+        run: dotnet tool install -g vpk
+
+      - name: Publish application
+        run: dotnet publish OpenpilotToolkit/OpenpilotToolkit.csproj -p:PublishProfile=FolderProfile -c Release /p:EnableWindowsTargeting=true
+
+      - name: Download Previous Release for Deltas
+        continue-on-error: true
+        run: |
+          export PATH="$PATH:$HOME/.dotnet/tools"
+          vpk download github --repoUrl https://github.com/spektor56/openpilottoolkit -o ReleasePackages
+
       - name: Package application
         run: |
-          zip -r OpenpilotToolkit-${{ github.event.inputs.version }}.zip OpenpilotToolkit/bin/Release/net10.0-windows10.0.19041/win-x64/
+          export PATH="$PATH:$HOME/.dotnet/tools"
+          VERSION="${{ github.event.inputs.version }}"
+          VERSION="${VERSION#v}"
+          vpk pack -u OpenpilotToolkit -v $VERSION -p OpenpilotToolkit/bin/publish/ -o ReleasePackages -i OpenpilotToolkit/Resources/ic_launcher-web.ico -s OpenpilotToolkit/Resources/ssh.png
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
@@ -37,6 +52,6 @@ jobs:
           tag_name: ${{ github.event.inputs.version }}
           name: Release ${{ github.event.inputs.version }}
           body: ${{ github.event.inputs.release_notes }}
-          files: ./OpenpilotToolkit-${{ github.event.inputs.version }}.zip
+          files: ./ReleasePackages/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

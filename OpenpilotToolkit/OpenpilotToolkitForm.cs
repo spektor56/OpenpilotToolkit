@@ -40,6 +40,8 @@ using System.Windows.Forms;
 using LiveChartsCore;
 using LiveChartsCore.Defaults;
 using LiveChartsCore.Measure;
+using Velopack;
+using Velopack.Sources;
 using LiveChartsCore.SkiaSharpView.Painting;
 using LiveChartsCore.SkiaSharpView.Painting.Effects;
 using LiveChartsCore.SkiaSharpView.SKCharts;
@@ -330,9 +332,88 @@ namespace OpenpilotToolkit
             await ScanDevices().ConfigureAwait(false);
 
             //Look for updates
+            _ = Task.Run(CheckForUpdatesAsync);
 
             //TODO: implement self-updater
             //var test = await _githubClient.Repository.Release.GetLatest("spektor56", "openpilotToolkit");
+        }
+
+        private async Task CheckForUpdatesAsync()
+        {
+            try
+            {
+                var mgr = new UpdateManager(new GithubSource("https://github.com/spektor56/openpilottoolkit", null, false));
+
+                if (!mgr.IsInstalled)
+                {
+                    try
+                    {
+                        var release = await _githubClient.Repository.Release.GetLatest("spektor56", "openpilotToolkit");
+                        if (release != null)
+                        {
+                            var currentVersionStr = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+                            if (Version.TryParse(currentVersionStr, out var currentVersion) &&
+                                Version.TryParse(release.TagName.TrimStart('v'), out var latestVersion) &&
+                                latestVersion > currentVersion)
+                            {
+                                Invoke(new MethodInvoker(() =>
+                                {
+                                    var result = ToolkitMessageDialog.ShowDialog($"An update to version {release.TagName} is available, but this version of OpenpilotToolkit was not installed via the auto-updating installer. Would you like to open the download page to install the new version?", this, MessageBoxButtons.YesNo);
+                                    if (result == DialogResult.Yes)
+                                    {
+                                        Process.Start(new ProcessStartInfo
+                                        {
+                                            FileName = "https://github.com/spektor56/openpilottoolkit/releases/latest",
+                                            UseShellExecute = true
+                                        });
+                                    }
+                                }));
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Serilog.Log.Error(ex, "Failed to check for non-Velopack updates from GitHub");
+                    }
+                    return;
+                }
+
+                var newVersion = await mgr.CheckForUpdatesAsync();
+                if (newVersion == null)
+                {
+                    return; // No update available
+                }
+
+                Invoke(new MethodInvoker(() =>
+                {
+                    var result = ToolkitMessageDialog.ShowDialog($"An update to version {newVersion.TargetFullRelease.Version} is available. Would you like to update now?", this, MessageBoxButtons.YesNo);
+                    if (result == DialogResult.Yes)
+                    {
+                        Task.Run(async () =>
+                        {
+                            try
+                            {
+                                Invoke(new MethodInvoker(() =>
+                                {
+                                    var message = new MaterialSnackBar("Downloading update, the application will restart automatically...", "OK", false);
+                                    message.Show(this);
+                                }));
+                                await mgr.DownloadUpdatesAsync(newVersion);
+                                mgr.ApplyUpdatesAndRestart(newVersion);
+                            }
+                            catch (Exception ex)
+                            {
+                                Serilog.Log.Error(ex, "Failed to download/apply update");
+                                Invoke(new MethodInvoker(() => ToolkitMessageDialog.ShowDialog("Failed to apply update: " + ex.Message, this)));
+                            }
+                        });
+                    }
+                }));
+            }
+            catch (Exception ex)
+            {
+                Serilog.Log.Error(ex, "Error checking for updates.");
+            }
         }
 
         private async void FileWatcherOnChanged(object sender, FileSystemEventArgs e)
