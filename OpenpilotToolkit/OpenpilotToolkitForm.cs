@@ -346,6 +346,35 @@ namespace OpenpilotToolkit
 
                 if (!mgr.IsInstalled)
                 {
+                    try
+                    {
+                        var release = await _githubClient.Repository.Release.GetLatest("spektor56", "openpilotToolkit");
+                        if (release != null)
+                        {
+                            var currentVersionStr = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+                            if (Version.TryParse(currentVersionStr, out var currentVersion) &&
+                                Version.TryParse(release.TagName.TrimStart('v'), out var latestVersion) &&
+                                latestVersion > currentVersion)
+                            {
+                                Invoke(new MethodInvoker(() =>
+                                {
+                                    var result = ToolkitMessageDialog.ShowDialog($"An update to version {release.TagName} is available, but this version of OpenpilotToolkit was not installed via the auto-updating installer. Would you like to open the download page to install the new version?", this, MessageBoxButtons.YesNo);
+                                    if (result == DialogResult.Yes)
+                                    {
+                                        Process.Start(new ProcessStartInfo
+                                        {
+                                            FileName = "https://github.com/spektor56/openpilottoolkit/releases/latest",
+                                            UseShellExecute = true
+                                        });
+                                    }
+                                }));
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Serilog.Log.Error(ex, "Failed to check for non-Velopack updates from GitHub");
+                    }
                     return;
                 }
 
